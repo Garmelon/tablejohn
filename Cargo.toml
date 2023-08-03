@@ -11,3 +11,6 @@ axum = { version = "0.6.19", features = ["macros"] }
 mime_guess = "2.0.4"
 rust-embed = "6.8.1"
 tokio = { version = "1.29.1", features = ["full"] }
+
+[build-dependencies]
+walkdir = "2.3.3"

@@ -783,6 +783,7 @@ dependencies = [
  "mime_guess",
  "rust-embed",
  "tokio",
+ "walkdir",
 ]
 
 [[package]]

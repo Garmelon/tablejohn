@@ -4,27 +4,40 @@ use std::{
     process::Command,
 };
 
+use walkdir::WalkDir;
+
 const STATIC_DIR: &str = "static";
 const STATIC_OUT_DIR: &str = "target/static";
+const STATIC_IGNORE_EXT: &[&str] = &["ts"];
 
-fn copy_recursively(path: &Path) {
-    let from = PathBuf::new().join(STATIC_DIR).join(path);
-    let to = PathBuf::new().join(STATIC_OUT_DIR).join(path);
+fn watch_dir(path: &Path) {
+    WalkDir::new(path)
+        .into_iter()
+        .for_each(|e| println!("cargo:rerun-if-changed={}", e.unwrap().path().display()));
+}
 
-    println!("cargo:rerun-if-changed={}", from.display());
+fn run_tsc() {
+    let status = Command::new("tsc").status().unwrap();
+    assert!(status.success(), "tsc produced errors");
+}
 
-    if from.is_file() {
-        if from.extension() == Some("ts".as_ref()) {
-            return;
-        }
-        fs::create_dir_all(to.parent().unwrap()).unwrap();
-        fs::copy(from, to).unwrap();
-    } else if from.is_dir() {
-        for entry in from.read_dir().unwrap() {
-            copy_recursively(&path.join(entry.unwrap().file_name()));
-        }
-    } else {
-        panic!("Unexpected file type at {}", from.display());
+fn copy_static_files() {
+    let files = WalkDir::new(STATIC_DIR)
+        .into_iter()
+        .map(|e| e.unwrap())
+        .filter(|e| e.file_type().is_file())
+        .filter(|e| {
+            let extension = e.path().extension().and_then(|s| s.to_str()).unwrap_or("");
+            !STATIC_IGNORE_EXT.contains(&extension)
+        });
+
+    for file in files {
+        let components = file.path().components().collect::<Vec<_>>();
+        let relative_path = components.into_iter().rev().take(file.depth()).rev();
+        let mut target = PathBuf::new().join(STATIC_OUT_DIR);
+        target.extend(relative_path);
+        fs::create_dir_all(target.parent().unwrap()).unwrap();
+        fs::copy(file.path(), target).unwrap();
     }
 }
 
@@ -35,10 +48,7 @@ fn main() {
     fs::create_dir_all(STATIC_OUT_DIR).unwrap();
     fs::remove_dir_all(STATIC_OUT_DIR).unwrap();
 
-    // Run typescript compiler
-    let status = Command::new("tsc").status().unwrap();
-    assert!(status.success(), "tsc produced errors");
-
-    // Copy remaining static files
-    copy_recursively("".as_ref());
+    watch_dir(STATIC_DIR.as_ref());
+    run_tsc();
+    copy_static_files();
 }
