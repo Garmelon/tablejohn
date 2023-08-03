@@ -1,0 +1,4 @@
+{
+    "json.format.keepLines": true,
+    "typescript.format.semicolons": "insert",
+}

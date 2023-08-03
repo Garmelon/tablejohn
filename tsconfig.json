@@ -1,0 +1,23 @@
+{ // See also https://aka.ms/tsconfig
+  "include": [ "static/**/*" ],
+
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "ES2015",
+    "rootDir": "static",
+    "outDir": "target/static",
+
+    // Misc
+    // TODO Source maps?
+    "forceConsistentCasingInFileNames": true,
+    "newLine": "lf",
+    "removeComments": true,
+
+    // Type checking
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "strict": true,
+  }
+}
