@@ -1,7 +1,11 @@
+mod r#static;
+
 use axum::{routing::get, Router};
 
 async fn run() -> anyhow::Result<()> {
-    let app = Router::new().route("/", get(|| async { "Hello, world!" }));
+    let app = Router::new()
+        .route("/", get(|| async { "Hello, world!" }))
+        .fallback(get(r#static::static_handler));
 
     axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
         .serve(app.into_make_service())
