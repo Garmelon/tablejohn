@@ -20,6 +20,7 @@ async fn run() -> anyhow::Result<()> {
             }),
         )
         .fallback(get(r#static::static_handler));
+    // TODO Add text body to body-less status codes
 
     axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
         .serve(app.into_make_service())
