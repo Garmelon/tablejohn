@@ -6,7 +6,10 @@ use std::{
 
 use walkdir::WalkDir;
 
+const MIGRATION_DIR: &str = "migrations";
 const STATIC_DIR: &str = "static";
+const TEMPLATE_DIR: &str = "templates";
+
 const STATIC_OUT_DIR: &str = "target/static";
 const STATIC_IGNORE_EXT: &[&str] = &["ts"];
 
@@ -42,13 +45,16 @@ fn copy_static_files() {
 }
 
 fn main() {
+    watch_dir(MIGRATION_DIR.as_ref());
+    watch_dir(STATIC_DIR.as_ref());
+    watch_dir(TEMPLATE_DIR.as_ref());
+
     // Since remove_dir_all fails if the directory doesn't exist, we ensure it
     // exists before deleting it. This way, we can use the remove_dir_all Result
     // to ensure the directory was deleted successfully.
     fs::create_dir_all(STATIC_OUT_DIR).unwrap();
     fs::remove_dir_all(STATIC_OUT_DIR).unwrap();
 
-    watch_dir(STATIC_DIR.as_ref());
     run_tsc();
     copy_static_files();
 }
