@@ -2,4 +2,5 @@ function main() {
     alert("Hello world!");
 }
 
-main();
+const BUTTON = document.getElementById("button");
+BUTTON?.addEventListener("click", main);

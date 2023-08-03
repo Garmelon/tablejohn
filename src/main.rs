@@ -1,10 +1,24 @@
 mod r#static;
 
+use askama::Template;
 use axum::{routing::get, Router};
+
+#[derive(Template)]
+#[template(path = "index.html")]
+struct IndexTemplate {
+    greetee: String,
+}
 
 async fn run() -> anyhow::Result<()> {
     let app = Router::new()
-        .route("/", get(|| async { "Hello, world!" }))
+        .route(
+            "/",
+            get(|| async {
+                IndexTemplate {
+                    greetee: "world".to_string(),
+                }
+            }),
+        )
         .fallback(get(r#static::static_handler));
 
     axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
