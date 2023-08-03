@@ -35,6 +35,10 @@ fn main() {
     fs::create_dir_all(STATIC_OUT_DIR).unwrap();
     fs::remove_dir_all(STATIC_OUT_DIR).unwrap();
 
-    Command::new("tsc").output().unwrap();
+    // Run typescript compiler
+    let status = Command::new("tsc").status().unwrap();
+    assert!(status.success(), "tsc produced errors");
+
+    // Copy remaining static files
     copy_recursively("".as_ref());
 }
