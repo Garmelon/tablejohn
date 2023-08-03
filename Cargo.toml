@@ -4,3 +4,6 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.72"
+axum = { version = "0.6.19", features = ["macros"] }
+tokio = { version = "1.29.1", features = ["full"] }
