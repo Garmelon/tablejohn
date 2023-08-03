@@ -10,6 +10,7 @@ askama_axum = "0.3.0"
 axum = { version = "0.6.19", features = ["macros"] }
 mime_guess = "2.0.4"
 rust-embed = "6.8.1"
+sqlx = { version = "0.7.1", features = ["runtime-tokio", "sqlite"] }
 tokio = { version = "1.29.1", features = ["full"] }
 
 [build-dependencies]

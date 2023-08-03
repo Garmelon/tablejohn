@@ -1,25 +1,34 @@
+mod db;
 mod r#static;
 
 use askama::Template;
-use axum::{routing::get, Router};
+use askama_axum::{IntoResponse, Response};
+use axum::{http::StatusCode, routing::get, Extension, Router};
+use sqlx::{Row, SqlitePool};
 
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
-    greetee: String,
+    number: i32,
+}
+
+async fn index(Extension(pool): Extension<SqlitePool>) -> Result<Response, Response> {
+    let result = sqlx::query("SELECT * FROM (VALUES (1))")
+        .fetch_one(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{e}")).into_response())?;
+
+    let number: i32 = result.get(0);
+    Ok(IndexTemplate { number }.into_response())
 }
 
 async fn run() -> anyhow::Result<()> {
+    let pool = db::pool().await?;
+
     let app = Router::new()
-        .route(
-            "/",
-            get(|| async {
-                IndexTemplate {
-                    greetee: "world".to_string(),
-                }
-            }),
-        )
-        .fallback(get(r#static::static_handler));
+        .route("/", get(index))
+        .fallback(get(r#static::static_handler))
+        .layer(Extension(pool));
     // TODO Add text body to body-less status codes
 
     axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
