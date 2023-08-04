@@ -97,8 +97,10 @@ async fn insert_new_commit_links(conn: &mut SqliteConnection, new: &[Info]) -> a
         let child = commit.id.to_string();
         for parent in &commit.parent_ids {
             let parent = parent.to_string();
+            // Commits *cough*linuxkernel*cough* may list the same parent
+            // multiple times, so we just ignore duplicates during insert.
             sqlx::query!(
-                "INSERT INTO commit_links (parent, child) VALUES (?, ?)",
+                "INSERT OR IGNORE INTO commit_links (parent, child) VALUES (?, ?)",
                 parent,
                 child
             )
