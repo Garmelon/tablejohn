@@ -13,8 +13,10 @@ use directories::ProjectDirs;
 use sqlx::SqlitePool;
 use state::AppState;
 use tokio::{select, signal::unix::SignalKind};
-use tracing::{debug, info};
-use tracing_subscriber::filter::LevelFilter;
+use tracing::{debug, info, Level};
+use tracing_subscriber::{
+    filter::Targets, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
+};
 
 use crate::config::Config;
 
@@ -31,23 +33,37 @@ struct Args {
     /// Path to the config file.
     #[arg(long, short)]
     config: Option<PathBuf>,
-    /// Enable more verbose output
-    #[arg(long, short)]
-    verbose: bool,
+    /// Enable increasingly more verbose output
+    #[arg(long, short, action = clap::ArgAction::Count)]
+    verbose: u8,
 }
 
-fn set_up_logging(verbose: bool) {
-    if verbose {
-        tracing_subscriber::fmt()
-            .with_max_level(LevelFilter::TRACE)
-            .pretty()
-            .init();
-    } else {
-        tracing_subscriber::fmt()
-            .with_max_level(LevelFilter::INFO)
+fn set_up_logging(verbose: u8) {
+    let filter = Targets::new()
+        .with_default(Level::TRACE)
+        .with_target("sqlx", Level::INFO);
+    match verbose {
+        0 => tracing_subscriber::fmt()
+            .with_max_level(Level::INFO)
             .without_time()
             .with_target(false)
-            .init();
+            .init(),
+        1 => tracing_subscriber::fmt()
+            .with_max_level(Level::TRACE)
+            .with_target(false)
+            .finish()
+            .with(filter)
+            .init(),
+        2 => tracing_subscriber::fmt()
+            .with_max_level(Level::TRACE)
+            .pretty()
+            .finish()
+            .with(filter)
+            .init(),
+        _ => tracing_subscriber::fmt()
+            .with_max_level(Level::TRACE)
+            .pretty()
+            .init(),
     }
 }
 
