@@ -4,7 +4,7 @@ mod r#static;
 use askama::Template;
 use askama_axum::{IntoResponse, Response};
 use axum::{http::StatusCode, routing::get, Extension, Router};
-use sqlx::{Row, SqlitePool};
+use sqlx::SqlitePool;
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -13,12 +13,12 @@ struct IndexTemplate {
 }
 
 async fn index(Extension(pool): Extension<SqlitePool>) -> Result<Response, Response> {
-    let result = sqlx::query("SELECT * FROM (VALUES (1))")
+    let result = sqlx::query!("SELECT column1 AS number FROM (VALUES (1))")
         .fetch_one(&pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{e}")).into_response())?;
 
-    let number: i32 = result.get(0);
+    let number = result.number;
     Ok(IndexTemplate { number }.into_response())
 }
 

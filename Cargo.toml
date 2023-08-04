@@ -15,3 +15,6 @@ tokio = { version = "1.29.1", features = ["full"] }
 
 [build-dependencies]
 walkdir = "2.3.3"
+
+[profile.dev.package.sqlx-macros]
+opt-level = 3
