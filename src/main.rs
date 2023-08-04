@@ -22,14 +22,23 @@ struct Args {
     db: PathBuf,
     /// Path to the git repo.
     repo: PathBuf,
+    /// Enable more verbose output
+    #[arg(long, short)]
+    verbose: bool,
 }
 
-fn set_up_logging() {
-    let filter = tracing_subscriber::filter::Builder::default()
-        .with_default_directive(LevelFilter::INFO.into())
-        .from_env_lossy();
-
-    tracing_subscriber::fmt().with_env_filter(filter).init();
+fn set_up_logging(verbose: bool) {
+    if verbose {
+        tracing_subscriber::fmt()
+            .with_max_level(LevelFilter::DEBUG)
+            .init();
+    } else {
+        tracing_subscriber::fmt()
+            .with_max_level(LevelFilter::INFO)
+            .without_time()
+            .with_target(false)
+            .init();
+    }
 }
 
 #[derive(Template)]
@@ -49,10 +58,9 @@ async fn index(State(db): State<SqlitePool>) -> Result<Response, Response> {
 }
 
 async fn run() -> anyhow::Result<()> {
-    // Parse args before any logging starts
     let args = Args::parse();
 
-    set_up_logging();
+    set_up_logging(args.verbose);
     info!("You are running {NAME} {VERSION}");
 
     let state = AppState::new(&args.db).await?;

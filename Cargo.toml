@@ -14,7 +14,7 @@ rust-embed = "6.8.1"
 sqlx = { version = "0.7.1", features = ["runtime-tokio", "sqlite"] }
 tokio = { version = "1.29.1", features = ["full"] }
 tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+tracing-subscriber = "0.3.17"
 
 [build-dependencies]
 vergen = { version = "8.2.4", features = ["git", "gitcl"] }

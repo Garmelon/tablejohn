@@ -7,6 +7,7 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
     SqlitePool,
 };
+use tracing::{info, debug};
 
 // TODO Occasionally run PRAGMA optimize
 async fn pool(db_path: &Path) -> sqlx::Result<SqlitePool> {
@@ -25,8 +26,10 @@ async fn pool(db_path: &Path) -> sqlx::Result<SqlitePool> {
         .create_if_missing(true)
         .optimize_on_close(true, None);
 
+    info!("Opening db at {}", db_path.display());
     let pool = SqlitePoolOptions::new().connect_with(options).await?;
 
+    debug!("Applying outstanding db migrations");
     sqlx::migrate!().run(&pool).await?;
 
     Ok(pool)
