@@ -125,6 +125,6 @@ pub async fn repeatedly(state: AppState) {
         .instrument(debug_span!("update repo"))
         .await;
 
-        tokio::time::sleep(state.config.repo_update_delay).await;
+        tokio::time::sleep(state.config.repo.update_delay).await;
     }
 }

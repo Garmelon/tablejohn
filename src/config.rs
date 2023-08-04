@@ -14,17 +14,22 @@ mod default {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Config {
+pub struct Repo {
     #[serde(default = "default::repo_update_delay", with = "humantime_serde")]
-    pub repo_update_delay: Duration,
+    pub update_delay: Duration,
 }
 
-impl Default for Config {
+impl Default for Repo {
     fn default() -> Self {
         Self {
-            repo_update_delay: default::repo_update_delay(),
+            update_delay: default::repo_update_delay(),
         }
     }
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct Config {
+    pub repo: Repo,
 }
 
 impl Config {
