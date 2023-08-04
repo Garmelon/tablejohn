@@ -1,7 +1,7 @@
 mod state;
 mod r#static;
 
-use std::path::PathBuf;
+use std::{io, path::PathBuf};
 
 use askama::Template;
 use askama_axum::{IntoResponse, Response};
@@ -9,7 +9,8 @@ use axum::{extract::State, http::StatusCode, routing::get, Router};
 use clap::Parser;
 use sqlx::SqlitePool;
 use state::AppState;
-use tracing::info;
+use tokio::{select, signal::unix::SignalKind};
+use tracing::{debug, info};
 use tracing_subscriber::filter::LevelFilter;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
@@ -41,6 +42,21 @@ fn set_up_logging(verbose: bool) {
     }
 }
 
+async fn wait_for_signal() -> io::Result<()> {
+    debug!("Listening to signals");
+
+    let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
+    let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
+
+    let signal = select! {
+        _ = sigint.recv() => "SIGINT",
+        _ = sigterm.recv() => "SIGTERM",
+    };
+
+    info!("Received {signal}, shutting down");
+    Ok(())
+}
+
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
@@ -68,13 +84,20 @@ async fn run() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(index))
         .fallback(get(r#static::static_handler))
-        .with_state(state);
+        .with_state(state.clone())
+        .into_make_service();
     // TODO Add text body to body-less status codes
     // TODO Add anyhow-like error type for endpoints
 
-    axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
-        .serve(app.into_make_service())
-        .await?;
+    let server = axum::Server::bind(&"0.0.0.0:8000".parse().unwrap());
+
+    info!("Startup complete, running");
+    select! {
+        _ = wait_for_signal() => {},
+        _ = server.serve(app) => {},
+    }
+
+    state.shut_down().await;
 
     Ok(())
 }

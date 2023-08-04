@@ -46,4 +46,9 @@ impl AppState {
             db: pool(db_path).await?,
         })
     }
+
+    pub async fn shut_down(self) {
+        info!("Closing db");
+        self.db.close().await;
+    }
 }
