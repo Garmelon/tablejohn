@@ -329,12 +329,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 
 [[package]]
-name = "bytesize"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38fcc2979eff34a4b84e1cf9a1e3da42a7d44b3b690a40cdcb23e3d556cfb2e5"
-
-[[package]]
 name = "cc"
 version = "1.0.81"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1029,7 +1023,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "882695cccf38da4c3cc7ee687bdb412cf25e37932d7f8f2c306112ea712449f1"
 dependencies = [
  "bytes",
- "bytesize",
  "crc32fast",
  "crossbeam-channel",
  "flate2",
@@ -1586,18 +1579,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
-name = "human_format"
-version = "1.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86cce260d758a9aa3d7c4b99d55c815a540f8a37514ba6046ab6be402a157cb0"
-
-[[package]]
 name = "humansize"
 version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6cb51c9a029ddc91b07a787f1d86b53ccfa49b0e86688c946ebe8d3555685dd7"
 dependencies = [
  "libm",
+]
+
+[[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
+
+[[package]]
+name = "humantime-serde"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57a3db5ea5923d99402c94e9feb261dc5ee9b4efa158b0315f788cf549cc200c"
+dependencies = [
+ "humantime",
+ "serde",
 ]
 
 [[package]]
@@ -2080,10 +2083,6 @@ name = "prodash"
 version = "25.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c236e70b7f9b9ea00d33c69f63ec1ae6e9ae96118923cd37bd4e9c7396f0b107"
-dependencies = [
- "bytesize",
- "human_format",
-]
 
 [[package]]
 name = "quote"
@@ -2733,6 +2732,7 @@ dependencies = [
  "clap",
  "directories",
  "gix",
+ "humantime-serde",
  "mime_guess",
  "rust-embed",
  "serde",
