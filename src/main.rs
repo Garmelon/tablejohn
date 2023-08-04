@@ -1,6 +1,8 @@
 mod state;
 mod r#static;
 
+use std::path::PathBuf;
+
 use askama::Template;
 use askama_axum::{IntoResponse, Response};
 use axum::{extract::State, http::StatusCode, routing::get, Router};
@@ -20,7 +22,12 @@ const VERSION: &str = concat!(
 
 #[derive(Debug, clap::Parser)]
 #[command(name = NAME, version = VERSION)]
-struct Args {}
+struct Args {
+    /// Path to the repo's tablejohn database.
+    db: PathBuf,
+    /// Path to the git repo.
+    repo: PathBuf,
+}
 
 fn set_up_logging() {
     let filter = tracing_subscriber::filter::Builder::default()
@@ -47,12 +54,13 @@ async fn index(State(db): State<SqlitePool>) -> Result<Response, Response> {
 }
 
 async fn run() -> anyhow::Result<()> {
+    // Parse args before any logging starts
     let args = Args::parse();
 
     set_up_logging();
     info!("You are running {NAME} {VERSION}");
 
-    let state = AppState::new().await?;
+    let state = AppState::new(&args.db).await?;
 
     let app = Router::new()
         .route("/", get(index))

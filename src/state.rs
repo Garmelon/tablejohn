@@ -1,5 +1,7 @@
 //! Globally accessible application state.
 
+use std::path::Path;
+
 use axum::extract::FromRef;
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
@@ -7,8 +9,7 @@ use sqlx::{
 };
 
 // TODO Occasionally run PRAGMA optimize
-// TODO Open db from path
-async fn pool() -> sqlx::Result<SqlitePool> {
+async fn pool(db_path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
         // https://www.sqlite.org/pragma.html#pragma_journal_mode
         .journal_mode(SqliteJournalMode::Wal)
@@ -20,6 +21,7 @@ async fn pool() -> sqlx::Result<SqlitePool> {
         // https://www.sqlite.org/pragma.html#pragma_trusted_schema
         // The docs recommend always turning this off
         .pragma("trusted_schema", "false")
+        .filename(db_path)
         .create_if_missing(true)
         .optimize_on_close(true, None);
 
@@ -36,7 +38,9 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new() -> anyhow::Result<Self> {
-        Ok(Self { db: pool().await? })
+    pub async fn new(db_path: &Path) -> anyhow::Result<Self> {
+        Ok(Self {
+            db: pool(db_path).await?,
+        })
     }
 }
