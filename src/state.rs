@@ -8,7 +8,9 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
     SqlitePool,
 };
-use tracing::{info, debug};
+use tracing::{debug, info};
+
+use crate::config::Config;
 
 // TODO Occasionally run PRAGMA optimize
 async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
@@ -43,13 +45,19 @@ fn open_repo(repo_path: &Path) -> anyhow::Result<ThreadSafeRepository> {
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
+    pub config: &'static Config,
     pub db: SqlitePool,
     pub repo: Arc<ThreadSafeRepository>,
 }
 
 impl AppState {
-    pub async fn new(db_path: &Path, repo_path: &Path) -> anyhow::Result<Self> {
+    pub async fn new(
+        config: &'static Config,
+        db_path: &Path,
+        repo_path: &Path,
+    ) -> anyhow::Result<Self> {
         Ok(Self {
+            config,
             db: open_db(db_path).await?,
             repo: Arc::new(open_repo(repo_path)?),
         })

@@ -1,3 +1,4 @@
+mod config;
 mod state;
 mod r#static;
 
@@ -7,11 +8,14 @@ use askama::Template;
 use askama_axum::{IntoResponse, Response};
 use axum::{extract::State, http::StatusCode, routing::get, Router};
 use clap::Parser;
+use directories::ProjectDirs;
 use sqlx::SqlitePool;
 use state::AppState;
 use tokio::{select, signal::unix::SignalKind};
 use tracing::{debug, info};
 use tracing_subscriber::filter::LevelFilter;
+
+use crate::config::Config;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("VERGEN_GIT_SHA"), ")");
@@ -23,6 +27,9 @@ struct Args {
     db: PathBuf,
     /// Path to the git repo.
     repo: PathBuf,
+    /// Path to the config file.
+    #[arg(long, short)]
+    config: Option<PathBuf>,
     /// Enable more verbose output
     #[arg(long, short)]
     verbose: bool,
@@ -40,6 +47,17 @@ fn set_up_logging(verbose: bool) {
             .with_target(false)
             .init();
     }
+}
+
+fn load_config(path: Option<PathBuf>) -> anyhow::Result<&'static Config> {
+    let config_path = path.unwrap_or_else(|| {
+        ProjectDirs::from("de", "plugh", "tablejohn")
+            .expect("could not determine home directory")
+            .config_dir()
+            .join("config.toml")
+    });
+
+    Ok(Box::leak(Box::new(Config::load(&config_path)?)))
 }
 
 async fn wait_for_signal() -> io::Result<()> {
@@ -79,7 +97,8 @@ async fn run() -> anyhow::Result<()> {
     set_up_logging(args.verbose);
     info!("You are running {NAME} {VERSION}");
 
-    let state = AppState::new(&args.db, &args.repo).await?;
+    let config = load_config(args.config)?;
+    let state = AppState::new(config, &args.db, &args.repo).await?;
 
     let app = Router::new()
         .route("/", get(index))
