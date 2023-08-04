@@ -1,8 +1,9 @@
 //! Globally accessible application state.
 
-use std::path::Path;
+use std::{path::Path, sync::Arc};
 
 use axum::extract::FromRef;
+use gix::ThreadSafeRepository;
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
     SqlitePool,
@@ -10,7 +11,7 @@ use sqlx::{
 use tracing::{info, debug};
 
 // TODO Occasionally run PRAGMA optimize
-async fn pool(db_path: &Path) -> sqlx::Result<SqlitePool> {
+async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
         // https://www.sqlite.org/pragma.html#pragma_journal_mode
         .journal_mode(SqliteJournalMode::Wal)
@@ -35,15 +36,22 @@ async fn pool(db_path: &Path) -> sqlx::Result<SqlitePool> {
     Ok(pool)
 }
 
+fn open_repo(repo_path: &Path) -> anyhow::Result<ThreadSafeRepository> {
+    info!("Opening repo at {}", repo_path.display());
+    Ok(ThreadSafeRepository::open(repo_path)?)
+}
+
 #[derive(Clone, FromRef)]
 pub struct AppState {
     pub db: SqlitePool,
+    pub repo: Arc<ThreadSafeRepository>,
 }
 
 impl AppState {
-    pub async fn new(db_path: &Path) -> anyhow::Result<Self> {
+    pub async fn new(db_path: &Path, repo_path: &Path) -> anyhow::Result<Self> {
         Ok(Self {
-            db: pool(db_path).await?,
+            db: open_db(db_path).await?,
+            repo: Arc::new(open_repo(repo_path)?),
         })
     }
 

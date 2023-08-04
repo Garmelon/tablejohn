@@ -79,7 +79,7 @@ async fn run() -> anyhow::Result<()> {
     set_up_logging(args.verbose);
     info!("You are running {NAME} {VERSION}");
 
-    let state = AppState::new(&args.db).await?;
+    let state = AppState::new(&args.db, &args.repo).await?;
 
     let app = Router::new()
         .route("/", get(index))
