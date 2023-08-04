@@ -13,12 +13,7 @@ use tracing::info;
 use tracing_subscriber::filter::LevelFilter;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
-const VERSION: &str = concat!(
-    env!("CARGO_PKG_VERSION"),
-    " (",
-    env!("VERGEN_GIT_DESCRIBE"),
-    ")"
-);
+const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("VERGEN_GIT_SHA"), ")");
 
 #[derive(Debug, clap::Parser)]
 #[command(name = NAME, version = VERSION)]
