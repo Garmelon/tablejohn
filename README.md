@@ -2,6 +2,20 @@
 
 A tool to run benchmarks for a git repo and display their results.
 
+## Building from source
+
+The following tools are required:
+- `cargo` and `rustc` (best installed via [rustup](https://rustup.rs/))
+- `tsc`, the [typescript](https://www.typescriptlang.org/) compiler
+
+For developing, the following tool is additionally required:
+- `sqlx`, the [CLI of the sqlx library](https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md)
+
+Once you have installed these tools, run `cargo build --release`.
+The compiled binary will be located at `target/release/tablejohn`.
+It contains everything needed to run tablejohn.
+No additional files are required.
+
 ## Design notes
 
 - A tablejohn instance tracks exactly one git repository.
