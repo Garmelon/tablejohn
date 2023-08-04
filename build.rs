@@ -45,6 +45,10 @@ fn copy_static_files() {
 }
 
 fn main() {
+    let mut builder = vergen::EmitBuilder::builder();
+    builder.git_describe(true, false, None);
+    builder.emit().unwrap();
+
     watch_dir(MIGRATION_DIR.as_ref());
     watch_dir(STATIC_DIR.as_ref());
     watch_dir(TEMPLATE_DIR.as_ref());

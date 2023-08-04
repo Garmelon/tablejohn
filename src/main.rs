@@ -7,9 +7,19 @@ use axum::{extract::State, http::StatusCode, routing::get, Router};
 use clap::Parser;
 use sqlx::SqlitePool;
 use state::AppState;
+use tracing::info;
 use tracing_subscriber::filter::LevelFilter;
 
+const NAME: &str = env!("CARGO_PKG_NAME");
+const VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    " (",
+    env!("VERGEN_GIT_DESCRIBE"),
+    ")"
+);
+
 #[derive(Debug, clap::Parser)]
+#[command(name = NAME, version = VERSION)]
 struct Args {}
 
 fn set_up_logging() {
@@ -37,9 +47,11 @@ async fn index(State(db): State<SqlitePool>) -> Result<Response, Response> {
 }
 
 async fn run() -> anyhow::Result<()> {
-    set_up_logging();
-
     let args = Args::parse();
+
+    set_up_logging();
+    info!("You are running {NAME} {VERSION}");
+
     let state = AppState::new().await?;
 
     let app = Router::new()
