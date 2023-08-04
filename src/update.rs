@@ -49,12 +49,16 @@ async fn add_new_commits_to_db(db: &SqlitePool, repo: &Repository) -> anyhow::Re
         .collect::<Result<Vec<_>, _>>()?;
     debug!("Found {} new commits in repo", new_commits.len());
 
-    for commit in new_commits {
+    for commit in &new_commits {
         let hash = commit.id.to_string();
         sqlx::query!("INSERT OR IGNORE INTO commits (hash) VALUES (?)", hash)
             .execute(&mut *conn)
             .await?;
+    }
+    debug!("Inserted commits");
 
+    for commit in &new_commits {
+        let hash = commit.id.to_string();
         for parent in commit.parent_ids() {
             let parent_hash = parent.to_string();
             sqlx::query!(
@@ -66,6 +70,7 @@ async fn add_new_commits_to_db(db: &SqlitePool, repo: &Repository) -> anyhow::Re
             .await?;
         }
     }
+    debug!("Inserted commit links");
 
     debug!("Finished adding new commits to the db");
     tx.commit().await?;
