@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 use anyhow::anyhow;
 use futures::TryStreamExt;
-use gix::{traverse::commit::Info, ObjectId, Repository};
+use gix::{objs::Kind, traverse::commit::Info, ObjectId, Repository};
 use sqlx::{prelude::*, SqliteConnection, SqlitePool};
 use tracing::{debug, debug_span, error, info, Instrument};
 
@@ -58,13 +58,18 @@ fn get_new_commits_from_repo(
     old: &HashSet<ObjectId>,
 ) -> anyhow::Result<Vec<Info>> {
     // Collect all references starting with "refs"
-    let mut all_references = vec![];
+    let mut all_references: Vec<ObjectId> = vec![];
     for reference in repo.references()?.prefixed("refs")? {
-        let id: ObjectId = reference
-            .map_err(|e| anyhow!(e))?
-            .into_fully_peeled_id()?
-            .into();
-        all_references.push(id);
+        let reference = reference.map_err(|e| anyhow!(e))?;
+        let id = reference.into_fully_peeled_id()?;
+
+        // Some repos *cough*linuxkernel*cough* have refs that don't point to
+        // commits. This makes the rev walk choke and die. We don't want that.
+        if id.object()?.kind != Kind::Commit {
+            continue;
+        }
+
+        all_references.push(id.into());
     }
 
     // Walk from those until hitting old references
