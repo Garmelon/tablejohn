@@ -1,12 +1,14 @@
-// TODO Occasionally run PRAGMA optimize
+//! Globally accessible application state.
 
+use axum::extract::FromRef;
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
     SqlitePool,
 };
 
+// TODO Occasionally run PRAGMA optimize
 // TODO Open db from path
-pub async fn pool() -> sqlx::Result<SqlitePool> {
+async fn pool() -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
         // https://www.sqlite.org/pragma.html#pragma_journal_mode
         .journal_mode(SqliteJournalMode::Wal)
@@ -26,4 +28,15 @@ pub async fn pool() -> sqlx::Result<SqlitePool> {
     sqlx::migrate!().run(&pool).await?;
 
     Ok(pool)
+}
+
+#[derive(Clone, FromRef)]
+pub struct AppState {
+    pub db: SqlitePool,
+}
+
+impl AppState {
+    pub async fn new() -> anyhow::Result<Self> {
+        Ok(Self { db: pool().await? })
+    }
 }
