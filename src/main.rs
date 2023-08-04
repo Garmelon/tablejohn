@@ -38,7 +38,8 @@ struct Args {
 fn set_up_logging(verbose: bool) {
     if verbose {
         tracing_subscriber::fmt()
-            .with_max_level(LevelFilter::DEBUG)
+            .with_max_level(LevelFilter::TRACE)
+            .pretty()
             .init();
     } else {
         tracing_subscriber::fmt()

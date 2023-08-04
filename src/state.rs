@@ -29,7 +29,7 @@ async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
         .create_if_missing(true)
         .optimize_on_close(true, None);
 
-    info!("Opening db at {}", db_path.display());
+    info!(path = %db_path.display(), "Opening db");
     let pool = SqlitePoolOptions::new().connect_with(options).await?;
 
     debug!("Applying outstanding db migrations");
@@ -39,7 +39,7 @@ async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
 }
 
 fn open_repo(repo_path: &Path) -> anyhow::Result<ThreadSafeRepository> {
-    info!("Opening repo at {}", repo_path.display());
+    info!(path = %repo_path.display(), "Opening repo");
     Ok(ThreadSafeRepository::open(repo_path)?)
 }
 

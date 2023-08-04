@@ -10,7 +10,7 @@ pub struct Config {}
 
 impl Config {
     pub fn load(path: &Path) -> anyhow::Result<Self> {
-        info!("Loading config from {}", path.display());
+        info!(path = %path.display(), "Loading config");
         Ok(match fs::read_to_string(path) {
             Ok(str) => toml::from_str(&str)?,
             Err(e) if e.kind() == ErrorKind::NotFound => {
