@@ -1,6 +1,6 @@
 //! Globally accessible application state.
 
-use std::{path::Path, sync::Arc};
+use std::{path::Path, sync::Arc, time::Duration};
 
 use axum::extract::FromRef;
 use gix::ThreadSafeRepository;
@@ -12,7 +12,6 @@ use tracing::{debug, info};
 
 use crate::config::Config;
 
-// TODO Occasionally run PRAGMA optimize
 async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
         // https://www.sqlite.org/pragma.html#pragma_journal_mode
@@ -27,10 +26,19 @@ async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
         .pragma("trusted_schema", "false")
         .filename(db_path)
         .create_if_missing(true)
-        .optimize_on_close(true, None);
+        // https://www.sqlite.org/lang_analyze.html#recommended_usage_pattern
+        // https://www.sqlite.org/pragma.html#pragma_analysis_limit
+        // https://www.sqlite.org/pragma.html#pragma_optimize
+        .optimize_on_close(true, Some(1000));
 
     info!(path = %db_path.display(), "Opening db");
-    let pool = SqlitePoolOptions::new().connect_with(options).await?;
+    let pool = SqlitePoolOptions::new()
+        // Regularly optimize the db as recommended by the sqlite docs
+        // https://www.sqlite.org/lang_analyze.html#recommended_usage_pattern
+        // https://github.com/launchbadge/sqlx/issues/2111#issuecomment-1254394698
+        .max_lifetime(Some(Duration::from_secs(60 * 60 * 24)))
+        .connect_with(options)
+        .await?;
 
     debug!("Applying outstanding db migrations");
     sqlx::migrate!().run(&pool).await?;
