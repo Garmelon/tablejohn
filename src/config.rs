@@ -5,6 +5,8 @@ use std::{fs, io::ErrorKind, path::Path, time::Duration};
 use serde::Deserialize;
 use tracing::{debug, info};
 
+use crate::somehow;
+
 mod default {
     use std::time::Duration;
 
@@ -74,7 +76,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load(path: &Path) -> anyhow::Result<Self> {
+    pub fn load(path: &Path) -> somehow::Result<Self> {
         info!(path = %path.display(), "Loading config");
         let config = match fs::read_to_string(path) {
             Ok(str) => toml::from_str(&str)?,

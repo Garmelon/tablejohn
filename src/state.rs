@@ -10,7 +10,7 @@ use sqlx::{
 };
 use tracing::{debug, info};
 
-use crate::config::Config;
+use crate::{config::Config, somehow};
 
 async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
@@ -46,7 +46,7 @@ async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
     Ok(pool)
 }
 
-fn open_repo(repo_path: &Path) -> anyhow::Result<ThreadSafeRepository> {
+fn open_repo(repo_path: &Path) -> somehow::Result<ThreadSafeRepository> {
     info!(path = %repo_path.display(), "Opening repo");
     Ok(ThreadSafeRepository::open(repo_path)?)
 }
@@ -63,7 +63,7 @@ impl AppState {
         config: &'static Config,
         db_path: &Path,
         repo_path: &Path,
-    ) -> anyhow::Result<Self> {
+    ) -> somehow::Result<Self> {
         Ok(Self {
             config,
             db: open_db(db_path).await?,

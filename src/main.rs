@@ -1,5 +1,6 @@
 mod config;
 mod recurring;
+mod somehow;
 mod state;
 mod web;
 
@@ -64,7 +65,7 @@ fn set_up_logging(verbose: u8) {
     }
 }
 
-fn load_config(path: Option<PathBuf>) -> anyhow::Result<&'static Config> {
+fn load_config(path: Option<PathBuf>) -> somehow::Result<&'static Config> {
     let config_path = path.unwrap_or_else(|| {
         ProjectDirs::from("de", "plugh", "tablejohn")
             .expect("could not determine home directory")
@@ -90,7 +91,7 @@ async fn wait_for_signal() -> io::Result<()> {
     Ok(())
 }
 
-async fn run() -> anyhow::Result<()> {
+async fn run() -> somehow::Result<()> {
     let args = Args::parse();
 
     set_up_logging(args.verbose);
@@ -112,7 +113,7 @@ async fn run() -> anyhow::Result<()> {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> somehow::Result<()> {
     // Rust-analyzer struggles analyzing code in this function, so the actual
     // code lives in a different function.
     run().await

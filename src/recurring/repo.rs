@@ -9,10 +9,14 @@ use gix::{objs::Kind, traverse::commit::Info, ObjectId, Repository};
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use tracing::{debug, info};
 
-async fn get_all_commits_from_db(conn: &mut SqliteConnection) -> anyhow::Result<HashSet<ObjectId>> {
+use crate::somehow;
+
+async fn get_all_commits_from_db(
+    conn: &mut SqliteConnection,
+) -> somehow::Result<HashSet<ObjectId>> {
     let hashes = sqlx::query!("SELECT hash FROM commits")
         .fetch(conn)
-        .err_into::<anyhow::Error>()
+        .err_into::<somehow::Error>()
         .and_then(|r| async move { r.hash.parse::<ObjectId>().map_err(|e| e.into()) })
         .try_collect::<HashSet<_>>()
         .await?;
@@ -23,11 +27,11 @@ async fn get_all_commits_from_db(conn: &mut SqliteConnection) -> anyhow::Result<
 fn get_new_commits_from_repo(
     repo: &Repository,
     old: &HashSet<ObjectId>,
-) -> anyhow::Result<Vec<Info>> {
+) -> somehow::Result<Vec<Info>> {
     // Collect all references starting with "refs"
     let mut all_references: Vec<ObjectId> = vec![];
     for reference in repo.references()?.prefixed("refs")? {
-        let reference = reference.map_err(|e| anyhow::anyhow!(e))?;
+        let reference = reference.map_err(|e| somehow::Error(anyhow::anyhow!(e)))?;
         let id = reference.into_fully_peeled_id()?;
 
         // Some repos *cough*linuxkernel*cough* have refs that don't point to
@@ -49,7 +53,7 @@ fn get_new_commits_from_repo(
     Ok(new_commits)
 }
 
-async fn insert_new_commits(conn: &mut SqliteConnection, new: &[Info]) -> anyhow::Result<()> {
+async fn insert_new_commits(conn: &mut SqliteConnection, new: &[Info]) -> somehow::Result<()> {
     for commit in new {
         let hash = commit.id.to_string();
         sqlx::query!("INSERT OR IGNORE INTO commits (hash) VALUES (?)", hash)
@@ -59,7 +63,7 @@ async fn insert_new_commits(conn: &mut SqliteConnection, new: &[Info]) -> anyhow
     Ok(())
 }
 
-async fn insert_new_commit_links(conn: &mut SqliteConnection, new: &[Info]) -> anyhow::Result<()> {
+async fn insert_new_commit_links(conn: &mut SqliteConnection, new: &[Info]) -> somehow::Result<()> {
     for commit in new {
         let child = commit.id.to_string();
         for parent in &commit.parent_ids {
@@ -78,14 +82,14 @@ async fn insert_new_commit_links(conn: &mut SqliteConnection, new: &[Info]) -> a
     Ok(())
 }
 
-async fn mark_all_commits_as_old(conn: &mut SqliteConnection) -> anyhow::Result<()> {
+async fn mark_all_commits_as_old(conn: &mut SqliteConnection) -> somehow::Result<()> {
     sqlx::query!("UPDATE commits SET new = 0")
         .execute(conn)
         .await?;
     Ok(())
 }
 
-async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> anyhow::Result<()> {
+async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> somehow::Result<()> {
     let Some(head) = repo.head_ref()? else { return Ok(()); };
     let name = head.inner.name.to_string();
     let hash = head.into_fully_peeled_id()?.to_string();
@@ -99,7 +103,10 @@ async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> an
     Ok(())
 }
 
-async fn update_tracked_refs(conn: &mut SqliteConnection, repo: &Repository) -> anyhow::Result<()> {
+async fn update_tracked_refs(
+    conn: &mut SqliteConnection,
+    repo: &Repository,
+) -> somehow::Result<()> {
     let tracked_refs = sqlx::query!("SELECT name, hash FROM tracked_refs")
         .fetch_all(&mut *conn)
         .await?;
@@ -127,7 +134,7 @@ async fn update_tracked_refs(conn: &mut SqliteConnection, repo: &Repository) -> 
     Ok(())
 }
 
-async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> anyhow::Result<()> {
+async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::Result<()> {
     sqlx::query!(
         "
 WITH RECURSIVE reachable(hash) AS (
@@ -146,7 +153,7 @@ SET tracked = (hash IN reachable)
     Ok(())
 }
 
-pub async fn update(db: &SqlitePool, repo: &Repository) -> anyhow::Result<()> {
+pub async fn update(db: &SqlitePool, repo: &Repository) -> somehow::Result<()> {
     debug!("Updating repo");
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;

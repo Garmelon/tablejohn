@@ -1,43 +1,11 @@
 mod index;
 mod r#static;
 
-use std::{error, result};
+use axum::{routing::get, Router, Server};
 
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Response},
-    routing::get,
-    Router, Server,
-};
+use crate::{somehow, state::AppState};
 
-use crate::state::AppState;
-
-/// Anyhow-like error that also implements [`IntoResponse`].
-pub struct Error(anyhow::Error);
-
-impl<E> From<E> for Error
-where
-    E: error::Error + Send + Sync + 'static,
-{
-    fn from(value: E) -> Self {
-        Self(anyhow::Error::from(value))
-    }
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> Response {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("500 Internal Server Error\n\n{}", self.0),
-        )
-            .into_response()
-    }
-}
-
-/// Anyhow-like result that also implements [`IntoResponse`].
-pub type Result<T> = result::Result<T, Error>;
-
-pub async fn run(state: AppState) -> anyhow::Result<()> {
+pub async fn run(state: AppState) -> somehow::Result<()> {
     // TODO Add text body to body-less status codes
 
     let app = Router::new()
