@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export DATABASE_URL=sqlite:target/dev.db
+mkdir -p target/
 cargo sqlx database drop -y
 cargo sqlx database setup
 cargo sqlx prepare

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+mkdir -p target/
+cargo sqlx database drop -y
+cargo sqlx database setup
