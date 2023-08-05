@@ -1,3 +1,4 @@
+mod commit;
 mod index;
 mod r#static;
 
@@ -10,6 +11,7 @@ pub async fn run(state: AppState) -> somehow::Result<()> {
 
     let app = Router::new()
         .route("/", get(index::get))
+        .route("/commit/", get(commit::get))
         .fallback(get(r#static::static_handler))
         .with_state(state.clone());
 
