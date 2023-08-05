@@ -1,7 +1,7 @@
 mod config;
+mod recurring;
 mod state;
 mod r#static;
-mod update;
 
 use std::{io, path::PathBuf};
 
@@ -132,7 +132,7 @@ async fn run() -> anyhow::Result<()> {
     select! {
         _ = wait_for_signal() => {},
         _ = server.serve(app) => {},
-        _ = update::repeatedly(state.clone()) => {},
+        _ = recurring::run(state.clone()) => {},
     }
 
     state.shut_down().await;
