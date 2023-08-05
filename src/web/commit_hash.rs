@@ -87,7 +87,7 @@ WHERE parent = ?
         current: "commit".to_string(),
         hash: id.to_string(),
         summary: commit.message()?.summary().to_string(),
-        message: commit.message_raw_sloppy().to_string(),
+        message: commit.message_raw()?.to_string().trim_end().to_string(),
         author: repo::format_actor(author_info.actor())?,
         author_date: repo::format_time(author_info.time),
         commit: repo::format_actor(committer_info.actor())?,
