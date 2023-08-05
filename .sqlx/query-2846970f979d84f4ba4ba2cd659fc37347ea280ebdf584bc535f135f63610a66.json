@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\nSELECT child, tracked FROM commit_links\nJOIN commits ON hash = child\nWHERE parent = ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "name": "child",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "tracked",
+        "ordinal": 1,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "2846970f979d84f4ba4ba2cd659fc37347ea280ebdf584bc535f135f63610a66"
+}

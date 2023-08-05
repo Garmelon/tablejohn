@@ -103,6 +103,7 @@ async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> so
     Ok(())
 }
 
+// TODO Write all refs to DB, not just tracked ones
 async fn update_tracked_refs(
     conn: &mut SqliteConnection,
     repo: &Repository,
@@ -134,6 +135,7 @@ async fn update_tracked_refs(
     Ok(())
 }
 
+// TODO tracked -> reachable, 0 = unreachable, 1 = reachable, 2 = reachable from tracked ref
 async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::Result<()> {
     sqlx::query!(
         "

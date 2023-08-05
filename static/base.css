@@ -82,3 +82,8 @@ dd {
     grid: auto-flow / min-content max-content;
     column-gap: 1ch;
 }
+
+.commit .untracked,
+.commit .untracked a {
+    color: #777;
+}

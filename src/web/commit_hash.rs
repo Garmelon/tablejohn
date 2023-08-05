@@ -5,7 +5,6 @@ use axum::{
     extract::{Path, State},
     response::IntoResponse,
 };
-use futures::TryStreamExt;
 use gix::{prelude::ObjectIdExt, Id, ObjectId, ThreadSafeRepository};
 use sqlx::SqlitePool;
 
@@ -14,14 +13,16 @@ use crate::{config::Config, repo, somehow};
 struct Commit {
     hash: String,
     description: String,
+    tracked: bool,
 }
 
 impl Commit {
-    fn new(id: Id<'_>) -> somehow::Result<Self> {
+    fn new(id: Id<'_>, tracked: bool) -> somehow::Result<Self> {
         let commit = id.object()?.try_into_commit()?;
         Ok(Self {
             hash: id.to_string(),
             description: repo::format_commit_short(&commit)?,
+            tracked,
         })
     }
 }
@@ -50,12 +51,18 @@ pub async fn get(
     State(repo): State<Arc<ThreadSafeRepository>>,
 ) -> somehow::Result<impl IntoResponse> {
     // Do this first because a &Repository can't be kept across awaits.
-    let child_ids = sqlx::query!("SELECT child FROM commit_links WHERE parent = ?", hash)
-        .fetch(&db)
-        .map_ok(|r| r.child)
-        .try_collect::<Vec<_>>()
-        .await?;
+    let child_rows = sqlx::query!(
+        "
+SELECT child, tracked FROM commit_links
+JOIN commits ON hash = child
+WHERE parent = ?
+    ",
+        hash
+    )
+    .fetch_all(&db)
+    .await?;
 
+    // TODO Include untracked info for current commit
     let repo = repo.to_thread_local();
     let id = hash.parse::<ObjectId>()?.attach(&repo);
     let commit = id.object()?.try_into_commit()?;
@@ -64,13 +71,14 @@ pub async fn get(
 
     let mut parents = vec![];
     for id in commit.parent_ids() {
-        parents.push(Commit::new(id)?);
+        // TODO Include untracked info for parents
+        parents.push(Commit::new(id, true)?);
     }
 
     let mut children = vec![];
-    for hash in child_ids {
-        let id = hash.parse::<ObjectId>()?.attach(&repo);
-        children.push(Commit::new(id)?);
+    for row in child_rows {
+        let id = row.child.parse::<ObjectId>()?.attach(&repo);
+        children.push(Commit::new(id, row.tracked != 0)?);
     }
 
     Ok(CommitIdTemplate {
