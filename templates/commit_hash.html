@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ summary }}{% endblock %}
+
+{% block body %}
+<h2>Commit</h2>
+<div class="commit">
+    <span class="hash">commit {{ hash }}</span>
+    <dl>
+        <dt>Author:</dt>
+        <dd>{{ author }}</dd>
+
+        <dt>AuthorDate:</dt>
+        <dd>{{ author_date }}</dd>
+
+        <dt>Commit:</dt>
+        <dd>{{ commit }}</dd>
+
+        <dt>CommitDate:</dt>
+        <dd>{{ commit_date }}</dd>
+
+        {% for commit in parents %}
+        <dt>Parent:</dt>
+        <dd><a href="{{ commit.hash }}">{{ commit.description }}</a></dd>
+        {% endfor %}
+
+        {% for commit in children %}
+        <dt>Child:</dt>
+        <dd><a href="{{ commit.hash }}">{{ commit.description }}</a></dd>
+        {% endfor %}
+    </dl>
+    <pre class="message">{{ message }}</pre>
+</div>
+{% endblock %}

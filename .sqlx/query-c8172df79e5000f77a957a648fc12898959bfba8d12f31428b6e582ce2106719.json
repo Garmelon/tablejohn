@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT child FROM commit_links WHERE parent = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "child",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c8172df79e5000f77a957a648fc12898959bfba8d12f31428b6e582ce2106719"
+}

@@ -1,5 +1,7 @@
 :root {
+    --lh: 1.3em;
     font-family: monospace;
+    line-height: var(--lh);
     color-scheme: light dark;
 }
 
@@ -58,4 +60,25 @@ a:hover {
 
 dd {
     margin-left: 4ch;
+}
+
+/* Commit */
+
+.commit * {
+    margin: 0;
+}
+
+.commit .hash {
+    color: #b70;
+    font-weight: bold;
+}
+
+.commit .message {
+    margin: 1em 0ch 1em 4ch;
+}
+
+.commit dl {
+    display: grid;
+    grid: auto-flow / min-content max-content;
+    column-gap: 1ch;
 }
