@@ -37,6 +37,7 @@ struct Args {
 fn set_up_logging(verbose: u8) {
     let filter = Targets::new()
         .with_default(Level::TRACE)
+        .with_target("hyper", Level::INFO)
         .with_target("sqlx", Level::INFO);
     match verbose {
         0 => tracing_subscriber::fmt()
