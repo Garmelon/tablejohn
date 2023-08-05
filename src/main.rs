@@ -1,5 +1,6 @@
 mod config;
 mod recurring;
+mod repo;
 mod somehow;
 mod state;
 mod web;
