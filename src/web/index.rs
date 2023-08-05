@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use askama::Template;
 use axum::{extract::State, response::IntoResponse};
-use gix::ThreadSafeRepository;
+use gix::{prelude::ObjectIdExt, ObjectId, ThreadSafeRepository};
 use sqlx::SqlitePool;
 
 use crate::{config::Config, repo, somehow};
@@ -35,10 +35,14 @@ pub async fn get(
 
     let mut refs = vec![];
     for row in rows {
-        let name = row.name;
-        let hash = row.hash;
-        let short = repo::short_commit(&repo, &hash)?;
-        refs.push(Ref { name, hash, short });
+        let id = row.hash.parse::<ObjectId>()?.attach(&repo);
+        let commit = id.object()?.try_into_commit()?;
+
+        refs.push(Ref {
+            name: row.name,
+            hash: row.hash,
+            short: repo::format_commit_short(&commit)?,
+        });
     }
 
     Ok(IndexTemplate {
