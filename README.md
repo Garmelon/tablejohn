@@ -34,9 +34,9 @@ First, run `./meta/setup`. This creates or updates the dev database at
 `target/dev.db`. You will need to rerun this command whenever you change or add
 a migration.
 
-Then, if you don't use VSCode, configure your `rust-analyzer` to run
-`cargo check` with the environment variable `SQLX_OFFLINE=false` using the
-[`rust-analyzer.check.extraEnv` option][ra-opt]. This signals to sqlx that it
+Then, if you don't use VSCode, configure your `rust-analyzer` to run with the
+with the environment variable `SQLX_OFFLINE=false` using the
+[`rust-analyzer.server.extraEnv` option][ra-opt]. This signals to sqlx that it
 should use the dev database instead of `.sqlx/`, but only in your IDE.
 
 **Important:** Before committing any changed SQL query, you **must** run
