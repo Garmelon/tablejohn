@@ -1,16 +1,5 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
 
-<head>
-    <meta charset="utf-8" />
-    <title>index</title>
-    <script type="module" src="main.js"></script>
-</head>
-
-<body>
-    <h1>Hello</h1>
-    <p>The number from the DB is {{ number }}, yay!</p>
-    <button id="button">Click me!</button>
-</body>
-
-</html>
+{% block body %}
+<h1>{{ repo_name }}</h1>
+{% endblock %}

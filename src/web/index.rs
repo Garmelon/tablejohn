@@ -1,18 +1,18 @@
 use askama::Template;
 use axum::{extract::State, response::IntoResponse};
-use sqlx::SqlitePool;
+
+use crate::config::Config;
 
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
-    number: i32,
+    base: String,
+    repo_name: String,
 }
 
-pub async fn get(State(db): State<SqlitePool>) -> super::Result<impl IntoResponse> {
-    let result = sqlx::query!("SELECT column1 AS number FROM (VALUES (1))")
-        .fetch_one(&db)
-        .await?;
-
-    let number = result.number;
-    Ok(IndexTemplate { number })
+pub async fn get(State(config): State<&'static Config>) -> super::Result<impl IntoResponse> {
+    Ok(IndexTemplate {
+        base: config.web.base(),
+        repo_name: config.repo.name(),
+    })
 }

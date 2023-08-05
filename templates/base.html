@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="icon" href="/logo.svg">
+    <link rel="stylesheet" href="{{ base }}/base.css" />
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <nav>
+        <a href="{{ base }}/"><img src="{{ base }}/logo.svg"> {{ repo_name }}</a>
+    </nav>
+    {% block body %}{% endblock %}
+</body>
+
+</html>
