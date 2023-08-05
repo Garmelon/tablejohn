@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM tracked_refs WHERE name = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "d6249ada8a6f58fabb3877446e851cfc88c6188163e5726d83941cdfb6e41c9e"
+}

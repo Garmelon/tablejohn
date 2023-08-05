@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE commits SET new = 0",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "0d36a4c7d21f4688db1cf309fd04c1f56ff147b7f80d8844bb2b5bad63dab372"
+}

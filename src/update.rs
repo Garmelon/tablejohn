@@ -11,8 +11,11 @@ use tracing::{debug, debug_span, error, info, Instrument};
 use crate::state::AppState;
 
 /// Add new commits from the repo to the database, marked as new.
-// TODO Initialize tracked refs?
-// TODO Update tracked refs?
+// TODO Rename so the name fits better (maybe rename update module to recurring as well?)
+// upadte module -> recurring
+// Fetching new commits -> fetch submodule
+// Updating repo (current file) -> repo submodule
+// Updating queue -> queue submodule
 async fn add_new_commits_to_db(db: &SqlitePool, repo: &Repository) -> anyhow::Result<()> {
     debug!("Adding new commits to db");
     let mut tx = db.begin().await?;
@@ -36,6 +39,17 @@ async fn add_new_commits_to_db(db: &SqlitePool, repo: &Repository) -> anyhow::Re
     insert_new_commits(conn, &new).await?;
     insert_new_commit_links(conn, &new).await?;
     debug!("Inserted {} new commits into db", new.len());
+
+    if old.is_empty() {
+        // We've never seen any repo before, so we need to do additional
+        // initialization.
+        info!("Detected new repo, initializing");
+        mark_all_commits_as_old(conn).await?;
+        track_main_branch(conn, repo).await?;
+        info!("Initialized new repo");
+    }
+
+    update_tracked_refs(conn, repo).await?;
 
     tx.commit().await?;
     debug!("Finished adding new commits to db");
@@ -102,10 +116,59 @@ async fn insert_new_commit_links(conn: &mut SqliteConnection, new: &[Info]) -> a
             sqlx::query!(
                 "INSERT OR IGNORE INTO commit_links (parent, child) VALUES (?, ?)",
                 parent,
-                child
+                child,
             )
             .execute(&mut *conn)
             .await?;
+        }
+    }
+    Ok(())
+}
+
+async fn mark_all_commits_as_old(conn: &mut SqliteConnection) -> anyhow::Result<()> {
+    sqlx::query!("UPDATE commits SET new = 0")
+        .execute(conn)
+        .await?;
+    Ok(())
+}
+
+async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> anyhow::Result<()> {
+    let Some(head) = repo.head_ref()? else { return Ok(()); };
+    let name = head.inner.name.to_string();
+    let hash = head.into_fully_peeled_id()?.to_string();
+    sqlx::query!(
+        "INSERT OR IGNORE INTO tracked_refs (name, hash) VALUES (?, ?)",
+        name,
+        hash,
+    )
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
+async fn update_tracked_refs(conn: &mut SqliteConnection, repo: &Repository) -> anyhow::Result<()> {
+    let tracked_refs = sqlx::query!("SELECT name, hash FROM tracked_refs")
+        .fetch_all(&mut *conn)
+        .await?;
+
+    for tracked_ref in tracked_refs {
+        if let Some(reference) = repo.try_find_reference(&tracked_ref.name)? {
+            let hash = reference.id().to_string();
+            if hash != tracked_ref.hash {
+                debug!("Updated tracked ref {}", tracked_ref.name);
+                sqlx::query!(
+                    "UPDATE tracked_refs SET hash = ? WHERE name = ?",
+                    hash,
+                    tracked_ref.name
+                )
+                .execute(&mut *conn)
+                .await?;
+            }
+        } else {
+            debug!("Deleted tracked ref {}", tracked_ref.name);
+            sqlx::query!("DELETE FROM tracked_refs WHERE name = ?", tracked_ref.name)
+                .execute(&mut *conn)
+                .await?;
         }
     }
     Ok(())

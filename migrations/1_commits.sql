@@ -11,7 +11,7 @@ CREATE TABLE commit_links (
     FOREIGN KEY (child)  REFERENCES commits (hash) ON DELETE CASCADE
 ) STRICT;
 
-CREATE TABLE branches (
+CREATE TABLE tracked_refs (
     name TEXT NOT NULL PRIMARY KEY,
     hash TEXT NOT NULL,
     FOREIGN KEY (hash) REFERENCES commits (hash) ON DELETE CASCADE
