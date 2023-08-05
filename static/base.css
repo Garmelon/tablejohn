@@ -1,0 +1,47 @@
+:root {
+    font-family: monospace;
+    color-scheme: light dark;
+}
+
+nav {
+    font-size: 1.5em;
+    line-height: 1.2em;
+    padding: 0.3em;
+    background-color: #bdf;
+    border-radius: 0.3em;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
+nav>* {
+    padding: 0 1ch;
+    border-left: 0.1em solid black;
+}
+
+nav> :first-child {
+    font-weight: bold;
+    padding-left: 0;
+    border: none;
+}
+
+nav> :last-child {
+    margin-left: auto;
+    padding-right: 0.1em;
+    border: none;
+}
+
+nav a {
+    color: black;
+    text-decoration: none;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+nav img {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: -20%;
+}
