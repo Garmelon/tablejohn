@@ -81,9 +81,9 @@ pub async fn get(
         summary: commit.message()?.summary().to_string(),
         message: commit.message_raw_sloppy().to_string(),
         author: repo::format_actor(author_info.actor())?,
-        author_date: author_info.time.to_bstring().to_string(),
+        author_date: repo::format_time(author_info.time),
         commit: repo::format_actor(committer_info.actor())?,
-        commit_date: committer_info.time.to_bstring().to_string(),
+        commit_date: repo::format_time(committer_info.time),
         parents,
         children,
     })
