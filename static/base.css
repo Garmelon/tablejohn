@@ -79,11 +79,15 @@ dd {
 
 .commit dl {
     display: grid;
-    grid: auto-flow / min-content max-content;
+    grid: auto-flow / min-content 1fr;
     column-gap: 1ch;
 }
 
 .commit .untracked,
 .commit .untracked a {
     color: #777;
+}
+
+.commit pre {
+    white-space: pre-wrap;
 }
