@@ -127,6 +127,25 @@ async fn update_tracked_refs(conn: &mut SqliteConnection, repo: &Repository) -> 
     Ok(())
 }
 
+async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> anyhow::Result<()> {
+    sqlx::query!(
+        "
+WITH RECURSIVE reachable(hash) AS (
+    SELECT hash FROM tracked_refs
+    UNION
+    SELECT parent FROM commit_links
+    JOIN reachable ON hash = child
+)
+
+UPDATE commits
+SET tracked = (hash IN reachable)
+"
+    )
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
 pub async fn update(db: &SqlitePool, repo: &Repository) -> anyhow::Result<()> {
     debug!("Updating repo");
     let mut tx = db.begin().await?;
@@ -136,7 +155,6 @@ pub async fn update(db: &SqlitePool, repo: &Repository) -> anyhow::Result<()> {
     debug!("Loaded {} commits from the db", old.len());
 
     let repo_is_new = old.is_empty();
-
     if repo_is_new {
         info!("Initializing new repo");
     }
@@ -164,6 +182,8 @@ pub async fn update(db: &SqlitePool, repo: &Repository) -> anyhow::Result<()> {
     }
 
     update_tracked_refs(conn, repo).await?;
+    update_commit_tracked_status(conn).await?;
+    debug!("Updated tracked refs");
 
     tx.commit().await?;
     if repo_is_new {
