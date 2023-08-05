@@ -62,6 +62,7 @@ WHERE parent = ?
     .fetch_all(&db)
     .await?;
 
+    // TODO Store commit info in db and avoid Repository
     // TODO Include untracked info for current commit
     let repo = repo.to_thread_local();
     let id = hash.parse::<ObjectId>()?.attach(&repo);

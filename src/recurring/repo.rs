@@ -1,6 +1,7 @@
 //! Add new commits to the database and update the tracked refs.
 
 // TODO Think about whether ref hashes should be tracked in the db
+// TODO Prevent some sync stuff from blocking the async stuff
 
 use std::collections::HashSet;
 
