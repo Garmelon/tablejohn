@@ -11,7 +11,7 @@ mod default {
     use std::time::Duration;
 
     pub fn repo_name() -> String {
-        "Local repo".to_string()
+        "local repo".to_string()
     }
 
     pub fn repo_update_delay() -> Duration {
