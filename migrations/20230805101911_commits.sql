@@ -17,3 +17,9 @@ CREATE TABLE tracked_refs (
     hash TEXT NOT NULL,
     FOREIGN KEY (hash) REFERENCES commits (hash) ON DELETE CASCADE
 ) STRICT;
+
+CREATE INDEX idx_commit_links_child_parent
+ON commit_links(child, parent);
+
+CREATE INDEX idx_commit_links_parent_child
+ON commit_links(parent, child);
