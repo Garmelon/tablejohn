@@ -4,5 +4,8 @@
     "files.associations": {
         "**/templates/**/*.html": "jinja-html",
     },
+    "rust-analyzer.check.extraEnv": {
+        "SQLX_OFFLINE": "false",
+    },
 
 }
