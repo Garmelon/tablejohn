@@ -1,16 +1,12 @@
 mod config;
 mod recurring;
 mod state;
-mod r#static;
+mod web;
 
 use std::{io, path::PathBuf};
 
-use askama::Template;
-use askama_axum::{IntoResponse, Response};
-use axum::{extract::State, http::StatusCode, routing::get, Router};
 use clap::Parser;
 use directories::ProjectDirs;
-use sqlx::SqlitePool;
 use state::AppState;
 use tokio::{select, signal::unix::SignalKind};
 use tracing::{debug, info, Level};
@@ -93,22 +89,6 @@ async fn wait_for_signal() -> io::Result<()> {
     Ok(())
 }
 
-#[derive(Template)]
-#[template(path = "index.html")]
-struct IndexTemplate {
-    number: i32,
-}
-
-async fn index(State(db): State<SqlitePool>) -> Result<Response, Response> {
-    let result = sqlx::query!("SELECT column1 AS number FROM (VALUES (1))")
-        .fetch_one(&db)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{e}")).into_response())?;
-
-    let number = result.number;
-    Ok(IndexTemplate { number }.into_response())
-}
-
 async fn run() -> anyhow::Result<()> {
     let args = Args::parse();
 
@@ -118,20 +98,10 @@ async fn run() -> anyhow::Result<()> {
     let config = load_config(args.config)?;
     let state = AppState::new(config, &args.db, &args.repo).await?;
 
-    let app = Router::new()
-        .route("/", get(index))
-        .fallback(get(r#static::static_handler))
-        .with_state(state.clone())
-        .into_make_service();
-    // TODO Add text body to body-less status codes
-    // TODO Add anyhow-like error type for endpoints
-
-    let server = axum::Server::bind(&"0.0.0.0:8000".parse().unwrap());
-
     info!("Startup complete, running");
     select! {
         _ = wait_for_signal() => {},
-        _ = server.serve(app) => {},
+        _ = web::run(state.clone()) => {},
         _ = recurring::run(state.clone()) => {},
     }
 
