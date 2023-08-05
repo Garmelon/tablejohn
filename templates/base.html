@@ -11,7 +11,7 @@
 
 <body>
     <nav>
-        <a href="{{ base }}/">
+        <a href="{{ base }}/" {% if current=="index" %} class="current" {% endif %}>
             <img src="{{ base }}/logo.svg">
             {{ repo_name }}
         </a>

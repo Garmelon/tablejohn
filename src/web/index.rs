@@ -18,6 +18,7 @@ struct Ref {
 struct IndexTemplate {
     base: String,
     repo_name: String,
+    current: String,
     refs: Vec<Ref>,
 }
 
@@ -43,6 +44,7 @@ pub async fn get(
     Ok(IndexTemplate {
         base: config.web.base(),
         repo_name: config.repo.name(),
+        current: "index".to_string(),
         refs,
     })
 }

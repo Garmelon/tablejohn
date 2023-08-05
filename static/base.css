@@ -23,7 +23,6 @@ nav>* {
 }
 
 nav> :first-child {
-    font-weight: bold;
     padding-left: 0;
     border: none;
 }
@@ -32,6 +31,10 @@ nav> :last-child {
     margin-left: auto;
     padding-right: 0.1em;
     border: none;
+}
+
+nav>.current {
+    font-weight: bold;
 }
 
 nav a {
