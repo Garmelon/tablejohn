@@ -20,17 +20,15 @@ nav {
 
 nav>* {
     padding: 0 1ch;
-    border-left: 0.1em solid black;
+    border-right: 0.1em solid black;
 }
 
 nav> :first-child {
     padding-left: 0;
-    border: none;
 }
 
 nav> :last-child {
-    margin-left: auto;
-    padding-right: 0.1em;
+    padding-right: 0;
     border: none;
 }
 
