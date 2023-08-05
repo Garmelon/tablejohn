@@ -54,14 +54,6 @@ a:hover {
     text-decoration: underline;
 }
 
-table {
-    border-collapse: collapse;
-}
-
-td {
-    padding: 0 1ch;
-}
-
-tbody tr:nth-child(odd) {
-    background-color: #ddd;
+dd {
+    margin-left: 4ch;
 }

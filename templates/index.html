@@ -2,20 +2,10 @@
 
 {% block body %}
 <h2>Tracked refs</h2>
-<table>
-    <thead>
-        <tr>
-            <th>ref</th>
-            <th>points to</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for ref in refs %}
-        <tr>
-            <td>{{ ref.name }}</td>
-            <td><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<dl>
+    {% for ref in refs %}
+    <dt>{{ ref.name }}</dt>
+    <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
+    {% endfor %}
+</dl>
 {% endblock %}
