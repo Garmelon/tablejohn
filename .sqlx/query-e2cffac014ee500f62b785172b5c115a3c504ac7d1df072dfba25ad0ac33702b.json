@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO commits ( hash, author, author_date, committer, committer_date, message ) VALUES (?, ?, ?, ?, ?, ?) ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "e2cffac014ee500f62b785172b5c115a3c504ac7d1df072dfba25ad0ac33702b"
+}

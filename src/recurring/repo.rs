@@ -1,12 +1,13 @@
 //! Add new commits to the database and update the tracked refs.
 
-// TODO Think about whether ref hashes should be tracked in the db
 // TODO Prevent some sync stuff from blocking the async stuff
 
 use std::collections::HashSet;
 
 use futures::TryStreamExt;
-use gix::{date::time::format::ISO8601_STRICT, objs::Kind, Commit, ObjectId, Repository};
+use gix::{
+    date::time::format::ISO8601_STRICT, objs::Kind, refs::Reference, Commit, ObjectId, Repository,
+};
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use tracing::{debug, info};
 
@@ -25,31 +26,33 @@ async fn get_all_commit_hashes_from_db(
     Ok(hashes)
 }
 
-fn get_new_commits_from_repo<'a, 'b: 'a>(
-    repo: &'a Repository,
-    old: &'b HashSet<ObjectId>,
-) -> somehow::Result<Vec<Commit<'a>>> {
-    // Collect all references starting with "refs"
-    let mut all_references: Vec<ObjectId> = vec![];
-    for reference in repo.references()?.prefixed("refs")? {
-        let reference = reference.map_err(somehow::Error::from_box)?;
-        let id = reference.into_fully_peeled_id()?;
+fn get_all_refs_from_repo(repo: &Repository) -> somehow::Result<Vec<Reference>> {
+    let mut references = vec![];
+    for reference in repo.references()?.all()? {
+        let mut reference = reference.map_err(somehow::Error::from_box)?;
+        reference.peel_to_id_in_place()?;
 
         // Some repos *cough*linuxkernel*cough* have refs that don't point to
         // commits. This makes the rev walk choke and die. We don't want that.
-        if id.object()?.kind != Kind::Commit {
+        if reference.id().object()?.kind != Kind::Commit {
             continue;
         }
 
-        all_references.push(id.into());
+        references.push(reference.detach());
     }
+    Ok(references)
+}
+
+fn get_new_commits_from_repo<'a, 'b: 'a>(
+    repo: &'a Repository,
+    refs: &[Reference],
+    old: &'b HashSet<ObjectId>,
+) -> somehow::Result<Vec<Commit<'a>>> {
+    let ref_ids = refs.iter().flat_map(|r| r.peeled.into_iter());
 
     // Walk from those until hitting old references
     let mut new = vec![];
-    for commit in repo
-        .rev_walk(all_references)
-        .selected(|c| !old.contains(c))?
-    {
+    for commit in repo.rev_walk(ref_ids).selected(|c| !old.contains(c))? {
         let commit = commit?.id().object()?.try_into_commit()?;
         new.push(commit);
     }
@@ -72,10 +75,17 @@ async fn insert_new_commits(
         let message = commit.message_raw()?.to_string();
 
         sqlx::query!(
-            "
-INSERT OR IGNORE INTO commits (hash, author, author_date, committer, committer_date, message)
-VALUES (?, ?, ?, ?, ?, ?)
-",
+            "\
+            INSERT OR IGNORE INTO commits ( \
+                hash, \
+                author, \
+                author_date, \
+                committer, \
+                committer_date, \
+                message \
+            ) \
+            VALUES (?, ?, ?, ?, ?, ?) \
+            ",
             hash,
             author,
             author_date,
@@ -118,65 +128,78 @@ async fn mark_all_commits_as_old(conn: &mut SqliteConnection) -> somehow::Result
     Ok(())
 }
 
-async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> somehow::Result<()> {
-    let Some(head) = repo.head_ref()? else { return Ok(()); };
-    let name = head.inner.name.to_string();
-    let hash = head.into_fully_peeled_id()?.to_string();
-    sqlx::query!(
-        "INSERT OR IGNORE INTO tracked_refs (name, hash) VALUES (?, ?)",
-        name,
-        hash,
-    )
-    .execute(conn)
-    .await?;
-    Ok(())
-}
-
-// TODO Write all refs to DB, not just tracked ones
-async fn update_tracked_refs(
-    conn: &mut SqliteConnection,
-    repo: &Repository,
-) -> somehow::Result<()> {
-    let tracked_refs = sqlx::query!("SELECT name, hash FROM tracked_refs")
+async fn update_refs(conn: &mut SqliteConnection, refs: Vec<Reference>) -> somehow::Result<()> {
+    // Remove refs that no longer exist
+    let existing = refs
+        .iter()
+        .map(|r| r.name.to_string())
+        .collect::<HashSet<_>>();
+    let current = sqlx::query!("SELECT name FROM refs")
         .fetch_all(&mut *conn)
         .await?;
-
-    for tracked_ref in tracked_refs {
-        if let Some(reference) = repo.try_find_reference(&tracked_ref.name)? {
-            let hash = reference.id().to_string();
-            if hash != tracked_ref.hash {
-                debug!("Updated tracked ref {}", tracked_ref.name);
-                sqlx::query!(
-                    "UPDATE tracked_refs SET hash = ? WHERE name = ?",
-                    hash,
-                    tracked_ref.name
-                )
-                .execute(&mut *conn)
-                .await?;
-            }
-        } else {
-            debug!("Deleted tracked ref {}", tracked_ref.name);
-            sqlx::query!("DELETE FROM tracked_refs WHERE name = ?", tracked_ref.name)
+    for reference in current {
+        if !existing.contains(&reference.name) {
+            sqlx::query!("DELETE FROM refs WHERE name = ?", reference.name)
                 .execute(&mut *conn)
                 .await?;
         }
     }
+
+    // Add new refs and update existing refs
+    for reference in refs {
+        let name = reference.name.to_string();
+        let Some(hash) = reference.peeled else { continue; };
+        let hash = hash.to_string();
+
+        sqlx::query!(
+            "\
+            INSERT INTO refs (name, hash) VALUES (?, ?) \
+            ON CONFLICT (name) DO UPDATE \
+                SET hash = excluded.hash \
+            ",
+            name,
+            hash
+        )
+        .execute(&mut *conn)
+        .await?;
+    }
+
     Ok(())
 }
 
-// TODO tracked -> reachable, 0 = unreachable, 1 = reachable, 2 = reachable from tracked ref
+async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> somehow::Result<()> {
+    let Some(head) = repo.head_ref()? else { return Ok(()); };
+    let name = head.inner.name.to_string();
+    sqlx::query!("UPDATE refs SET tracked = true WHERE name = ?", name)
+        .execute(conn)
+        .await?;
+    Ok(())
+}
+
 async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::Result<()> {
     sqlx::query!(
-        "
-WITH RECURSIVE reachable(hash) AS (
-    SELECT hash FROM tracked_refs
-    UNION
-    SELECT parent FROM commit_links
-    JOIN reachable ON hash = child
-)
-
-UPDATE commits
-SET reachable = (hash IN reachable)
+        "\
+        WITH RECURSIVE \
+            tracked (hash) AS ( \
+                SELECT hash FROM refs WHERE tracked \
+                UNION \
+                SELECT parent FROM commit_links \
+                JOIN tracked ON hash = child \
+            ), \
+            reachable (hash) AS ( \
+                SELECT hash FROM refs \
+                UNION \
+                SELECT hash FROM tracked \
+                UNION \
+                SELECT parent FROM commit_links \
+                JOIN reachable ON hash = child \
+            ) \
+        UPDATE commits \
+        SET reachable = CASE \
+            WHEN hash IN tracked   THEN 2 \
+            WHEN hash IN reachable THEN 1 \
+            ELSE 0 \
+        END \
 "
     )
     .execute(conn)
@@ -197,7 +220,8 @@ pub async fn update(db: &SqlitePool, repo: &Repository) -> somehow::Result<()> {
         info!("Initializing new repo");
     }
 
-    let new = get_new_commits_from_repo(repo, &old)?;
+    let refs = get_all_refs_from_repo(repo)?;
+    let new = get_new_commits_from_repo(repo, &refs, &old)?;
     debug!("Found {} new commits in repo", new.len());
 
     // Defer foreign key checks until the end of the transaction to improve
@@ -211,15 +235,15 @@ pub async fn update(db: &SqlitePool, repo: &Repository) -> somehow::Result<()> {
     // commit and so on).
     insert_new_commits(conn, &new).await?;
     insert_new_commit_links(conn, &new).await?;
-    debug!("Inserted {} new commits into db", new.len());
-
     if repo_is_new {
         mark_all_commits_as_old(conn).await?;
-        track_main_branch(conn, repo).await?;
-        debug!("Prepared new repo");
     }
+    debug!("Inserted {} new commits into db", new.len());
 
-    update_tracked_refs(conn, repo).await?;
+    update_refs(conn, refs).await?;
+    if repo_is_new {
+        track_main_branch(conn, repo).await?;
+    }
     update_commit_tracked_status(conn).await?;
     debug!("Updated tracked refs");
 

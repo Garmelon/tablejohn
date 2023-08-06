@@ -29,7 +29,7 @@ pub async fn get(
 ) -> somehow::Result<impl IntoResponse> {
     let repo = repo.to_thread_local();
 
-    let rows = sqlx::query!("SELECT name, hash FROM tracked_refs")
+    let rows = sqlx::query!("SELECT name, hash FROM refs WHERE tracked")
         .fetch_all(&db)
         .await?;
 

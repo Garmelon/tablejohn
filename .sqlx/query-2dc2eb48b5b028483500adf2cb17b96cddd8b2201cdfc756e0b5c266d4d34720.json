@@ -1,16 +1,11 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT name, hash FROM tracked_refs",
+  "query": "SELECT name FROM refs",
   "describe": {
     "columns": [
       {
         "name": "name",
         "ordinal": 0,
-        "type_info": "Text"
-      },
-      {
-        "name": "hash",
-        "ordinal": 1,
         "type_info": "Text"
       }
     ],
@@ -18,9 +13,8 @@
       "Right": 0
     },
     "nullable": [
-      false,
       false
     ]
   },
-  "hash": "f39201c5c3a530a7f659a923a230e3e42dbe19c1ea5d71e6dd5910905e4402d4"
+  "hash": "2dc2eb48b5b028483500adf2cb17b96cddd8b2201cdfc756e0b5c266d4d34720"
 }

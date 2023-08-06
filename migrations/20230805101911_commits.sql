@@ -17,9 +17,10 @@ CREATE TABLE commit_links (
     FOREIGN KEY (child)  REFERENCES commits (hash) ON DELETE CASCADE
 ) STRICT;
 
-CREATE TABLE tracked_refs (
-    name TEXT NOT NULL PRIMARY KEY,
-    hash TEXT NOT NULL,
+CREATE TABLE refs (
+    name    TEXT NOT NULL PRIMARY KEY,
+    hash    TEXT NOT NULL,
+    tracked INT NOT NULL DEFAULT 0,
     FOREIGN KEY (hash) REFERENCES commits (hash) ON DELETE CASCADE
 ) STRICT;
 
