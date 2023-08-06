@@ -109,10 +109,6 @@ nav img {
     font-weight: bold;
 }
 
-.commit .message {
-    margin: 1em 0ch 1em 4ch;
-}
-
 .commit dl {
     display: grid;
     grid: auto-flow / min-content 1fr;
@@ -130,6 +126,7 @@ nav img {
 }
 
 .commit pre {
+    margin: 1em 0ch 1em 4ch;
     white-space: pre-wrap;
 }
 

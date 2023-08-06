@@ -53,6 +53,6 @@ This commit can be reached from a tracked ref.
         </dd>
         {% endfor %}
     </dl>
-    <pre class="message {% call r_class(reachable) %}" title="{% call r_title(reachable) %}">{{ message }}</pre>
+    <pre class="{% call r_class(reachable) %}" title="{% call r_title(reachable) %}">{{ message }}</pre>
 </div>
 {% endblock %}
