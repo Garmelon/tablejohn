@@ -2769,6 +2769,7 @@ dependencies = [
  "humantime",
  "humantime-serde",
  "mime_guess",
+ "rand",
  "rust-embed",
  "serde",
  "sqlx",

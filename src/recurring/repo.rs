@@ -4,13 +4,12 @@ use std::{collections::HashSet, sync::Arc};
 
 use futures::TryStreamExt;
 use gix::{
-    actor::IdentityRef, date::time::format::ISO8601_STRICT, objs::Kind, prelude::ObjectIdExt,
-    refs::Reference, ObjectId, Repository, ThreadSafeRepository,
+    objs::Kind, prelude::ObjectIdExt, refs::Reference, ObjectId, Repository, ThreadSafeRepository,
 };
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use tracing::{debug, info};
 
-use crate::somehow;
+use crate::{somehow, util};
 
 async fn get_all_commit_hashes_from_db(
     conn: &mut SqliteConnection,
@@ -67,12 +66,6 @@ fn get_all_refs_and_new_commits_from_repo(
     Ok((refs, new))
 }
 
-pub fn format_actor(author: IdentityRef<'_>) -> somehow::Result<String> {
-    let mut buffer = vec![];
-    author.trim().write_to(&mut buffer)?;
-    Ok(String::from_utf8_lossy(&buffer).to_string())
-}
-
 async fn insert_new_commits(
     conn: &mut SqliteConnection,
     repo: &Repository,
@@ -82,11 +75,11 @@ async fn insert_new_commits(
         let commit = id.attach(repo).object()?.try_into_commit()?;
         let hash = commit.id.to_string();
         let author_info = commit.author()?;
-        let author = format_actor(author_info.actor())?;
-        let author_date = author_info.time.format(ISO8601_STRICT);
+        let author = util::format_actor(author_info.actor())?;
+        let author_date = util::time_to_offset_datetime(author_info.time)?;
         let committer_info = commit.committer()?;
-        let committer = format_actor(committer_info.actor())?;
-        let committer_date = committer_info.time.format(ISO8601_STRICT);
+        let committer = util::format_actor(committer_info.actor())?;
+        let committer_date = util::time_to_offset_datetime(committer_info.time)?;
         let message = commit.message_raw()?.to_string();
 
         sqlx::query!(

@@ -3,6 +3,7 @@
 // TODO `fetch` submodule for fetching new commits
 // TODO `queue` submodule for updating the queue
 
+mod queue;
 mod repo;
 
 use tracing::{debug_span, error, Instrument};
@@ -16,6 +17,14 @@ async fn recurring_task(state: &AppState) {
         };
     }
     .instrument(debug_span!("update repo"))
+    .await;
+
+    async {
+        if let Err(e) = queue::update(&state.db).await {
+            error!("Error updating queue:\n{e:?}");
+        };
+    }
+    .instrument(debug_span!("update queue"))
     .await;
 }
 
