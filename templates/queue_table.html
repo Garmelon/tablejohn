@@ -8,7 +8,7 @@
     </thead>
     <tbody>
         {% for task in tasks %}
-        <tr {% if task.priority % 2==1 %}class="odd" {% endif %}>
+        <tr {% if task.odd %} class="odd" {% endif %}>
             <td><a href="{{ task.id }}">{{ task.short }}</a></td>
             <td>{{ task.since }}</td>
             <td>{{ task.priority }}</td>

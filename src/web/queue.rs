@@ -12,10 +12,11 @@ struct Task {
     short: String,
     since: String,
     priority: i64,
+    odd: bool,
 }
 
 async fn get_queue(db: &SqlitePool) -> somehow::Result<Vec<Task>> {
-    sqlx::query!(
+    let mut tasks = sqlx::query!(
         "\
         SELECT \
             id, \
@@ -34,10 +35,22 @@ async fn get_queue(db: &SqlitePool) -> somehow::Result<Vec<Task>> {
         short: util::format_commit_short(&r.hash, &r.message),
         since: util::format_delta_from_now(r.date),
         priority: r.priority,
+        odd: false,
     })
-    .err_into::<somehow::Error>()
     .try_collect::<Vec<_>>()
-    .await
+    .await?;
+
+    let mut last_priority = None;
+    let mut odd = false;
+    for task in tasks.iter_mut().rev() {
+        if last_priority.is_some() && last_priority != Some(task.priority) {
+            odd = !odd;
+        }
+        task.odd = odd;
+        last_priority = Some(task.priority);
+    }
+
+    Ok(tasks)
 }
 
 #[derive(Template)]

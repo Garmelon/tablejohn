@@ -135,12 +135,9 @@ nav img {
 
 /* Queue */
 
-.queue td:nth-child(2) {
-    text-align: right;
-}
-
+.queue td:nth-child(2),
 .queue td:nth-child(3) {
-    text-align: center;
+    text-align: right;
 }
 
 .queue .odd {
