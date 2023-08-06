@@ -37,6 +37,21 @@ details>summary {
     margin-left: 0;
 }
 
+table {
+    border-collapse: collapse;
+}
+
+thead tr,
+tbody tr:hover {
+    background-color: #ddd;
+}
+
+th+th,
+td+td {
+    padding-left: 2ch;
+}
+
+
 /* Nav bar */
 
 nav {
@@ -116,4 +131,18 @@ nav img {
 
 .commit pre {
     white-space: pre-wrap;
+}
+
+/* Queue */
+
+.queue td:nth-child(2) {
+    text-align: right;
+}
+
+.queue td:nth-child(3) {
+    text-align: center;
+}
+
+.queue .odd {
+    background-color: #eee;
 }

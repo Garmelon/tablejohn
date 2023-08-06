@@ -14,6 +14,7 @@ pub enum Tab {
     Queue,
 }
 
+#[derive(Clone)]
 pub struct Base {
     root: String,
     repo_name: String,
@@ -43,6 +44,7 @@ pub async fn run(state: AppState) -> somehow::Result<()> {
         .route("/commit/", get(commit::get))
         .route("/commit/:hash", get(commit_hash::get))
         .route("/queue/", get(queue::get))
+        .route("/queue/table", get(queue::get_table))
         .fallback(get(r#static::static_handler))
         .with_state(state.clone());
 

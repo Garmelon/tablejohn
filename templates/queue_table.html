@@ -1,0 +1,18 @@
+<table class="queue">
+    <thead>
+        <tr>
+            <th>commit</th>
+            <th>since</th>
+            <th>prio</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for task in tasks %}
+        <tr {% if task.priority % 2==1 %}class="odd" {% endif %}>
+            <td><a href="{{ task.id }}">{{ task.short }}</a></td>
+            <td>{{ task.since }}</td>
+            <td>{{ task.priority }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

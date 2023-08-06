@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}queue{% endblock %}
+{% block title %}queue ({{ table.tasks.len() }}){% endblock %}
 
 {% block body %}
-<h2>Queue</h2>
-<p>Sorry, nothing here yet.</p>
+<h2>Queue ({{ table.tasks.len() }})</h2>
+{{ table|safe }}
 {% endblock %}

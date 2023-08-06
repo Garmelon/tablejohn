@@ -22,20 +22,31 @@ pub fn time_to_offset_datetime(time: Time) -> somehow::Result<OffsetDateTime> {
         .to_offset(UtcOffset::from_whole_seconds(time.offset)?))
 }
 
-pub fn format_time(time: OffsetDateTime) -> somehow::Result<String> {
-    let now = OffsetDateTime::now_utc();
-    let delta = time - now;
-
-    let formatted_time = time.format(format_description!(
-        "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory][offset_minute]"
-    ))?;
-    let formatted_delta =
-        humantime::format_duration(Duration::from_secs(delta.unsigned_abs().as_secs()));
-    Ok(if delta.is_positive() {
-        format!("{formatted_time} (in {formatted_delta})")
+pub fn format_delta(delta: time::Duration) -> String {
+    let seconds = delta.unsigned_abs().as_secs();
+    let seconds = seconds + 30 - (seconds + 30) % 60; // To nearest minute
+    let formatted = humantime::format_duration(Duration::from_secs(seconds));
+    if delta.is_positive() {
+        format!("in {formatted}")
     } else {
-        format!("{formatted_time} ({formatted_delta} ago)")
-    })
+        format!("{formatted} ago")
+    }
+}
+
+pub fn format_delta_from_now(time: OffsetDateTime) -> String {
+    let now = OffsetDateTime::now_utc();
+    format_delta(time - now)
+}
+
+pub fn format_time(time: OffsetDateTime) -> String {
+    let formatted_time = time
+        .format(format_description!(
+        "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory][offset_minute]"
+    ))
+        .expect("invalid date format");
+
+    let formatted_delta = format_delta_from_now(time);
+    format!("{formatted_time} ({formatted_delta})")
 }
 
 pub fn format_actor(author: IdentityRef<'_>) -> somehow::Result<String> {
