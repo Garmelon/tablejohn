@@ -7,7 +7,7 @@ use crate::somehow;
 
 pub fn format_actor(author: IdentityRef<'_>) -> somehow::Result<String> {
     let mut buffer = vec![];
-    author.write_to(&mut buffer)?;
+    author.trim().write_to(&mut buffer)?;
     Ok(String::from_utf8_lossy(&buffer).to_string())
 }
 

@@ -1,7 +1,12 @@
 CREATE TABLE commits (
-    hash    TEXT NOT NULL PRIMARY KEY,
-    new     INT  NOT NULL DEFAULT 1,
-    tracked INT  NOT NULL DEFAULT 0
+    hash           TEXT NOT NULL PRIMARY KEY,
+    author         TEXT NOT NULL,
+    author_date    TEXT NOT NULL,
+    committer      TEXT NOT NULL,
+    committer_date TEXT NOT NULL,
+    message        TEXT NOT NULL,
+    reachable      INT  NOT NULL DEFAULT 0,
+    new            INT  NOT NULL DEFAULT 1
 ) STRICT;
 
 CREATE TABLE commit_links (

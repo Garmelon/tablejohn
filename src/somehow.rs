@@ -8,6 +8,12 @@ use axum::{
 /// Wrapper around [`anyhow::Error`] that implements additional type classes.
 pub struct Error(pub anyhow::Error);
 
+impl Error {
+    pub fn from_box(err: Box<dyn error::Error + Send + Sync + 'static>) -> Self {
+        Self(anyhow::anyhow!(err))
+    }
+}
+
 impl<E> From<E> for Error
 where
     E: error::Error + Send + Sync + 'static,

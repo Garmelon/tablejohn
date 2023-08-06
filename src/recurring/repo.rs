@@ -6,13 +6,13 @@
 use std::collections::HashSet;
 
 use futures::TryStreamExt;
-use gix::{objs::Kind, traverse::commit::Info, ObjectId, Repository};
+use gix::{date::time::format::ISO8601_STRICT, objs::Kind, Commit, ObjectId, Repository};
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use tracing::{debug, info};
 
-use crate::somehow;
+use crate::{repo, somehow};
 
-async fn get_all_commits_from_db(
+async fn get_all_commit_hashes_from_db(
     conn: &mut SqliteConnection,
 ) -> somehow::Result<HashSet<ObjectId>> {
     let hashes = sqlx::query!("SELECT hash FROM commits")
@@ -25,14 +25,14 @@ async fn get_all_commits_from_db(
     Ok(hashes)
 }
 
-fn get_new_commits_from_repo(
-    repo: &Repository,
-    old: &HashSet<ObjectId>,
-) -> somehow::Result<Vec<Info>> {
+fn get_new_commits_from_repo<'a, 'b: 'a>(
+    repo: &'a Repository,
+    old: &'b HashSet<ObjectId>,
+) -> somehow::Result<Vec<Commit<'a>>> {
     // Collect all references starting with "refs"
     let mut all_references: Vec<ObjectId> = vec![];
     for reference in repo.references()?.prefixed("refs")? {
-        let reference = reference.map_err(|e| somehow::Error(anyhow::anyhow!(e)))?;
+        let reference = reference.map_err(somehow::Error::from_box)?;
         let id = reference.into_fully_peeled_id()?;
 
         // Some repos *cough*linuxkernel*cough* have refs that don't point to
@@ -45,29 +45,57 @@ fn get_new_commits_from_repo(
     }
 
     // Walk from those until hitting old references
-    let new_commits = repo
+    let mut new = vec![];
+    for commit in repo
         .rev_walk(all_references)
         .selected(|c| !old.contains(c))?
-        .map(|r| r.map(|i| i.detach()))
-        .collect::<Result<Vec<_>, _>>()?;
+    {
+        let commit = commit?.id().object()?.try_into_commit()?;
+        new.push(commit);
+    }
 
-    Ok(new_commits)
+    Ok(new)
 }
 
-async fn insert_new_commits(conn: &mut SqliteConnection, new: &[Info]) -> somehow::Result<()> {
+async fn insert_new_commits(
+    conn: &mut SqliteConnection,
+    new: &[Commit<'_>],
+) -> somehow::Result<()> {
     for commit in new {
         let hash = commit.id.to_string();
-        sqlx::query!("INSERT OR IGNORE INTO commits (hash) VALUES (?)", hash)
-            .execute(&mut *conn)
-            .await?;
+        let author_info = commit.author()?;
+        let author = repo::format_actor(author_info.actor())?;
+        let author_date = author_info.time.format(ISO8601_STRICT);
+        let committer_info = commit.committer()?;
+        let committer = repo::format_actor(committer_info.actor())?;
+        let committer_date = committer_info.time.format(ISO8601_STRICT);
+        let message = commit.message_raw()?.to_string();
+
+        sqlx::query!(
+            "
+INSERT OR IGNORE INTO commits (hash, author, author_date, committer, committer_date, message)
+VALUES (?, ?, ?, ?, ?, ?)
+",
+            hash,
+            author,
+            author_date,
+            committer,
+            committer_date,
+            message
+        )
+        .execute(&mut *conn)
+        .await?;
     }
     Ok(())
 }
 
-async fn insert_new_commit_links(conn: &mut SqliteConnection, new: &[Info]) -> somehow::Result<()> {
+async fn insert_new_commit_links(
+    conn: &mut SqliteConnection,
+    new: &[Commit<'_>],
+) -> somehow::Result<()> {
     for commit in new {
         let child = commit.id.to_string();
-        for parent in &commit.parent_ids {
+        for parent in commit.parent_ids() {
             let parent = parent.to_string();
             // Commits *cough*linuxkernel*cough* may list the same parent
             // multiple times, so we just ignore duplicates during insert.
@@ -148,7 +176,7 @@ WITH RECURSIVE reachable(hash) AS (
 )
 
 UPDATE commits
-SET tracked = (hash IN reachable)
+SET reachable = (hash IN reachable)
 "
     )
     .execute(conn)
@@ -161,7 +189,7 @@ pub async fn update(db: &SqlitePool, repo: &Repository) -> somehow::Result<()> {
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
-    let old = get_all_commits_from_db(&mut *conn).await?;
+    let old = get_all_commit_hashes_from_db(&mut *conn).await?;
     debug!("Loaded {} commits from the db", old.len());
 
     let repo_is_new = old.is_empty();

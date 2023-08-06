@@ -53,7 +53,7 @@ pub async fn get(
     // Do this first because a &Repository can't be kept across awaits.
     let child_rows = sqlx::query!(
         "
-SELECT child, tracked FROM commit_links
+SELECT child, reachable FROM commit_links
 JOIN commits ON hash = child
 WHERE parent = ?
     ",
@@ -79,7 +79,7 @@ WHERE parent = ?
     let mut children = vec![];
     for row in child_rows {
         let id = row.child.parse::<ObjectId>()?.attach(&repo);
-        children.push(Commit::new(id, row.tracked != 0)?);
+        children.push(Commit::new(id, row.reachable != 0)?);
     }
 
     Ok(CommitIdTemplate {
