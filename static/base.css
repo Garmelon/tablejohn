@@ -130,6 +130,23 @@ nav img {
     white-space: pre-wrap;
 }
 
+/* Task */
+
+.task * {
+    margin: 0;
+}
+
+.task .id {
+    color: #380;
+    font-weight: bold;
+}
+
+.task dl {
+    display: grid;
+    grid: auto-flow / min-content 1fr;
+    column-gap: 1ch;
+}
+
 /* Queue */
 
 .queue td:nth-child(2),
