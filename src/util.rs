@@ -25,6 +25,9 @@ pub fn time_to_offset_datetime(time: Time) -> somehow::Result<OffsetDateTime> {
 pub fn format_delta(delta: time::Duration) -> String {
     let seconds = delta.unsigned_abs().as_secs();
     let seconds = seconds + 30 - (seconds + 30) % 60; // To nearest minute
+    if seconds == 0 {
+        return "now".to_string();
+    }
     let formatted = humantime::format_duration(Duration::from_secs(seconds));
     if delta.is_positive() {
         format!("in {formatted}")
