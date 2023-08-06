@@ -1,13 +1,11 @@
 //! Add new commits to the database and update the tracked refs.
 
-// TODO Prevent some sync stuff from blocking the async stuff
-
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 use futures::TryStreamExt;
 use gix::{
-    actor::IdentityRef, date::time::format::ISO8601_STRICT, objs::Kind, refs::Reference, Commit,
-    ObjectId, Repository,
+    actor::IdentityRef, date::time::format::ISO8601_STRICT, objs::Kind, prelude::ObjectIdExt,
+    refs::Reference, ObjectId, Repository, ThreadSafeRepository,
 };
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use tracing::{debug, info};
@@ -44,21 +42,29 @@ fn get_all_refs_from_repo(repo: &Repository) -> somehow::Result<Vec<Reference>> 
     Ok(references)
 }
 
-fn get_new_commits_from_repo<'a, 'b: 'a>(
-    repo: &'a Repository,
+fn get_new_commits_from_repo(
+    repo: &Repository,
     refs: &[Reference],
-    old: &'b HashSet<ObjectId>,
-) -> somehow::Result<Vec<Commit<'a>>> {
+    old: &HashSet<ObjectId>,
+) -> somehow::Result<Vec<ObjectId>> {
     let ref_ids = refs.iter().flat_map(|r| r.peeled.into_iter());
 
     // Walk from those until hitting old references
     let mut new = vec![];
     for commit in repo.rev_walk(ref_ids).selected(|c| !old.contains(c))? {
-        let commit = commit?.id().object()?.try_into_commit()?;
-        new.push(commit);
+        new.push(commit?.id);
     }
 
     Ok(new)
+}
+
+fn get_all_refs_and_new_commits_from_repo(
+    repo: &Repository,
+    old: &HashSet<ObjectId>,
+) -> somehow::Result<(Vec<Reference>, Vec<ObjectId>)> {
+    let refs = get_all_refs_from_repo(repo)?;
+    let new = get_new_commits_from_repo(repo, &refs, old)?;
+    Ok((refs, new))
 }
 
 pub fn format_actor(author: IdentityRef<'_>) -> somehow::Result<String> {
@@ -69,9 +75,11 @@ pub fn format_actor(author: IdentityRef<'_>) -> somehow::Result<String> {
 
 async fn insert_new_commits(
     conn: &mut SqliteConnection,
-    new: &[Commit<'_>],
+    repo: &Repository,
+    new: &[ObjectId],
 ) -> somehow::Result<()> {
-    for (i, commit) in new.iter().enumerate() {
+    for (i, id) in new.iter().enumerate() {
+        let commit = id.attach(repo).object()?.try_into_commit()?;
         let hash = commit.id.to_string();
         let author_info = commit.author()?;
         let author = format_actor(author_info.actor())?;
@@ -113,9 +121,11 @@ async fn insert_new_commits(
 
 async fn insert_new_commit_links(
     conn: &mut SqliteConnection,
-    new: &[Commit<'_>],
+    repo: &Repository,
+    new: &[ObjectId],
 ) -> somehow::Result<()> {
-    for (i, commit) in new.iter().enumerate() {
+    for (i, hash) in new.iter().enumerate() {
+        let commit = hash.attach(repo).object()?.try_into_commit()?;
         let child = commit.id.to_string();
         for parent in commit.parent_ids() {
             let parent = parent.to_string();
@@ -224,8 +234,9 @@ async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::R
     Ok(())
 }
 
-pub async fn update(db: &SqlitePool, repo: &Repository) -> somehow::Result<()> {
+pub async fn update(db: &SqlitePool, repo: Arc<ThreadSafeRepository>) -> somehow::Result<()> {
     debug!("Updating repo");
+    let thread_local_repo = repo.to_thread_local();
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
@@ -237,8 +248,12 @@ pub async fn update(db: &SqlitePool, repo: &Repository) -> somehow::Result<()> {
         info!("Initializing new repo");
     }
 
-    let refs = get_all_refs_from_repo(repo)?;
-    let new = get_new_commits_from_repo(repo, &refs, &old)?;
+    // This can take a while for larger repos. Running it via spawn_blocking
+    // keeps it from blocking the entire tokio worker.
+    let (refs, new) = tokio::task::spawn_blocking(move || {
+        get_all_refs_and_new_commits_from_repo(&repo.to_thread_local(), &old)
+    })
+    .await??;
     debug!("Found {} new commits in repo", new.len());
 
     // Defer foreign key checks until the end of the transaction to improve
@@ -250,15 +265,15 @@ pub async fn update(db: &SqlitePool, repo: &Repository) -> somehow::Result<()> {
     // Inserts are grouped by table so sqlite can process them *a lot* faster
     // than if they were grouped by commit (insert commit and parents, then next
     // commit and so on).
-    insert_new_commits(conn, &new).await?;
-    insert_new_commit_links(conn, &new).await?;
+    insert_new_commits(conn, &thread_local_repo, &new).await?;
+    insert_new_commit_links(conn, &thread_local_repo, &new).await?;
     if repo_is_new {
         mark_all_commits_as_old(conn).await?;
     }
 
     update_refs(conn, refs).await?;
     if repo_is_new {
-        track_main_branch(conn, repo).await?;
+        track_main_branch(conn, &thread_local_repo).await?;
     }
     update_commit_tracked_status(conn).await?;
     debug!("Updated tracked refs");

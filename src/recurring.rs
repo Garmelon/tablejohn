@@ -10,10 +10,8 @@ use tracing::{debug_span, error, Instrument};
 use crate::state::AppState;
 
 async fn recurring_task(state: &AppState) {
-    let repo = state.repo.to_thread_local();
-
     async {
-        if let Err(e) = repo::update(&state.db, &repo).await {
+        if let Err(e) = repo::update(&state.db, state.repo.clone()).await {
             error!("Error updating repo:\n{e:?}");
         };
     }

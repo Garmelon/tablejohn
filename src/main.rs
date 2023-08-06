@@ -11,7 +11,7 @@ use clap::Parser;
 use directories::ProjectDirs;
 use state::AppState;
 use tokio::{select, signal::unix::SignalKind};
-use tracing::{error, info, Level};
+use tracing::{debug, error, info, Level};
 use tracing_subscriber::{
     filter::Targets, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };
@@ -78,6 +78,8 @@ fn load_config(path: Option<PathBuf>) -> somehow::Result<&'static Config> {
 }
 
 async fn wait_for_signal() -> io::Result<()> {
+    debug!("Listening to signals");
+
     let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
     let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
@@ -91,6 +93,8 @@ async fn wait_for_signal() -> io::Result<()> {
 }
 
 async fn die_on_signal() -> io::Result<()> {
+    debug!("Listening to signals again");
+
     let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
     let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
@@ -121,6 +125,15 @@ async fn run() -> somehow::Result<()> {
 
     select! {
         _ = die_on_signal() => {}
+        // For some reason, the thread pool shutting down seems to block
+        // receiving further signals if a heavy sql operation is currently
+        // running. Maybe this is due to the thread pool not deferring blocking
+        // work to a separate thread? In any case, replacing it with a sleep
+        // doesn't block the signals.
+        // 
+        // In order to fix this, I could maybe register a bare signal handler
+        // (instead of using tokio streams) that just calls process::exit(1) and
+        // nothing else?
         _ = state.shut_down() => {}
     }
 
