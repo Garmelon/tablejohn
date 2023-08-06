@@ -5,13 +5,13 @@ mod somehow;
 mod state;
 mod web;
 
-use std::{io, path::PathBuf};
+use std::{io, path::PathBuf, process};
 
 use clap::Parser;
 use directories::ProjectDirs;
 use state::AppState;
 use tokio::{select, signal::unix::SignalKind};
-use tracing::{debug, info, Level};
+use tracing::{error, info, Level};
 use tracing_subscriber::{
     filter::Targets, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };
@@ -78,8 +78,6 @@ fn load_config(path: Option<PathBuf>) -> somehow::Result<&'static Config> {
 }
 
 async fn wait_for_signal() -> io::Result<()> {
-    debug!("Listening to signals");
-
     let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
     let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
@@ -88,8 +86,21 @@ async fn wait_for_signal() -> io::Result<()> {
         _ = sigterm.recv() => "SIGTERM",
     };
 
-    info!("Received {signal}, shutting down");
+    info!("Received signal ({signal}), shutting down gracefully");
     Ok(())
+}
+
+async fn die_on_signal() -> io::Result<()> {
+    let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
+    let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
+
+    let signal = select! {
+        _ = sigint.recv() => "SIGINT",
+        _ = sigterm.recv() => "SIGTERM",
+    };
+
+    error!("Received second signal ({signal}), dying immediately");
+    process::exit(1);
 }
 
 async fn run() -> somehow::Result<()> {
@@ -103,12 +114,15 @@ async fn run() -> somehow::Result<()> {
 
     info!("Startup complete, running");
     select! {
-        _ = wait_for_signal() => {},
-        _ = web::run(state.clone()) => {},
-        _ = recurring::run(state.clone()) => {},
+        _ = wait_for_signal() => {}
+        _ = web::run(state.clone()) => {}
+        _ = recurring::run(state.clone()) => {}
     }
 
-    state.shut_down().await;
+    select! {
+        _ = die_on_signal() => {}
+        _ = state.shut_down() => {}
+    }
 
     Ok(())
 }
