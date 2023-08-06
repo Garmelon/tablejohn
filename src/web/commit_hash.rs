@@ -11,14 +11,14 @@ use crate::{config::Config, db, somehow};
 
 struct Commit {
     hash: String,
-    description: String,
+    short: String,
     reachable: i64,
 }
 
 impl Commit {
     fn new(hash: String, message: &str, reachable: i64) -> Self {
         Self {
-            description: db::format_commit_short(&hash, message),
+            short: db::format_commit_short(&hash, message),
             hash,
             reachable,
         }

@@ -42,14 +42,14 @@ This commit can be reached from a tracked ref.
         {% for commit in parents %}
         <dt class="{% call r_class(commit.reachable) %}" title="{% call r_title(commit.reachable) %}">Parent:</dt>
         <dd class="{% call r_class(commit.reachable) %}" title="{% call r_title(commit.reachable) %}">
-            <a href="{{ commit.hash }}">{{ commit.description }}</a>
+            <a href="{{ commit.hash }}">{{ commit.short }}</a>
         </dd>
         {% endfor %}
 
         {% for commit in children %}
         <dt class="{% call r_class(commit.reachable) %}" title="{% call r_title(commit.reachable) %}">Child:</dt>
         <dd class="{% call r_class(commit.reachable) %}" title="{% call r_title(commit.reachable) %}">
-            <a href="{{ commit.hash }}">{{ commit.description }}</a>
+            <a href="{{ commit.hash }}">{{ commit.short }}</a>
         </dd>
         {% endfor %}
     </dl>
