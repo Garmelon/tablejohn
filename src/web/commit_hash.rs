@@ -30,7 +30,7 @@ impl Commit {
 struct CommitIdTemplate {
     base: String,
     repo_name: String,
-    current: String,
+    current: &'static str,
     hash: String,
     author: String,
     author_date: String,
@@ -100,7 +100,7 @@ pub async fn get(
     Ok(CommitIdTemplate {
         base: config.web.base(),
         repo_name: config.repo.name(),
-        current: "commit".to_string(),
+        current: "commit",
         hash: commit.hash,
         author: commit.author,
         author_date: util::format_time(commit.author_date)?,
