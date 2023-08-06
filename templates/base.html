@@ -3,19 +3,19 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>{% block title %}{% endblock %} - {{ repo_name }}</title>
+    <title>{% block title %}{% endblock %} - {{ base.repo_name }}</title>
     <link rel="icon" href="/logo.svg">
-    <link rel="stylesheet" href="{{ base }}/base.css" />
+    <link rel="stylesheet" href="{{ base.root }}/base.css" />
     {% block head %}{% endblock %}
 </head>
 
 <body>
     <nav>
-        <a href="{{ base }}/" {% if current=="index" %} class="current" {% endif %}>
-            <img src="{{ base }}/logo.svg">
-            {{ repo_name }}
+        <a href="{{ base.root }}/" {% if base.current=="index" %} class="current" {% endif %}>
+            <img src="{{ base.root }}/logo.svg">
+            {{ base.repo_name }}
         </a>
-        <a href="{{ base }}/commit/" {% if current=="commit" %} class="current" {% endif %}>
+        <a href="{{ base.root }}/commit/" {% if base.current=="commit" %} class="current" {% endif %}>
             commit
         </a>
     </nav>

@@ -5,6 +5,8 @@ use sqlx::SqlitePool;
 
 use crate::{config::Config, somehow, util};
 
+use super::{Base, Tab};
+
 struct Ref {
     name: String,
     hash: String,
@@ -15,9 +17,7 @@ struct Ref {
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
-    base: String,
-    repo_name: String,
-    current: &'static str,
+    base: Base,
     tracked_refs: Vec<Ref>,
     untracked_refs: Vec<Ref>,
 }
@@ -54,9 +54,7 @@ pub async fn get(
     }
 
     Ok(IndexTemplate {
-        base: config.web.base(),
-        repo_name: config.repo.name(),
-        current: "index",
+        base: Base::new(config, Tab::Index),
         tracked_refs,
         untracked_refs,
     })

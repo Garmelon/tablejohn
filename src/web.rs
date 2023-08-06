@@ -5,7 +5,32 @@ mod r#static;
 
 use axum::{routing::get, Router, Server};
 
-use crate::{somehow, state::AppState};
+use crate::{config::Config, somehow, state::AppState};
+
+pub enum Tab {
+    Index,
+    Commit,
+}
+
+pub struct Base {
+    root: String,
+    repo_name: String,
+    current: String,
+}
+
+impl Base {
+    pub fn new(config: &Config, tab: Tab) -> Self {
+        let current = match tab {
+            Tab::Index => "index",
+            Tab::Commit => "commit",
+        };
+        Self {
+            root: config.web.base(),
+            repo_name: config.repo.name.clone(),
+            current: current.to_string(),
+        }
+    }
+}
 
 pub async fn run(state: AppState) -> somehow::Result<()> {
     // TODO Add text body to body-less status codes

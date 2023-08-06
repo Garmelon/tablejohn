@@ -9,7 +9,7 @@
     <dl>
         {% for ref in tracked_refs %}
         <dt>{{ ref.name }}</dt>
-        <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
+        <dd><a href="{{ base.root }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
         {% endfor %}
     </dl>
 </details>
@@ -18,7 +18,7 @@
     <dl>
         {% for ref in untracked_refs %}
         <dt>{{ ref.name }}</dt>
-        <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
+        <dd><a href="{{ base.root }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
         {% endfor %}
     </dl>
 </details>

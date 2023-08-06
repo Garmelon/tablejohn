@@ -40,12 +40,6 @@ impl Default for Repo {
     }
 }
 
-impl Repo {
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-}
-
 #[derive(Debug, Deserialize)]
 pub struct Web {
     #[serde(default = "default::web_base")]

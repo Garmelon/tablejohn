@@ -9,6 +9,8 @@ use sqlx::SqlitePool;
 
 use crate::{config::Config, somehow, util};
 
+use super::{Base, Tab};
+
 struct Commit {
     hash: String,
     short: String,
@@ -28,9 +30,7 @@ impl Commit {
 #[derive(Template)]
 #[template(path = "commit_hash.html")]
 struct CommitIdTemplate {
-    base: String,
-    repo_name: String,
-    current: &'static str,
+    base: Base,
     hash: String,
     author: String,
     author_date: String,
@@ -98,9 +98,7 @@ pub async fn get(
     .await?;
 
     Ok(CommitIdTemplate {
-        base: config.web.base(),
-        repo_name: config.repo.name(),
-        current: "commit",
+        base: Base::new(config, Tab::Commit),
         hash: commit.hash,
         author: commit.author,
         author_date: util::format_time(commit.author_date)?,
