@@ -11,6 +11,7 @@ struct Ref {
     name: String,
     hash: String,
     short: String,
+    reachable: i64,
     tracked: bool,
 }
 
@@ -28,16 +29,18 @@ pub async fn get(
 ) -> somehow::Result<impl IntoResponse> {
     let refs = sqlx::query!(
         "\
-        SELECT name, hash, tracked, message FROM refs \
+        SELECT name, hash, message, reachable, tracked \
+        FROM refs \
         JOIN commits USING (hash) \
         ORDER BY name ASC \
         "
     )
     .fetch(&db)
     .map_ok(|r| Ref {
-        name: r.name,
         short: util::format_commit_short(&r.hash, &r.message),
+        name: r.name,
         hash: r.hash,
+        reachable: r.reachable,
         tracked: r.tracked != 0,
     })
     .try_collect::<Vec<_>>()

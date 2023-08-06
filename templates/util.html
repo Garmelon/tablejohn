@@ -1,0 +1,23 @@
+{% macro r_class(reachable) %}
+{%- if reachable == 0 -%}
+orphaned
+{%- else if reachable == 1 -%}
+reachable
+{%- else -%}
+tracked
+{%- endif -%}
+{% endmacro %}
+
+{% macro r_title(reachable) %}
+{%- if reachable == 0 -%}
+This commit is orphaned. It can't be reached from any ref.
+{%- else if reachable == 1 -%}
+This commit can only be reached from untracked refs.
+{%- else -%}
+This commit can be reached from a tracked ref.
+{%- endif -%}
+{% endmacro %}
+
+{% macro commit_short(short, reachable) -%}
+<span class="{% call r_class(reachable) %}" title="{% call r_title(reachable) %}">{{ short }}</span>
+{%- endmacro %}

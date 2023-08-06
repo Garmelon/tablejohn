@@ -10,6 +10,7 @@ use super::{Base, Tab};
 struct Task {
     id: String,
     short: String,
+    reachable: i64,
     since: String,
     priority: i64,
     odd: bool,
@@ -22,6 +23,7 @@ async fn get_queue(db: &SqlitePool) -> somehow::Result<Vec<Task>> {
             id, \
             hash, \
             message, \
+            reachable, \
             date AS \"date: time::OffsetDateTime\", \
             priority \
         FROM queue \
@@ -33,6 +35,7 @@ async fn get_queue(db: &SqlitePool) -> somehow::Result<Vec<Task>> {
     .map_ok(|r| Task {
         id: r.id,
         short: util::format_commit_short(&r.hash, &r.message),
+        reachable: r.reachable,
         since: util::format_delta_from_now(r.date),
         priority: r.priority,
         odd: false,

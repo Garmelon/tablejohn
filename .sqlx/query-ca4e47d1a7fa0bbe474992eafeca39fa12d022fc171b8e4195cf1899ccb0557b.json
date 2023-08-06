@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id, hash, message, date AS \"date: time::OffsetDateTime\", priority FROM queue JOIN commits USING (hash) ORDER BY priority DESC, unixepoch(date) DESC, hash ASC ",
+  "query": "SELECT id, hash, message, reachable, date AS \"date: time::OffsetDateTime\", priority FROM queue JOIN commits USING (hash) ORDER BY priority DESC, unixepoch(date) DESC, hash ASC ",
   "describe": {
     "columns": [
       {
@@ -19,13 +19,18 @@
         "type_info": "Text"
       },
       {
-        "name": "date: time::OffsetDateTime",
+        "name": "reachable",
         "ordinal": 3,
+        "type_info": "Int64"
+      },
+      {
+        "name": "date: time::OffsetDateTime",
+        "ordinal": 4,
         "type_info": "Text"
       },
       {
         "name": "priority",
-        "ordinal": 4,
+        "ordinal": 5,
         "type_info": "Int64"
       }
     ],
@@ -37,8 +42,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "02a0484f131cdd7420fb073dec5c9ed2758e21a6bf74026ba3e19cba1d274536"
+  "hash": "ca4e47d1a7fa0bbe474992eafeca39fa12d022fc171b8e4195cf1899ccb0557b"
 }

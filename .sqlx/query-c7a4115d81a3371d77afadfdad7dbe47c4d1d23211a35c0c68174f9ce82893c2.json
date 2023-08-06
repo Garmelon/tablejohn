@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT name, hash, tracked, message FROM refs JOIN commits USING (hash) ORDER BY name ASC ",
+  "query": "SELECT name, hash, message, reachable, tracked FROM refs JOIN commits USING (hash) ORDER BY name ASC ",
   "describe": {
     "columns": [
       {
@@ -14,14 +14,19 @@
         "type_info": "Text"
       },
       {
-        "name": "tracked",
+        "name": "message",
         "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "reachable",
+        "ordinal": 3,
         "type_info": "Int64"
       },
       {
-        "name": "message",
-        "ordinal": 3,
-        "type_info": "Text"
+        "name": "tracked",
+        "ordinal": 4,
+        "type_info": "Int64"
       }
     ],
     "parameters": {
@@ -31,8 +36,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "39e21f75c4f68be1e4f64c4a9c0a38974f12556b6ac463f21f7729f758dec886"
+  "hash": "c7a4115d81a3371d77afadfdad7dbe47c4d1d23211a35c0c68174f9ce82893c2"
 }

@@ -1,3 +1,5 @@
+{% import "util.html" as util %}
+
 <table class="queue">
     <thead>
         <tr>
@@ -9,7 +11,11 @@
     <tbody>
         {% for task in tasks %}
         <tr {% if task.odd %} class="odd" {% endif %}>
-            <td><a href="{{ task.id }}">{{ task.short }}</a></td>
+            <td>
+                <a href="{{ task.id }}">
+                    {% call util::commit_short(task.short, task.reachable) %}
+                </a>
+            </td>
             <td>{{ task.since }}</td>
             <td>{{ task.priority }}</td>
         </tr>

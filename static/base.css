@@ -51,6 +51,13 @@ td+td {
     padding-left: 2ch;
 }
 
+.reachable {
+    color: #777;
+}
+
+.orphaned {
+    color: #a33;
+}
 
 /* Nav bar */
 
@@ -113,16 +120,6 @@ nav img {
     display: grid;
     grid: auto-flow / min-content 1fr;
     column-gap: 1ch;
-}
-
-.commit .reachable,
-.commit .reachable a {
-    color: #777;
-}
-
-.commit .orphaned,
-.commit .orphaned a {
-    color: #a33;
 }
 
 .commit pre {
