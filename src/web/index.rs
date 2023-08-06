@@ -3,7 +3,7 @@ use axum::{extract::State, response::IntoResponse};
 use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
-use crate::{config::Config, db, somehow};
+use crate::{config::Config, somehow, util};
 
 struct Ref {
     name: String,
@@ -36,7 +36,7 @@ pub async fn get(
     .fetch(&db)
     .map_ok(|r| Ref {
         name: r.name,
-        short: db::format_commit_short(&r.hash, &r.message),
+        short: util::format_commit_short(&r.hash, &r.message),
         hash: r.hash,
         tracked: r.tracked != 0,
     })

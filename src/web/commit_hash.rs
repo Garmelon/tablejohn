@@ -7,7 +7,7 @@ use axum::{
 use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
-use crate::{config::Config, db, somehow};
+use crate::{config::Config, somehow, util};
 
 struct Commit {
     hash: String,
@@ -18,7 +18,7 @@ struct Commit {
 impl Commit {
     fn new(hash: String, message: &str, reachable: i64) -> Self {
         Self {
-            short: db::format_commit_short(&hash, message),
+            short: util::format_commit_short(&hash, message),
             hash,
             reachable,
         }
@@ -48,9 +48,23 @@ pub async fn get(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
-    let Some(commit) = sqlx::query!("SELECT * FROM commits WHERE hash = ?", hash)
-        .fetch_optional(&db)
-        .await?
+    let Some(commit) = sqlx::query!(
+        "\
+        SELECT \
+            hash, \
+            author, \
+            author_date AS \"author_date: time::OffsetDateTime\", \
+            committer, \
+            committer_date AS \"committer_date: time::OffsetDateTime\", \
+            message, \
+            reachable \
+        FROM commits \
+        WHERE hash = ? \
+        ",
+        hash
+    )
+    .fetch_optional(&db)
+    .await?
     else {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
@@ -89,12 +103,12 @@ pub async fn get(
         current: "commit".to_string(),
         hash: commit.hash,
         author: commit.author,
-        author_date: db::format_time(&commit.author_date)?,
+        author_date: util::format_time(commit.author_date)?,
         commit: commit.committer,
-        commit_date: db::format_time(&commit.committer_date)?,
+        commit_date: util::format_time(commit.committer_date)?,
         parents,
         children,
-        summary: db::summary(&commit.message),
+        summary: util::format_commit_summary(&commit.message),
         message: commit.message.trim_end().to_string(),
         reachable: commit.reachable,
     }

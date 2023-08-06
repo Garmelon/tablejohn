@@ -1,8 +1,8 @@
 mod config;
-mod db;
 mod recurring;
 mod somehow;
 mod state;
+mod util;
 mod web;
 
 use std::{io, path::PathBuf, process};
@@ -130,7 +130,7 @@ async fn run() -> somehow::Result<()> {
         // running. Maybe this is due to the thread pool not deferring blocking
         // work to a separate thread? In any case, replacing it with a sleep
         // doesn't block the signals.
-        // 
+        //
         // In order to fix this, I could maybe register a bare signal handler
         // (instead of using tokio streams) that just calls process::exit(1) and
         // nothing else?

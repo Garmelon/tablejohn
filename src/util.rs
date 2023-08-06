@@ -1,12 +1,17 @@
 use std::time::Duration;
 
-use time::{format_description::well_known::Rfc3339, macros::format_description, OffsetDateTime};
+use gix::date::Time;
+use time::{macros::format_description, OffsetDateTime, UtcOffset};
 
 use crate::somehow;
 
-pub fn format_time(time: &str) -> somehow::Result<String> {
+pub fn time_to_offset_datetime(time: Time) -> somehow::Result<OffsetDateTime> {
+    Ok(OffsetDateTime::from_unix_timestamp(time.seconds)?
+        .to_offset(UtcOffset::from_whole_seconds(time.offset)?))
+}
+
+pub fn format_time(time: OffsetDateTime) -> somehow::Result<String> {
     let now = OffsetDateTime::now_utc();
-    let time = OffsetDateTime::parse(time, &Rfc3339)?;
     let delta = time - now;
 
     let formatted_time = time.format(format_description!(
@@ -21,7 +26,7 @@ pub fn format_time(time: &str) -> somehow::Result<String> {
     })
 }
 
-pub fn summary(message: &str) -> String {
+pub fn format_commit_summary(message: &str) -> String {
     // Take everything up to the first double newline
     let title = message
         .split_once("\n\n")
@@ -34,6 +39,6 @@ pub fn summary(message: &str) -> String {
 
 pub fn format_commit_short(hash: &str, message: &str) -> String {
     let short_hash = hash.chars().take(8).collect::<String>();
-    let summary = summary(message);
+    let summary = format_commit_summary(message);
     format!("{short_hash} ({summary})")
 }

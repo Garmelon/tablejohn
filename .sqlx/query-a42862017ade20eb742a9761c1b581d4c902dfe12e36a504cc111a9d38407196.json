@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT * FROM commits WHERE hash = ?",
+  "query": "SELECT hash, author, author_date AS \"author_date: time::OffsetDateTime\", committer, committer_date AS \"committer_date: time::OffsetDateTime\", message, reachable FROM commits WHERE hash = ? ",
   "describe": {
     "columns": [
       {
@@ -14,7 +14,7 @@
         "type_info": "Text"
       },
       {
-        "name": "author_date",
+        "name": "author_date: time::OffsetDateTime",
         "ordinal": 2,
         "type_info": "Text"
       },
@@ -24,7 +24,7 @@
         "type_info": "Text"
       },
       {
-        "name": "committer_date",
+        "name": "committer_date: time::OffsetDateTime",
         "ordinal": 4,
         "type_info": "Text"
       },
@@ -36,11 +36,6 @@
       {
         "name": "reachable",
         "ordinal": 6,
-        "type_info": "Int64"
-      },
-      {
-        "name": "new",
-        "ordinal": 7,
         "type_info": "Int64"
       }
     ],
@@ -54,9 +49,8 @@
       false,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "61bcc32d29fb7b162f3a51b5b463bc917ddce4a5fc292fb19036a88f697f9056"
+  "hash": "a42862017ade20eb742a9761c1b581d4c902dfe12e36a504cc111a9d38407196"
 }
