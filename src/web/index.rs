@@ -8,6 +8,7 @@ use crate::{config::Config, db, somehow};
 struct Ref {
     name: String,
     hash: String,
+    tracked: bool,
     short: String,
 }
 
@@ -17,18 +18,17 @@ struct IndexTemplate {
     base: String,
     repo_name: String,
     current: String,
-    tracked_refs: Vec<Ref>,
+    refs: Vec<Ref>,
 }
 
 pub async fn get(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
-    let tracked_refs = sqlx::query!(
+    let refs = sqlx::query!(
         "\
-        SELECT name, hash, message FROM refs \
+        SELECT name, hash, tracked, message FROM refs \
         JOIN commits USING (hash) \
-        WHERE tracked \
         "
     )
     .fetch(&db)
@@ -36,6 +36,7 @@ pub async fn get(
         name: r.name,
         short: db::format_commit_short(&r.hash, &r.message),
         hash: r.hash,
+        tracked: r.tracked != 0,
     })
     .try_collect::<Vec<_>>()
     .await?;
@@ -44,6 +45,6 @@ pub async fn get(
         base: config.web.base(),
         repo_name: config.repo.name(),
         current: "index".to_string(),
-        tracked_refs,
+        refs,
     })
 }

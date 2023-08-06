@@ -3,11 +3,27 @@
 {% block title %}overview{% endblock %}
 
 {% block body %}
-<h2>Tracked refs</h2>
-<dl>
-    {% for ref in tracked_refs %}
-    <dt>{{ ref.name }}</dt>
-    <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
-    {% endfor %}
-</dl>
+<h2>Refs</h2>
+<details>
+    <summary>Tracked</summary>
+    <dl>
+        {% for ref in refs %}
+        {% if ref.tracked %}
+        <dt>{{ ref.name }}</dt>
+        <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
+        {% endif %}
+        {% endfor %}
+    </dl>
+</details>
+<details>
+    <summary>Untracked</summary>
+    <dl>
+        {% for ref in refs %}
+        {% if !ref.tracked %}
+        <dt>{{ ref.name }}</dt>
+        <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
+        {% endif %}
+        {% endfor %}
+    </dl>
+</details>
 {% endblock %}

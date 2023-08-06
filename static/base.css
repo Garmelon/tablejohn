@@ -5,6 +5,37 @@
     color-scheme: light dark;
 }
 
+/* General */
+
+details,
+dl {
+    margin: var(--lh) 0;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+dd {
+    margin-left: 4ch;
+}
+
+details {
+    background-color: #ddd;
+}
+
+details>* {
+    margin-left: 4ch;
+}
+
+details>summary {
+    margin-left: 0;
+}
+
 /* Nav bar */
 
 nav {
@@ -44,20 +75,6 @@ nav img {
     width: 1.2em;
     height: 1.2em;
     vertical-align: -20%;
-}
-
-/* General */
-
-a {
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-dd {
-    margin-left: 4ch;
 }
 
 /* Commit */
