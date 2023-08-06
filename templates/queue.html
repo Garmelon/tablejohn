@@ -2,7 +2,11 @@
 
 {% block title %}queue ({{ table.tasks.len() }}){% endblock %}
 
+{% block head %}
+<script type="module" src="main.js"></script>
+{% endblock %}
+
 {% block body %}
-<h2>Queue ({{ table.tasks.len() }})</h2>
-{{ table|safe }}
+<h2>Queue (<span id="count">{{ table.tasks.len() }}</span>)</h2>
+<div id="queue">{{ table|safe }}</div>
 {% endblock %}
