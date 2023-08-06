@@ -1,11 +1,9 @@
-use std::sync::Arc;
-
 use askama::Template;
 use axum::{extract::State, response::IntoResponse};
-use gix::{prelude::ObjectIdExt, ObjectId, ThreadSafeRepository};
+use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
-use crate::{config::Config, repo, somehow};
+use crate::{config::Config, db, somehow};
 
 struct Ref {
     name: String,
@@ -19,36 +17,33 @@ struct IndexTemplate {
     base: String,
     repo_name: String,
     current: String,
-    refs: Vec<Ref>,
+    tracked_refs: Vec<Ref>,
 }
 
 pub async fn get(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
-    State(repo): State<Arc<ThreadSafeRepository>>,
 ) -> somehow::Result<impl IntoResponse> {
-    let repo = repo.to_thread_local();
-
-    let rows = sqlx::query!("SELECT name, hash FROM refs WHERE tracked")
-        .fetch_all(&db)
-        .await?;
-
-    let mut refs = vec![];
-    for row in rows {
-        let id = row.hash.parse::<ObjectId>()?.attach(&repo);
-        let commit = id.object()?.try_into_commit()?;
-
-        refs.push(Ref {
-            name: row.name,
-            hash: row.hash,
-            short: repo::format_commit_short(&commit)?,
-        });
-    }
+    let tracked_refs = sqlx::query!(
+        "\
+        SELECT name, hash, message FROM refs \
+        JOIN commits USING (hash) \
+        WHERE tracked \
+        "
+    )
+    .fetch(&db)
+    .map_ok(|r| Ref {
+        name: r.name,
+        short: db::format_commit_short(&r.hash, &r.message),
+        hash: r.hash,
+    })
+    .try_collect::<Vec<_>>()
+    .await?;
 
     Ok(IndexTemplate {
         base: config.web.base(),
         repo_name: config.repo.name(),
         current: "index".to_string(),
-        refs,
+        tracked_refs,
     })
 }

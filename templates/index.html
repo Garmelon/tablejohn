@@ -5,7 +5,7 @@
 {% block body %}
 <h2>Tracked refs</h2>
 <dl>
-    {% for ref in refs %}
+    {% for ref in tracked_refs %}
     <dt>{{ ref.name }}</dt>
     <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
     {% endfor %}

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT name, hash FROM refs WHERE tracked",
+  "query": "SELECT name, hash, message FROM refs JOIN commits USING (hash) WHERE tracked ",
   "describe": {
     "columns": [
       {
@@ -12,6 +12,11 @@
         "name": "hash",
         "ordinal": 1,
         "type_info": "Text"
+      },
+      {
+        "name": "message",
+        "ordinal": 2,
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -19,8 +24,9 @@
     },
     "nullable": [
       false,
+      false,
       false
     ]
   },
-  "hash": "3e31ed6194d487b58b8aa0f10438b731232104af05b8e5bd056b69e69c91b703"
+  "hash": "0ac905715f402ec22f28dad89ba60f21644418d1f483aecbcd425a0b69c16bb3"
 }
