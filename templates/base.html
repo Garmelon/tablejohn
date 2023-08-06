@@ -18,6 +18,9 @@
         <a href="{{ base.root }}/commit/" {% if base.current=="commit" %} class="current" {% endif %}>
             commit
         </a>
+        <a href="{{ base.root }}/queue/" {% if base.current=="queue" %} class="current" {% endif %}>
+            queue
+        </a>
     </nav>
     {% block body %}{% endblock %}
 </body>

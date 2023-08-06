@@ -1,6 +1,7 @@
 mod commit;
 mod commit_hash;
 mod index;
+mod queue;
 mod r#static;
 
 use axum::{routing::get, Router, Server};
@@ -10,6 +11,7 @@ use crate::{config::Config, somehow, state::AppState};
 pub enum Tab {
     Index,
     Commit,
+    Queue,
 }
 
 pub struct Base {
@@ -23,6 +25,7 @@ impl Base {
         let current = match tab {
             Tab::Index => "index",
             Tab::Commit => "commit",
+            Tab::Queue => "queue",
         };
         Self {
             root: config.web.base(),
@@ -39,6 +42,7 @@ pub async fn run(state: AppState) -> somehow::Result<()> {
         .route("/", get(index::get))
         .route("/commit/", get(commit::get))
         .route("/commit/:hash", get(commit_hash::get))
+        .route("/queue/", get(queue::get))
         .fallback(get(r#static::static_handler))
         .with_state(state.clone());
 
