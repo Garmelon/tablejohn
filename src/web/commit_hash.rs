@@ -29,7 +29,7 @@ impl Commit {
 
 #[derive(Template)]
 #[template(path = "commit_hash.html")]
-struct CommitIdTemplate {
+struct CommitHashTemplate {
     base: Base,
     hash: String,
     author: String,
@@ -97,7 +97,7 @@ pub async fn get(
     .try_collect::<Vec<_>>()
     .await?;
 
-    Ok(CommitIdTemplate {
+    Ok(CommitHashTemplate {
         base: Base::new(config, Tab::Commit),
         hash: commit.hash,
         author: commit.author,
