@@ -60,6 +60,7 @@ pub async fn get(
         SELECT hash, message, reachable FROM commits \
         JOIN commit_links ON hash = parent \
         WHERE child = ? \
+        ORDER BY reachable DESC, unixepoch(committer_date) ASC \
         ",
         hash
     )
@@ -73,6 +74,7 @@ pub async fn get(
         SELECT hash, message, reachable FROM commits \
         JOIN commit_links ON hash = child \
         WHERE parent = ? \
+        ORDER BY reachable DESC, unixepoch(committer_date) ASC \
         ",
         hash
     )

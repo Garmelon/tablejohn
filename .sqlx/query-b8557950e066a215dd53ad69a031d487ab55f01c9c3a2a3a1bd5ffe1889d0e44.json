@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT hash, message, reachable FROM commits JOIN commit_links ON hash = child WHERE parent = ? ",
+  "query": "SELECT hash, message, reachable FROM commits JOIN commit_links ON hash = child WHERE parent = ? ORDER BY reachable DESC, unixepoch(committer_date) ASC ",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "73bdd8a83f317d9f815d5d00215de3f740730b01048f73e62f8931e5dafa3d2f"
+  "hash": "b8557950e066a215dd53ad69a031d487ab55f01c9c3a2a3a1bd5ffe1889d0e44"
 }
