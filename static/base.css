@@ -81,9 +81,14 @@ dd {
     column-gap: 1ch;
 }
 
-.commit .untracked,
-.commit .untracked a {
+.commit .reachable,
+.commit .reachable a {
     color: #777;
+}
+
+.commit .orphaned,
+.commit .orphaned a {
+    color: #a33;
 }
 
 .commit pre {

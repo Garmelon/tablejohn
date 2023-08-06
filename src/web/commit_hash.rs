@@ -1,29 +1,27 @@
-use std::sync::Arc;
-
 use askama::Template;
 use axum::{
     extract::{Path, State},
-    response::IntoResponse,
+    http::StatusCode,
+    response::{IntoResponse, Response},
 };
-use gix::{prelude::ObjectIdExt, Id, ObjectId, ThreadSafeRepository};
+use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
-use crate::{config::Config, repo, somehow};
+use crate::{config::Config, db, somehow};
 
 struct Commit {
     hash: String,
     description: String,
-    tracked: bool,
+    reachable: i64,
 }
 
 impl Commit {
-    fn new(id: Id<'_>, tracked: bool) -> somehow::Result<Self> {
-        let commit = id.object()?.try_into_commit()?;
-        Ok(Self {
-            hash: id.to_string(),
-            description: repo::format_commit_short(&commit)?,
-            tracked,
-        })
+    fn new(hash: String, message: &str, reachable: i64) -> Self {
+        Self {
+            description: db::format_commit_short(&hash, message),
+            hash,
+            reachable,
+        }
     }
 }
 
@@ -34,66 +32,69 @@ struct CommitIdTemplate {
     repo_name: String,
     current: String,
     hash: String,
-    summary: String,
-    message: String,
     author: String,
     author_date: String,
     commit: String,
     commit_date: String,
     parents: Vec<Commit>,
     children: Vec<Commit>,
+    summary: String,
+    message: String,
+    reachable: i64,
 }
 
 pub async fn get(
     Path(hash): Path<String>,
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
-    State(repo): State<Arc<ThreadSafeRepository>>,
-) -> somehow::Result<impl IntoResponse> {
-    // Do this first because a &Repository can't be kept across awaits.
-    let child_rows = sqlx::query!(
-        "
-SELECT child, reachable FROM commit_links
-JOIN commits ON hash = child
-WHERE parent = ?
-    ",
+) -> somehow::Result<Response> {
+    let Some(commit) = sqlx::query!("SELECT * FROM commits WHERE hash = ?", hash)
+        .fetch_optional(&db)
+        .await?
+    else {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    };
+
+    let parents = sqlx::query!(
+        "\
+        SELECT hash, message, reachable FROM commits \
+        JOIN commit_links ON hash = parent \
+        WHERE child = ? \
+        ",
         hash
     )
-    .fetch_all(&db)
+    .fetch(&db)
+    .map_ok(|r| Commit::new(r.hash, &r.message, r.reachable))
+    .try_collect::<Vec<_>>()
     .await?;
 
-    // TODO Store commit info in db and avoid Repository
-    // TODO Include untracked info for current commit
-    let repo = repo.to_thread_local();
-    let id = hash.parse::<ObjectId>()?.attach(&repo);
-    let commit = id.object()?.try_into_commit()?;
-    let author_info = commit.author()?;
-    let committer_info = commit.committer()?;
-
-    let mut parents = vec![];
-    for id in commit.parent_ids() {
-        // TODO Include untracked info for parents
-        parents.push(Commit::new(id, true)?);
-    }
-
-    let mut children = vec![];
-    for row in child_rows {
-        let id = row.child.parse::<ObjectId>()?.attach(&repo);
-        children.push(Commit::new(id, row.reachable != 0)?);
-    }
+    let children = sqlx::query!(
+        "\
+        SELECT hash, message, reachable FROM commits \
+        JOIN commit_links ON hash = child \
+        WHERE parent = ? \
+        ",
+        hash
+    )
+    .fetch(&db)
+    .map_ok(|r| Commit::new(r.hash, &r.message, r.reachable))
+    .try_collect::<Vec<_>>()
+    .await?;
 
     Ok(CommitIdTemplate {
         base: config.web.base(),
         repo_name: config.repo.name(),
         current: "commit".to_string(),
-        hash: id.to_string(),
-        summary: commit.message()?.summary().to_string(),
-        message: commit.message_raw()?.to_string().trim_end().to_string(),
-        author: repo::format_actor(author_info.actor())?,
-        author_date: repo::format_time(author_info.time),
-        commit: repo::format_actor(committer_info.actor())?,
-        commit_date: repo::format_time(committer_info.time),
+        hash: commit.hash,
+        author: commit.author,
+        author_date: db::format_time(&commit.author_date)?,
+        commit: commit.committer,
+        commit_date: db::format_time(&commit.committer_date)?,
         parents,
         children,
-    })
+        summary: db::summary(&commit.message),
+        message: commit.message.trim_end().to_string(),
+        reachable: commit.reachable,
+    }
+    .into_response())
 }

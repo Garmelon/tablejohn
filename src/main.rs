@@ -1,4 +1,5 @@
 mod config;
+mod db;
 mod recurring;
 mod repo;
 mod somehow;

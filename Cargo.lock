@@ -2761,6 +2761,7 @@ dependencies = [
  "directories",
  "futures",
  "gix",
+ "humantime",
  "humantime-serde",
  "mime_guess",
  "rust-embed",

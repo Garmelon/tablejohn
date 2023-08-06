@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT hash, message, reachable FROM commits JOIN commit_links ON hash = parent WHERE child = ? ",
+  "describe": {
+    "columns": [
+      {
+        "name": "hash",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "message",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "reachable",
+        "ordinal": 2,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "167a3c4e2ea3540b2608b75019a112916c8f4c413355366cca8b3e41715081c6"
+}
