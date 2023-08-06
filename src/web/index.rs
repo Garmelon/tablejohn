@@ -8,8 +8,8 @@ use crate::{config::Config, db, somehow};
 struct Ref {
     name: String,
     hash: String,
-    tracked: bool,
     short: String,
+    tracked: bool,
 }
 
 #[derive(Template)]
@@ -18,7 +18,8 @@ struct IndexTemplate {
     base: String,
     repo_name: String,
     current: String,
-    refs: Vec<Ref>,
+    tracked_refs: Vec<Ref>,
+    untracked_refs: Vec<Ref>,
 }
 
 pub async fn get(
@@ -29,6 +30,7 @@ pub async fn get(
         "\
         SELECT name, hash, tracked, message FROM refs \
         JOIN commits USING (hash) \
+        ORDER BY name ASC \
         "
     )
     .fetch(&db)
@@ -41,10 +43,21 @@ pub async fn get(
     .try_collect::<Vec<_>>()
     .await?;
 
+    let mut tracked_refs = vec![];
+    let mut untracked_refs = vec![];
+    for reference in refs {
+        if reference.tracked {
+            tracked_refs.push(reference);
+        } else {
+            untracked_refs.push(reference);
+        }
+    }
+
     Ok(IndexTemplate {
         base: config.web.base(),
         repo_name: config.repo.name(),
         current: "index".to_string(),
-        refs,
+        tracked_refs,
+        untracked_refs,
     })
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT name, hash, tracked, message FROM refs JOIN commits USING (hash) ",
+  "query": "SELECT name, hash, tracked, message FROM refs JOIN commits USING (hash) ORDER BY name ASC ",
   "describe": {
     "columns": [
       {
@@ -34,5 +34,5 @@
       false
     ]
   },
-  "hash": "1e09e422a6fd826b7dfdaf52a271e77672c4dbc933af42a59fd8a8459e495732"
+  "hash": "39e21f75c4f68be1e4f64c4a9c0a38974f12556b6ac463f21f7729f758dec886"
 }

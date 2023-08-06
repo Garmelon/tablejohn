@@ -5,24 +5,20 @@
 {% block body %}
 <h2>Refs</h2>
 <details>
-    <summary>Tracked</summary>
+    <summary>Tracked ({{ tracked_refs.len() }})</summary>
     <dl>
-        {% for ref in refs %}
-        {% if ref.tracked %}
+        {% for ref in tracked_refs %}
         <dt>{{ ref.name }}</dt>
         <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
-        {% endif %}
         {% endfor %}
     </dl>
 </details>
 <details>
-    <summary>Untracked</summary>
+    <summary>Untracked ({{ untracked_refs.len() }})</summary>
     <dl>
-        {% for ref in refs %}
-        {% if !ref.tracked %}
+        {% for ref in untracked_refs %}
         <dt>{{ ref.name }}</dt>
         <dd><a href="{{ base }}/commit/{{ ref.hash }}">{{ ref.short }}</a></dd>
-        {% endif %}
         {% endfor %}
     </dl>
 </details>
