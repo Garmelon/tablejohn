@@ -71,7 +71,7 @@ async fn insert_new_commits(
     conn: &mut SqliteConnection,
     new: &[Commit<'_>],
 ) -> somehow::Result<()> {
-    for commit in new {
+    for (i, commit) in new.iter().enumerate() {
         let hash = commit.id.to_string();
         let author_info = commit.author()?;
         let author = format_actor(author_info.actor())?;
@@ -102,7 +102,12 @@ async fn insert_new_commits(
         )
         .execute(&mut *conn)
         .await?;
+
+        if (i + 1) % 100000 == 0 {
+            debug!("Inserted {} commits so far", i + 1);
+        }
     }
+    debug!("Inserted {} commits in total", new.len());
     Ok(())
 }
 
@@ -110,7 +115,7 @@ async fn insert_new_commit_links(
     conn: &mut SqliteConnection,
     new: &[Commit<'_>],
 ) -> somehow::Result<()> {
-    for commit in new {
+    for (i, commit) in new.iter().enumerate() {
         let child = commit.id.to_string();
         for parent in commit.parent_ids() {
             let parent = parent.to_string();
@@ -124,7 +129,12 @@ async fn insert_new_commit_links(
             .execute(&mut *conn)
             .await?;
         }
+
+        if (i + 1) % 100000 == 0 {
+            debug!("Inserted {} commits' links so far", i + 1);
+        }
     }
+    debug!("Inserted {} commits' links in total", new.len());
     Ok(())
 }
 
@@ -245,7 +255,6 @@ pub async fn update(db: &SqlitePool, repo: &Repository) -> somehow::Result<()> {
     if repo_is_new {
         mark_all_commits_as_old(conn).await?;
     }
-    debug!("Inserted {} new commits into db", new.len());
 
     update_refs(conn, refs).await?;
     if repo_is_new {
