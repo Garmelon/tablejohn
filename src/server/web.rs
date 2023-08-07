@@ -5,9 +5,11 @@ mod queue;
 mod queue_id;
 mod r#static;
 
-use axum::{routing::get, Router, Server};
+use axum::{routing::get, Router};
 
-use crate::{config::Config, somehow, state::AppState};
+use crate::{config::Config, somehow};
+
+use super::Server;
 
 pub enum Tab {
     Index,
@@ -37,7 +39,7 @@ impl Base {
     }
 }
 
-pub async fn run(state: AppState) -> somehow::Result<()> {
+pub async fn run(state: Server) -> somehow::Result<()> {
     // TODO Add text body to body-less status codes
 
     let app = Router::new()
@@ -50,7 +52,7 @@ pub async fn run(state: AppState) -> somehow::Result<()> {
         .fallback(get(r#static::static_handler))
         .with_state(state.clone());
 
-    Server::bind(&"0.0.0.0:8000".parse().unwrap())
+    axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
         .serve(app.into_make_service())
         .await?;
 

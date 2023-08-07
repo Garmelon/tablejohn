@@ -2,14 +2,12 @@ mod args;
 mod config;
 mod server;
 mod somehow;
-mod state;
 mod util;
 
 use std::{io, path::PathBuf, process};
 
 use clap::Parser;
 use directories::ProjectDirs;
-use state::AppState;
 use tokio::{select, signal::unix::SignalKind};
 use tracing::{debug, error, info, Level};
 use tracing_subscriber::{
@@ -19,6 +17,7 @@ use tracing_subscriber::{
 use crate::{
     args::{Args, NAME, VERSION},
     config::Config,
+    server::Server,
 };
 
 fn set_up_logging(verbose: u8) {
@@ -99,12 +98,12 @@ async fn run() -> somehow::Result<()> {
     info!("You are running {NAME} {VERSION}");
 
     let config = load_config(args.config)?;
-    let state = AppState::new(config, &args.db, &args.repo).await?;
+    let server = Server::new(config, &args.db, &args.repo).await?;
 
     info!("Startup complete, running");
     select! {
         _ = wait_for_signal() => {}
-        _ = server::run(state.clone()) => {}
+        _ = server.run() => {}
     }
 
     select! {
@@ -118,7 +117,7 @@ async fn run() -> somehow::Result<()> {
         // In order to fix this, I could maybe register a bare signal handler
         // (instead of using tokio streams) that just calls process::exit(1) and
         // nothing else?
-        _ = state.shut_down() => {}
+        _ = server.shut_down() => {}
     }
 
     Ok(())

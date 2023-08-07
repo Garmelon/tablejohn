@@ -8,9 +8,9 @@ mod repo;
 
 use tracing::{debug_span, error, Instrument};
 
-use crate::state::AppState;
+use super::Server;
 
-async fn recurring_task(state: &AppState) {
+async fn recurring_task(state: &Server) {
     async {
         if let Err(e) = repo::update(&state.db, state.repo.clone()).await {
             error!("Error updating repo:\n{e:?}");
@@ -28,7 +28,7 @@ async fn recurring_task(state: &AppState) {
     .await;
 }
 
-pub async fn run(state: AppState) {
+pub async fn run(state: Server) {
     loop {
         recurring_task(&state).await;
         tokio::time::sleep(state.config.repo.update_delay).await;
