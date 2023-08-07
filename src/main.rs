@@ -1,3 +1,4 @@
+mod args;
 mod config;
 mod recurring;
 mod somehow;
@@ -16,25 +17,10 @@ use tracing_subscriber::{
     filter::Targets, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };
 
-use crate::config::Config;
-
-const NAME: &str = env!("CARGO_PKG_NAME");
-const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("VERGEN_GIT_SHA"), ")");
-
-#[derive(Debug, clap::Parser)]
-#[command(name = NAME, version = VERSION)]
-struct Args {
-    /// Path to the repo's tablejohn database.
-    db: PathBuf,
-    /// Path to the git repo.
-    repo: PathBuf,
-    /// Path to the config file.
-    #[arg(long, short)]
-    config: Option<PathBuf>,
-    /// Enable increasingly more verbose output
-    #[arg(long, short, action = clap::ArgAction::Count)]
-    verbose: u8,
-}
+use crate::{
+    args::{Args, NAME, VERSION},
+    config::Config,
+};
 
 fn set_up_logging(verbose: u8) {
     let filter = Targets::new()
