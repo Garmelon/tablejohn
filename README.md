@@ -8,10 +8,17 @@ The following tools are required:
 - `cargo` and `rustc` (best installed via [rustup](https://rustup.rs/))
 - `tsc`, the [typescript](https://www.typescriptlang.org/) compiler
 
-Once you have installed these tools, run `cargo build --release`.
-The compiled binary will be located at `target/release/tablejohn`.
-It contains everything needed to run tablejohn.
-No additional files are required.
+Once you have installed these tools, run the following command to install or
+update tablejohn to `~/.cargo/bin/tablejohn`:
+```
+cargo install --force --git https://github.com/Garmelon/tablejohn
+```
+
+Alternatively, clone the repo and run `cargo build --release`. The compiled
+binary will be located at `target/release/tablejohn`.
+
+The binary produced by either of these steps contains everything needed to run
+tablejohn. Not additional files are required.
 
 ## Developing
 
