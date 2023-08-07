@@ -54,24 +54,14 @@ impl Default for Web {
     }
 }
 
-impl Web {
-    pub fn base(&self) -> String {
-        self.base
-            .strip_suffix('/')
-            .unwrap_or(&self.base)
-            .to_string()
-    }
-}
-
 #[derive(Debug, Default, Deserialize)]
-pub struct Config {
-    pub repo: Repo,
-    pub web: Web,
+struct ConfigFile {
+    repo: Repo,
+    web: Web,
 }
 
-impl Config {
-    pub fn load(path: &Path) -> somehow::Result<Self> {
-        info!(path = %path.display(), "Loading config");
+impl ConfigFile {
+    fn load(path: &Path) -> somehow::Result<Self> {
         let config = match fs::read_to_string(path) {
             Ok(str) => toml::from_str(&str)?,
             Err(e) if e.kind() == ErrorKind::NotFound => {
@@ -81,7 +71,38 @@ impl Config {
             Err(e) => Err(e)?,
         };
 
-        debug!("Loaded config:\n{config:#?}");
         Ok(config)
+    }
+
+    fn web_base(&self) -> String {
+        self.web
+            .base
+            .strip_prefix('/')
+            .unwrap_or(&self.web.base)
+            .strip_suffix('/')
+            .unwrap_or(&self.web.base)
+            .to_string()
+    }
+}
+
+pub struct Config {
+    pub repo_name: String,
+    pub repo_update_delay: Duration,
+    pub web_base: String,
+}
+
+impl Config {
+    pub fn load(path: &Path) -> somehow::Result<Self> {
+        info!(path = %path.display(), "Loading config");
+        let config_file = ConfigFile::load(path)?;
+        debug!("Loaded config file:\n{config_file:#?}");
+
+        let web_base = config_file.web_base();
+
+        Ok(Self {
+            repo_name: config_file.repo.name,
+            repo_update_delay: config_file.repo.update_delay,
+            web_base,
+        })
     }
 }

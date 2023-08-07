@@ -32,8 +32,8 @@ impl Base {
             Tab::Queue => "queue",
         };
         Self {
-            root: config.web.base(),
-            repo_name: config.repo.name.clone(),
+            root: config.web_base.clone(),
+            repo_name: config.repo_name.clone(),
             current: current.to_string(),
         }
     }

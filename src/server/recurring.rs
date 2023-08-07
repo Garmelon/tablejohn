@@ -31,6 +31,6 @@ async fn recurring_task(state: &Server) {
 pub async fn run(state: Server) {
     loop {
         recurring_task(&state).await;
-        tokio::time::sleep(state.config.repo.update_delay).await;
+        tokio::time::sleep(state.config.repo_update_delay).await;
     }
 }
