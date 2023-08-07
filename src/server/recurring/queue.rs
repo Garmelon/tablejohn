@@ -2,7 +2,7 @@ use sqlx::{Acquire, SqlitePool};
 use time::OffsetDateTime;
 use tracing::debug;
 
-use crate::{somehow, util};
+use crate::{server::util, somehow};
 
 pub async fn update(db: &SqlitePool) -> somehow::Result<()> {
     debug!("Updating queue");

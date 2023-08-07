@@ -2,7 +2,6 @@ mod args;
 mod config;
 mod server;
 mod somehow;
-mod util;
 
 use std::{io, path::PathBuf, process};
 

@@ -9,7 +9,7 @@ use gix::{
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use tracing::{debug, info};
 
-use crate::{somehow, util};
+use crate::{server::util, somehow};
 
 async fn get_all_commit_hashes_from_db(
     conn: &mut SqliteConnection,
