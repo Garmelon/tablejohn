@@ -1,5 +1,6 @@
 mod args;
 mod config;
+mod runner;
 mod server;
 mod somehow;
 
@@ -16,6 +17,7 @@ use tracing_subscriber::{
 use crate::{
     args::{Args, Command, NAME, VERSION},
     config::Config,
+    runner::Runner,
     server::Server,
 };
 
@@ -119,6 +121,14 @@ async fn run() -> somehow::Result<()> {
                 // (instead of using tokio streams) that just calls process::exit(1) and
                 // nothing else?
                 _ = server.shut_down() => {}
+            }
+        }
+        Command::Runner => {
+            let runner = Runner::new();
+
+            select! {
+                _ = wait_for_signal() => {}
+                _ = runner.run() => {}
             }
         }
     }
