@@ -1,10 +1,9 @@
 mod args;
 mod config;
-mod recurring;
+mod server;
 mod somehow;
 mod state;
 mod util;
-mod web;
 
 use std::{io, path::PathBuf, process};
 
@@ -105,8 +104,7 @@ async fn run() -> somehow::Result<()> {
     info!("Startup complete, running");
     select! {
         _ = wait_for_signal() => {}
-        _ = web::run(state.clone()) => {}
-        _ = recurring::run(state.clone()) => {}
+        _ = server::run(state.clone()) => {}
     }
 
     select! {
