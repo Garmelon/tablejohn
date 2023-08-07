@@ -15,7 +15,7 @@ use tracing_subscriber::{
 };
 
 use crate::{
-    args::{Args, NAME, VERSION},
+    args::{Args, Command, NAME, VERSION},
     config::Config,
     server::Server,
 };
@@ -98,26 +98,30 @@ async fn run() -> somehow::Result<()> {
     info!("You are running {NAME} {VERSION}");
 
     let config = load_config(args.config)?;
-    let server = Server::new(config, &args.db, &args.repo).await?;
 
-    info!("Startup complete, running");
-    select! {
-        _ = wait_for_signal() => {}
-        _ = server.run() => {}
-    }
+    match args.command {
+        Command::Server(command) => {
+            let server = Server::new(config, command).await?;
 
-    select! {
-        _ = die_on_signal() => {}
-        // For some reason, the thread pool shutting down seems to block
-        // receiving further signals if a heavy sql operation is currently
-        // running. Maybe this is due to the thread pool not deferring blocking
-        // work to a separate thread? In any case, replacing it with a sleep
-        // doesn't block the signals.
-        //
-        // In order to fix this, I could maybe register a bare signal handler
-        // (instead of using tokio streams) that just calls process::exit(1) and
-        // nothing else?
-        _ = server.shut_down() => {}
+            select! {
+                _ = wait_for_signal() => {}
+                _ = server.run() => {}
+            }
+
+            select! {
+                _ = die_on_signal() => {}
+                // For some reason, the thread pool shutting down seems to block
+                // receiving further signals if a heavy sql operation is currently
+                // running. Maybe this is due to the thread pool not deferring blocking
+                // work to a separate thread? In any case, replacing it with a sleep
+                // doesn't block the signals.
+                //
+                // In order to fix this, I could maybe register a bare signal handler
+                // (instead of using tokio streams) that just calls process::exit(1) and
+                // nothing else?
+                _ = server.shut_down() => {}
+            }
+        }
     }
 
     Ok(())

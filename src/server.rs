@@ -12,7 +12,7 @@ use sqlx::{
 use tokio::select;
 use tracing::{debug, info};
 
-use crate::{config::Config, somehow};
+use crate::{args::ServerCommand, config::Config, somehow};
 
 async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
@@ -61,15 +61,11 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn new(
-        config: &'static Config,
-        db_path: &Path,
-        repo_path: &Path,
-    ) -> somehow::Result<Self> {
+    pub async fn new(config: &'static Config, command: ServerCommand) -> somehow::Result<Self> {
         Ok(Self {
             config,
-            db: open_db(db_path).await?,
-            repo: Arc::new(open_repo(repo_path)?),
+            db: open_db(&command.db).await?,
+            repo: Arc::new(open_repo(&command.repo)?),
         })
     }
 
