@@ -15,7 +15,7 @@ humantime = "2.1.0"
 humantime-serde = "1.1.1"
 mime_guess = "2.0.4"
 rand = "0.8.5"
-rust-embed = "6.8.1"
+rust-embed = { version = "6.8.1", features = ["interpolate-folder-path"] }
 serde = { version = "1.0.181", features = ["derive"] }
 sqlx = { version = "0.7.1", features = ["runtime-tokio", "sqlite", "time"] }
 time = { version = "0.3.25", features = ["formatting", "macros", "parsing"] }

@@ -1,10 +1,10 @@
 { // See also https://aka.ms/tsconfig
-  "include": [ "static/**/*" ],
+  "include": [ "scripts/**/*" ],
 
   "compilerOptions": {
     "target": "ES2015",
     "module": "ES2015",
-    "rootDir": "static",
+    "rootDir": "scripts",
     "outDir": "target/static",
 
     // Misc
