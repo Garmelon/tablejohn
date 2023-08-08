@@ -10,6 +10,10 @@ use crate::somehow;
 mod default {
     use std::time::Duration;
 
+    pub fn web_base() -> String {
+        "".to_string()
+    }
+
     pub fn repo_name() -> String {
         "local repo".to_string()
     }
@@ -17,9 +21,19 @@ mod default {
     pub fn repo_update_delay() -> Duration {
         Duration::from_secs(60)
     }
+}
 
-    pub fn web_base() -> String {
-        "".to_string()
+#[derive(Debug, Deserialize)]
+pub struct Web {
+    #[serde(default = "default::web_base")]
+    pub base: String,
+}
+
+impl Default for Web {
+    fn default() -> Self {
+        Self {
+            base: default::web_base(),
+        }
     }
 }
 
@@ -36,20 +50,6 @@ impl Default for Repo {
         Self {
             name: default::repo_name(),
             update_delay: default::repo_update_delay(),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Web {
-    #[serde(default = "default::web_base")]
-    pub base: String,
-}
-
-impl Default for Web {
-    fn default() -> Self {
-        Self {
-            base: default::web_base(),
         }
     }
 }
