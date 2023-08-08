@@ -1,11 +1,21 @@
 //! Configuration from a file.
 
-use std::{fs, io::ErrorKind, net::SocketAddr, path::Path, time::Duration};
+use std::{
+    fs,
+    io::ErrorKind,
+    net::SocketAddr,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
+use directories::ProjectDirs;
 use serde::Deserialize;
 use tracing::{debug, info};
 
-use crate::somehow;
+use crate::{
+    args::{Args, Command, ServerCommand},
+    somehow,
+};
 
 mod default {
     use std::{net::SocketAddr, time::Duration};
@@ -17,10 +27,6 @@ mod default {
     pub fn web_address() -> SocketAddr {
         // Port chosen by fair dice roll
         "[::1]:8221".parse().unwrap()
-    }
-
-    pub fn repo_name() -> String {
-        "local repo".to_string()
     }
 
     pub fn repo_update_delay() -> Duration {
@@ -47,8 +53,7 @@ impl Default for Web {
 
 #[derive(Debug, Deserialize)]
 pub struct Repo {
-    #[serde(default = "default::repo_name")]
-    pub name: String,
+    pub name: Option<String>,
     #[serde(default = "default::repo_update_delay", with = "humantime_serde")]
     pub update_delay: Duration,
 }
@@ -56,7 +61,7 @@ pub struct Repo {
 impl Default for Repo {
     fn default() -> Self {
         Self {
-            name: default::repo_name(),
+            name: None,
             update_delay: default::repo_update_delay(),
         }
     }
@@ -91,6 +96,22 @@ impl ConfigFile {
             .unwrap_or(&self.web.base)
             .to_string()
     }
+
+    fn repo_name(&self, args: &Args) -> somehow::Result<String> {
+        if let Some(name) = &self.repo.name {
+            return Ok(name.clone());
+        }
+
+        if let Command::Server(ServerCommand { repo, .. }) = &args.command {
+            if let Some(name) = repo.canonicalize()?.file_name() {
+                let name = name.to_string_lossy();
+                let name = name.strip_suffix(".git").unwrap_or(&name).to_string();
+                return Ok(name);
+            }
+        }
+
+        Ok("unnamed repo".to_string())
+    }
 }
 
 pub struct Config {
@@ -101,17 +122,30 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load(path: &Path) -> somehow::Result<Self> {
+    fn path(args: &Args) -> PathBuf {
+        if let Some(path) = &args.config {
+            return path.clone();
+        }
+
+        ProjectDirs::from("de", "plugh", "tablejohn")
+            .expect("could not determine home directory")
+            .config_dir()
+            .join("config.toml")
+    }
+
+    pub fn load(args: &Args) -> somehow::Result<Self> {
+        let path = Self::path(args);
         info!(path = %path.display(), "Loading config");
-        let config_file = ConfigFile::load(path)?;
+        let config_file = ConfigFile::load(&path)?;
         debug!("Loaded config file:\n{config_file:#?}");
 
         let web_base = config_file.web_base();
+        let repo_name = config_file.repo_name(args)?;
 
         Ok(Self {
             web_base,
             web_address: config_file.web.address,
-            repo_name: config_file.repo.name,
+            repo_name,
             repo_update_delay: config_file.repo.update_delay,
         })
     }

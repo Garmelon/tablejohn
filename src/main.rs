@@ -4,10 +4,9 @@ mod runner;
 mod server;
 mod somehow;
 
-use std::{io, path::PathBuf, process};
+use std::{io, process};
 
 use clap::Parser;
-use directories::ProjectDirs;
 use tokio::{select, signal::unix::SignalKind};
 use tracing::{debug, error, info, Level};
 use tracing_subscriber::{
@@ -51,17 +50,6 @@ fn set_up_logging(verbose: u8) {
     }
 }
 
-fn load_config(path: Option<PathBuf>) -> somehow::Result<&'static Config> {
-    let config_path = path.unwrap_or_else(|| {
-        ProjectDirs::from("de", "plugh", "tablejohn")
-            .expect("could not determine home directory")
-            .config_dir()
-            .join("config.toml")
-    });
-
-    Ok(Box::leak(Box::new(Config::load(&config_path)?)))
-}
-
 async fn wait_for_signal() -> io::Result<()> {
     debug!("Listening to signals");
 
@@ -98,7 +86,7 @@ async fn run() -> somehow::Result<()> {
     set_up_logging(args.verbose);
     info!("You are running {NAME} {VERSION}");
 
-    let config = load_config(args.config)?;
+    let config = Box::leak(Box::new(Config::load(&args)?));
 
     match args.command {
         Command::Server(command) => {
