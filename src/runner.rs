@@ -1,10 +1,14 @@
 use tracing::error;
 
-pub struct Runner {}
+use crate::config::Config;
+
+pub struct Runner {
+    config: &'static Config,
+}
 
 impl Runner {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(config: &'static Config) -> Self {
+        Self { config }
     }
 
     pub async fn run(&self) {

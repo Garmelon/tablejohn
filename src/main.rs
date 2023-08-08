@@ -124,7 +124,7 @@ async fn run() -> somehow::Result<()> {
             }
         }
         Command::Runner => {
-            let runner = Runner::new();
+            let runner = Runner::new(config);
 
             select! {
                 _ = wait_for_signal() => {}
