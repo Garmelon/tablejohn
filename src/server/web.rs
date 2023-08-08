@@ -39,7 +39,7 @@ impl Base {
     }
 }
 
-pub async fn run(state: Server) -> somehow::Result<()> {
+pub async fn run(server: Server) -> somehow::Result<()> {
     // TODO Add text body to body-less status codes
 
     let app = Router::new()
@@ -50,9 +50,9 @@ pub async fn run(state: Server) -> somehow::Result<()> {
         .route("/queue/table", get(queue::get_table))
         .route("/queue/:id", get(queue_id::get))
         .fallback(get(r#static::static_handler))
-        .with_state(state.clone());
+        .with_state(server.clone());
 
-    axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
+    axum::Server::bind(&server.config.web_address)
         .serve(app.into_make_service())
         .await?;
 

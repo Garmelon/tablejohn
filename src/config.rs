@@ -1,6 +1,6 @@
 //! Configuration from a file.
 
-use std::{fs, io::ErrorKind, path::Path, time::Duration};
+use std::{fs, io::ErrorKind, net::SocketAddr, path::Path, time::Duration};
 
 use serde::Deserialize;
 use tracing::{debug, info};
@@ -8,10 +8,15 @@ use tracing::{debug, info};
 use crate::somehow;
 
 mod default {
-    use std::time::Duration;
+    use std::{net::SocketAddr, time::Duration};
 
     pub fn web_base() -> String {
         "".to_string()
+    }
+
+    pub fn web_address() -> SocketAddr {
+        // Port chosen by fair dice roll
+        "[::]:8221".parse().unwrap()
     }
 
     pub fn repo_name() -> String {
@@ -27,12 +32,15 @@ mod default {
 pub struct Web {
     #[serde(default = "default::web_base")]
     pub base: String,
+    #[serde(default = "default::web_address")]
+    pub address: SocketAddr,
 }
 
 impl Default for Web {
     fn default() -> Self {
         Self {
             base: default::web_base(),
+            address: default::web_address(),
         }
     }
 }
@@ -86,9 +94,10 @@ impl ConfigFile {
 }
 
 pub struct Config {
+    pub web_base: String,
+    pub web_address: SocketAddr,
     pub repo_name: String,
     pub repo_update_delay: Duration,
-    pub web_base: String,
 }
 
 impl Config {
@@ -100,9 +109,10 @@ impl Config {
         let web_base = config_file.web_base();
 
         Ok(Self {
+            web_base,
+            web_address: config_file.web.address,
             repo_name: config_file.repo.name,
             repo_update_delay: config_file.repo.update_delay,
-            web_base,
         })
     }
 }
