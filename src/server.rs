@@ -56,9 +56,9 @@ fn open_repo(repo_path: &Path) -> somehow::Result<ThreadSafeRepository> {
 
 #[derive(Clone, FromRef)]
 pub struct Server {
-    pub config: &'static Config,
-    pub db: SqlitePool,
-    pub repo: Arc<ThreadSafeRepository>,
+    config: &'static Config,
+    db: SqlitePool,
+    repo: Arc<ThreadSafeRepository>,
 }
 
 impl Server {
