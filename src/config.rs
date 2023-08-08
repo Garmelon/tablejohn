@@ -16,7 +16,7 @@ mod default {
 
     pub fn web_address() -> SocketAddr {
         // Port chosen by fair dice roll
-        "[::]:8221".parse().unwrap()
+        "[::1]:8221".parse().unwrap()
     }
 
     pub fn repo_name() -> String {
