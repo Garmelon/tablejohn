@@ -1,6 +1,7 @@
 //! Configuration from a file.
 
 use std::{
+    collections::HashMap,
     fs,
     io::ErrorKind,
     net::SocketAddr,
@@ -31,6 +32,10 @@ mod default {
 
     pub fn repo_update_delay() -> Duration {
         Duration::from_secs(60)
+    }
+
+    pub fn runner_ping_delay() -> Duration {
+        Duration::from_secs(10)
     }
 }
 
@@ -67,10 +72,38 @@ impl Default for Repo {
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct RunnerServer {
+    url: String,
+    token: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct Runner {
+    name: Option<String>,
+    #[serde(default = "default::runner_ping_delay", with = "humantime_serde")]
+    ping_delay: Duration,
+    servers: HashMap<String, RunnerServer>,
+}
+
+impl Default for Runner {
+    fn default() -> Self {
+        Self {
+            name: None,
+            ping_delay: default::runner_ping_delay(),
+            servers: HashMap::new(),
+        }
+    }
+}
+
 #[derive(Debug, Default, Deserialize)]
 struct ConfigFile {
-    repo: Repo,
+    #[serde(default)]
     web: Web,
+    #[serde(default)]
+    repo: Repo,
+    #[serde(default)]
+    runner: Runner,
 }
 
 impl ConfigFile {
@@ -115,6 +148,35 @@ impl ConfigFile {
 
         Ok("unnamed repo".to_string())
     }
+
+    fn runner_name(&self) -> String {
+        if let Some(name) = &self.runner.name {
+            return name.clone();
+        }
+
+        gethostname::gethostname().to_string_lossy().to_string()
+    }
+
+    fn runner_servers(&self) -> HashMap<String, RunnerServerConfig> {
+        self.runner
+            .servers
+            .iter()
+            .map(|(name, server)| {
+                let url = server
+                    .url
+                    .strip_suffix('/')
+                    .unwrap_or(&server.url)
+                    .to_string();
+                let token = server.token.to_string();
+                (name.to_string(), RunnerServerConfig { url, token })
+            })
+            .collect()
+    }
+}
+
+pub struct RunnerServerConfig {
+    pub url: String,
+    pub token: String,
 }
 
 pub struct Config {
@@ -122,6 +184,9 @@ pub struct Config {
     pub web_address: SocketAddr,
     pub repo_name: String,
     pub repo_update_delay: Duration,
+    pub runner_name: String,
+    pub runner_ping_delay: Duration,
+    pub runner_servers: HashMap<String, RunnerServerConfig>,
 }
 
 impl Config {
@@ -144,12 +209,17 @@ impl Config {
 
         let web_base = config_file.web_base();
         let repo_name = config_file.repo_name(args)?;
+        let runner_name = config_file.runner_name();
+        let runner_servers = config_file.runner_servers();
 
         Ok(Self {
             web_base,
             web_address: config_file.web.address,
             repo_name,
             repo_update_delay: config_file.repo.update_delay,
+            runner_name,
+            runner_ping_delay: config_file.runner.ping_delay,
+            runner_servers,
         })
     }
 }
