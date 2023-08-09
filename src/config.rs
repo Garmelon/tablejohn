@@ -35,11 +35,11 @@ mod default {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Web {
+struct Web {
     #[serde(default = "default::web_base")]
-    pub base: String,
+    base: String,
     #[serde(default = "default::web_address")]
-    pub address: SocketAddr,
+    address: SocketAddr,
 }
 
 impl Default for Web {
@@ -52,10 +52,10 @@ impl Default for Web {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Repo {
-    pub name: Option<String>,
+struct Repo {
+    name: Option<String>,
     #[serde(default = "default::repo_update_delay", with = "humantime_serde")]
-    pub update_delay: Duration,
+    update_delay: Duration,
 }
 
 impl Default for Repo {
