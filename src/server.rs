@@ -58,22 +58,32 @@ fn open_repo(repo_path: &Path) -> somehow::Result<ThreadSafeRepository> {
 pub struct Server {
     config: &'static Config,
     db: SqlitePool,
-    repo: Arc<ThreadSafeRepository>,
+    repo: Option<Arc<ThreadSafeRepository>>,
 }
 
 impl Server {
     pub async fn new(config: &'static Config, command: ServerCommand) -> somehow::Result<Self> {
+        let repo = if let Some(repo) = command.repo.as_ref() {
+            Some(Arc::new(open_repo(repo)?))
+        } else {
+            None
+        };
+
         Ok(Self {
             config,
             db: open_db(&command.db).await?,
-            repo: Arc::new(open_repo(&command.repo)?),
+            repo,
         })
     }
 
     pub async fn run(&self) -> somehow::Result<()> {
-        select! {
-            e = web::run(self.clone()) => e,
-            () = recurring::run(self.clone()) => Ok(()),
+        if let Some(repo) = self.repo.clone() {
+            select! {
+                e = web::run(self.clone()) => e,
+                () = recurring::run(self.clone(), repo) => Ok(()),
+            }
+        } else {
+            web::run(self.clone()).await
         }
     }
 

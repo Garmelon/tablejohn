@@ -7,9 +7,8 @@ pub const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("VERGEN_
 pub struct ServerCommand {
     /// Path to the repo's tablejohn database.
     pub db: PathBuf,
-    // TODO Make repo optional
     /// Path to the git repo.
-    pub repo: PathBuf,
+    pub repo: Option<PathBuf>,
 }
 
 #[derive(Debug, clap::Parser)]

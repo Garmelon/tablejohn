@@ -102,8 +102,11 @@ impl ConfigFile {
             return Ok(name.clone());
         }
 
-        if let Command::Server(ServerCommand { repo, .. }) = &args.command {
-            if let Some(name) = repo.canonicalize()?.file_name() {
+        if let Command::Server(ServerCommand {
+            repo: Some(path), ..
+        }) = &args.command
+        {
+            if let Some(name) = path.canonicalize()?.file_name() {
                 let name = name.to_string_lossy();
                 let name = name.strip_suffix(".git").unwrap_or(&name).to_string();
                 return Ok(name);
