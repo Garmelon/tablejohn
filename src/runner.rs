@@ -1,3 +1,5 @@
+mod coordinator;
+
 use tracing::error;
 
 use crate::config::Config;
