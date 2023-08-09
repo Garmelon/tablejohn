@@ -2,7 +2,7 @@ use sqlx::{Acquire, SqlitePool};
 use time::OffsetDateTime;
 use tracing::debug;
 
-use crate::{server::util, somehow};
+use crate::somehow;
 
 pub async fn update(db: &SqlitePool) -> somehow::Result<()> {
     debug!("Updating queue");
@@ -17,13 +17,11 @@ pub async fn update(db: &SqlitePool) -> somehow::Result<()> {
 
     // Insert them into the queue
     for row in new {
-        let id = util::new_run_id();
         let date = OffsetDateTime::now_utc();
         sqlx::query!(
-            "INSERT INTO queue (id, hash, date) VALUES (?, ?, ?)",
-            id,
+            "INSERT INTO queue (hash, date) VALUES (?, ?)",
             row.hash,
-            date
+            date,
         )
         .execute(&mut *conn)
         .await?;

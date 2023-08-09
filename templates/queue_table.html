@@ -12,7 +12,7 @@
         {% for task in tasks %}
         <tr {% if task.odd %} class="odd" {% endif %}>
             <td>
-                <a href="{{ task.id }}">
+                <a href="{{ base.root }}/commit/{{ task.hash }}">
                     {% call util::commit_short(task.short, task.reachable) %}
                 </a>
             </td>

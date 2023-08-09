@@ -8,7 +8,7 @@ use crate::{config::Config, server::util, somehow};
 use super::{Base, Tab};
 
 struct Task {
-    id: String,
+    hash: String,
     short: String,
     reachable: i64,
     since: String,
@@ -20,7 +20,6 @@ async fn get_queue(db: &SqlitePool) -> somehow::Result<Vec<Task>> {
     let mut tasks = sqlx::query!(
         "\
         SELECT \
-            id, \
             hash, \
             message, \
             reachable, \
@@ -33,8 +32,8 @@ async fn get_queue(db: &SqlitePool) -> somehow::Result<Vec<Task>> {
     )
     .fetch(db)
     .map_ok(|r| Task {
-        id: r.id,
         short: util::format_commit_short(&r.hash, &r.message),
+        hash: r.hash,
         reachable: r.reachable,
         since: util::format_delta_from_now(r.date),
         priority: r.priority,
@@ -59,12 +58,19 @@ async fn get_queue(db: &SqlitePool) -> somehow::Result<Vec<Task>> {
 #[derive(Template)]
 #[template(path = "queue_table.html")]
 struct QueueTableTemplate {
+    base: Base,
     tasks: Vec<Task>,
 }
 
-pub async fn get_table(State(db): State<SqlitePool>) -> somehow::Result<impl IntoResponse> {
+pub async fn get_table(
+    State(config): State<&'static Config>,
+    State(db): State<SqlitePool>,
+) -> somehow::Result<impl IntoResponse> {
     let tasks = get_queue(&db).await?;
-    Ok(QueueTableTemplate { tasks })
+    Ok(QueueTableTemplate {
+        base: Base::new(config, Tab::Queue),
+        tasks,
+    })
 }
 #[derive(Template)]
 #[template(path = "queue.html")]
@@ -77,9 +83,10 @@ pub async fn get(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
+    let base = Base::new(config, Tab::Queue);
     let tasks = get_queue(&db).await?;
     Ok(QueueTemplate {
-        base: Base::new(config, Tab::Queue),
-        table: QueueTableTemplate { tasks },
+        base: base.clone(),
+        table: QueueTableTemplate { base, tasks },
     })
 }

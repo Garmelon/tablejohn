@@ -2,7 +2,6 @@ mod commit;
 mod commit_hash;
 mod index;
 mod queue;
-mod queue_id;
 mod r#static;
 
 use axum::{routing::get, Router};
@@ -48,7 +47,6 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .route("/commit/:hash", get(commit_hash::get))
         .route("/queue/", get(queue::get))
         .route("/queue/table", get(queue::get_table))
-        .route("/queue/:id", get(queue_id::get))
         .fallback(get(r#static::static_handler))
         .with_state(server.clone());
 
