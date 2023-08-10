@@ -1,7 +1,43 @@
 {% extends "base.html" %}
+{% import "util.html" as util %}
 
-{% block title %}commit{% endblock %}
+{% block title %}{{ summary }}{% endblock %}
 
 {% block body %}
-Sorry, nothing here yet.
+<h2>Commit</h2>
+<div class="commit">
+    <span class="hash">commit {{ hash }}</span>
+    <dl>
+        <dt>Author:</dt>
+        <dd>{{ author }}</dd>
+
+        <dt>AuthorDate:</dt>
+        <dd>{{ author_date }}</dd>
+
+        <dt>Commit:</dt>
+        <dd>{{ commit }}</dd>
+
+        <dt>CommitDate:</dt>
+        <dd>{{ commit_date }}</dd>
+
+        {% for commit in parents %}
+        <dt>Parent:</dt>
+        <dd>
+            <a href="{{ commit.hash }}">
+                {% call util::commit_short(commit.short, commit.reachable)%}
+            </a>
+        </dd>
+        {% endfor %}
+
+        {% for commit in children %}
+        <dt>Child:</dt>
+        <dd>
+            <a href="{{ commit.hash }}">
+                {% call util::commit_short(commit.short, commit.reachable)%}
+            </a>
+        </dd>
+        {% endfor %}
+    </dl>
+    <pre class="{% call util::r_class(reachable) %}" title="{% call util::r_title(reachable) %}">{{ message }}</pre>
+</div>
 {% endblock %}

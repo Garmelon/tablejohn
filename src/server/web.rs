@@ -1,6 +1,5 @@
 mod api;
 mod commit;
-mod commit_hash;
 mod index;
 mod queue;
 mod r#static;
@@ -44,8 +43,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
 
     let app = Router::new()
         .route("/", get(index::get))
-        .route("/commit/", get(commit::get))
-        .route("/commit/:hash", get(commit_hash::get))
+        .route("/commit/:hash", get(commit::get))
         .route("/queue/", get(queue::get))
         .route("/queue/table", get(queue::get_table))
         .merge(api::router(&server))
