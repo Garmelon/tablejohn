@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT hash FROM queue ORDER BY priority DESC, unixepoch(date) DESC, hash ASC ",
+  "describe": {
+    "columns": [
+      {
+        "name": "hash",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a1ffd52b6d9dc0c24e67db5a98f626df4efd1d2e78bc6055054cd05d80671314"
+}

@@ -65,15 +65,15 @@ think them through.
 
 ## Runner interaction
 
-Runner interaction happens via endpoints located at `/api/runner/`. All of these
-are behind BASIC authentication. The username is `runner` and the password must
-be the server's runner token. When the runner presents the correct token, the
-server trusts the data the runner sends, including the name, current state, and
-run ids.
+Runner interaction happens via endpoints located at `/api/runner/`. To access
+any endpoint, the runner must use Basic authentication. The username is the name
+of the runner and the password is the server's runner token. When the runner
+presents the correct token, the server trusts the data the runner sends,
+including the name, current state, and run ids.
 
-On the server side, runners are identified by the runner's self-reported
-identifier. This allows more human-readable and permanent links to runners than
-something like session ids.
+On the server side, runners are identified by the runner's self-reported name.
+This allows more human-readable and permanent links to runners than something
+like session ids.
 
 - POST `/api/runner/status`
     - Main endpoint for runner/server coordination

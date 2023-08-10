@@ -58,19 +58,7 @@ pub enum RunnerStatus {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Request {
-    /// The runner's name.
-    ///
-    /// This name is shown to the user in the UI and used to identify the runner
-    /// in URLs. Because of this, only these characters are allowed:
-    ///
-    /// - Letters from `a` to `z`, both lowercase and uppercase
-    /// - Digits from `0` to `9`
-    /// - The hyphen `-`, underscore `_`, and dot `.` characters
-    ///
-    /// Additionally, the name must be at least one character long.
-    pub name: String,
-
+pub struct RunnerRequest {
     /// Additional free-form info about the runner.
     ///
     /// This could for example be used to describe the runner's system specs.
@@ -111,7 +99,7 @@ pub struct Work {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Response {
+pub struct ServerResponse {
     /// Work the runner requested using [`Request::request_work].
     ///
     /// The runner may ignore this work and do something else. However, until

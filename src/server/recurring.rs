@@ -8,7 +8,7 @@ mod repo;
 
 use tracing::{debug_span, error, Instrument};
 
-use super::{BenchRepo, Repo, Server};
+use super::{Repo, Server};
 
 async fn recurring_task(state: &Server, repo: Repo) {
     async {
@@ -28,7 +28,7 @@ async fn recurring_task(state: &Server, repo: Repo) {
     .await;
 }
 
-pub(super) async fn run(server: Server, repo: Repo, bench_repo: Option<BenchRepo>) {
+pub(super) async fn run(server: Server, repo: Repo) {
     loop {
         recurring_task(&server, repo.clone()).await;
         tokio::time::sleep(server.config.repo_update_delay).await;

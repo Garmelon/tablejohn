@@ -1,3 +1,4 @@
+mod api;
 mod commit;
 mod commit_hash;
 mod index;
@@ -47,6 +48,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .route("/commit/:hash", get(commit_hash::get))
         .route("/queue/", get(queue::get))
         .route("/queue/table", get(queue::get_table))
+        .merge(api::router(&server))
         .fallback(get(r#static::static_handler))
         .with_state(server.clone());
 

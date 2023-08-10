@@ -1,8 +1,13 @@
 mod recurring;
+mod runners;
 mod util;
 mod web;
 
-use std::{path::Path, sync::Arc, time::Duration};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use axum::extract::FromRef;
 use gix::ThreadSafeRepository;
@@ -14,6 +19,8 @@ use tokio::select;
 use tracing::{debug, info};
 
 use crate::{args::ServerCommand, config::Config, somehow};
+
+use self::runners::Runners;
 
 async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
@@ -61,6 +68,7 @@ pub struct Server {
     db: SqlitePool,
     repo: Option<Repo>,
     bench_repo: Option<BenchRepo>,
+    runners: Arc<Mutex<Runners>>,
 }
 
 impl Server {
@@ -86,6 +94,7 @@ impl Server {
             db: open_db(&command.db).await?,
             repo,
             bench_repo,
+            runners: Arc::new(Mutex::new(Runners::new(config))),
         })
     }
 
@@ -93,7 +102,7 @@ impl Server {
         if let Some(repo) = self.repo.clone() {
             select! {
                 e = web::run(self.clone()) => e,
-                () = recurring::run(self.clone(), repo, self.bench_repo.clone()) => Ok(()),
+                () = recurring::run(self.clone(), repo) => Ok(()),
             }
         } else {
             web::run(self.clone()).await
