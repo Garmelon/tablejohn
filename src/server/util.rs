@@ -1,21 +1,9 @@
 use std::time::Duration;
 
 use gix::{actor::IdentityRef, date::Time};
-use rand::{rngs::OsRng, seq::IteratorRandom};
 use time::{macros::format_description, OffsetDateTime, UtcOffset};
 
 use crate::somehow;
-
-const RUN_ID_PREFIX: &str = "r-";
-const RUN_ID_CHARS: &str = "0123456789abcdefghijklmnopqrstuvwxyz";
-const RUN_ID_LEN: usize = 30; // log(16^40, base=len(RUN_ID_CHARS)) ~ 31
-
-pub fn new_run_id() -> String {
-    RUN_ID_PREFIX
-        .chars()
-        .chain((0..RUN_ID_LEN).map(|_| RUN_ID_CHARS.chars().choose(&mut OsRng).unwrap()))
-        .collect()
-}
 
 pub fn time_to_offset_datetime(time: Time) -> somehow::Result<OffsetDateTime> {
     Ok(OffsetDateTime::from_unix_timestamp(time.seconds)?
