@@ -34,7 +34,7 @@ pub async fn get(
     };
 
     Ok(RunnerTemplate {
-        base: Base::new(config, Tab::Commit),
+        base: Base::new(config, Tab::None),
         name,
         last_seen: util::format_time(info.last_seen),
     }

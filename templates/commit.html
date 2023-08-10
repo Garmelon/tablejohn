@@ -22,22 +22,15 @@
 
         {% for commit in parents %}
         <dt>Parent:</dt>
-        <dd>
-            <a href="{{ commit.hash }}">
-                {% call util::commit_short(commit.short, commit.reachable)%}
-            </a>
-        </dd>
+        <dd>{{ commit|safe }}</dd>
         {% endfor %}
 
         {% for commit in children %}
         <dt>Child:</dt>
-        <dd>
-            <a href="{{ commit.hash }}">
-                {% call util::commit_short(commit.short, commit.reachable)%}
-            </a>
-        </dd>
+        <dd>{{ commit|safe }}</dd>
         {% endfor %}
     </dl>
-    <pre class="{% call util::r_class(reachable) %}" title="{% call util::r_title(reachable) %}">{{ message }}</pre>
+    <pre class="{% call util::commit_class(reachable) %}"
+        title="{% call util::commit_title(reachable) %}">{{ message }}</pre>
 </div>
 {% endblock %}

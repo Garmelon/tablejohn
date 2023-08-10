@@ -13,7 +13,7 @@
         <tr {% if task.odd %} class="odd" {% endif %}>
             <td>
                 <a href="{{ base.root }}commit/{{ task.hash }}">
-                    {% call util::commit_short(task.short, task.reachable) %}
+                    {# {% call util::commit_short(task.short, task.reachable) %} #}
                 </a>
             </td>
             <td>{{ task.since }}</td>

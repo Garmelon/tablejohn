@@ -3,15 +3,13 @@ use axum::{extract::State, response::IntoResponse};
 use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
-use crate::{config::Config, server::util, somehow};
+use crate::{config::Config, somehow};
 
-use super::{Base, Tab};
+use super::{link::CommitLink, Base, Tab};
 
 struct Ref {
     name: String,
-    hash: String,
-    short: String,
-    reachable: i64,
+    commit: CommitLink,
     tracked: bool,
 }
 
@@ -27,6 +25,8 @@ pub async fn get(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
+    let base = Base::new(config, Tab::Index);
+
     let refs = sqlx::query!(
         "\
         SELECT name, hash, message, reachable, tracked \
@@ -37,10 +37,8 @@ pub async fn get(
     )
     .fetch(&db)
     .map_ok(|r| Ref {
-        short: util::format_commit_short(&r.hash, &r.message),
-        name: r.name,
-        hash: r.hash,
-        reachable: r.reachable,
+        name: r.name.clone(),
+        commit: CommitLink::new(&base, r.hash, &r.message, r.reachable),
         tracked: r.tracked != 0,
     })
     .try_collect::<Vec<_>>()

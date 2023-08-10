@@ -9,23 +9,8 @@ use sqlx::SqlitePool;
 
 use crate::{config::Config, server::util, somehow};
 
-use super::{Base, Tab};
+use super::{Base, Tab, link::CommitLink};
 
-struct Commit {
-    hash: String,
-    short: String,
-    reachable: i64,
-}
-
-impl Commit {
-    fn new(hash: String, message: &str, reachable: i64) -> Self {
-        Self {
-            short: util::format_commit_short(&hash, message),
-            hash,
-            reachable,
-        }
-    }
-}
 
 #[derive(Template)]
 #[template(path = "commit.html")]
@@ -36,8 +21,8 @@ struct CommitTemplate {
     author_date: String,
     commit: String,
     commit_date: String,
-    parents: Vec<Commit>,
-    children: Vec<Commit>,
+    parents: Vec<CommitLink>,
+    children: Vec<CommitLink>,
     summary: String,
     message: String,
     reachable: i64,
@@ -48,6 +33,8 @@ pub async fn get(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
+    let base = Base::new(config, Tab::None);
+
     let Some(commit) = sqlx::query!(
         "\
         SELECT \
@@ -79,7 +66,7 @@ pub async fn get(
         hash
     )
     .fetch(&db)
-    .map_ok(|r| Commit::new(r.hash, &r.message, r.reachable))
+    .map_ok(|r| CommitLink::new(&base, r.hash, &r.message, r.reachable))
     .try_collect::<Vec<_>>()
     .await?;
 
@@ -93,12 +80,12 @@ pub async fn get(
         hash
     )
     .fetch(&db)
-    .map_ok(|r| Commit::new(r.hash, &r.message, r.reachable))
+    .map_ok(|r| CommitLink::new(&base, r.hash, &r.message, r.reachable))
     .try_collect::<Vec<_>>()
     .await?;
 
     Ok(CommitTemplate {
-        base: Base::new(config, Tab::Commit),
+        base,
         hash: commit.hash,
         author: commit.author,
         author_date: util::format_time(commit.author_date),

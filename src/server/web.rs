@@ -1,6 +1,7 @@
 mod api;
 mod commit;
 mod index;
+mod link;
 mod queue;
 mod runner;
 mod r#static;
@@ -12,8 +13,8 @@ use crate::{config::Config, somehow};
 use super::Server;
 
 pub enum Tab {
+    None,
     Index,
-    Commit,
     Queue,
 }
 
@@ -21,20 +22,20 @@ pub enum Tab {
 pub struct Base {
     root: String,
     repo_name: String,
-    current: String,
+    current: &'static str,
 }
 
 impl Base {
     pub fn new(config: &Config, tab: Tab) -> Self {
         let current = match tab {
+            Tab::None => "",
             Tab::Index => "index",
-            Tab::Commit => "commit",
             Tab::Queue => "queue",
         };
         Self {
             root: config.web_base.clone(),
             repo_name: config.repo_name.clone(),
-            current: current.to_string(),
+            current,
         }
     }
 }

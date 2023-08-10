@@ -21,12 +21,6 @@ a:hover {
     font-weight: bold;
 }
 
-dl {
-    display: grid;
-    grid: auto-flow / min-content 1fr;
-    column-gap: 1ch;
-}
-
 dd {
     margin-left: 4ch;
 }
@@ -117,6 +111,12 @@ nav a:hover {
     margin: 0;
 }
 
+.commit dl {
+    display: grid;
+    grid: auto-flow / max-content 1fr;
+    column-gap: 1ch;
+}
+
 .commit .hash {
     color: #b70;
     font-weight: bold;
@@ -128,6 +128,16 @@ nav a:hover {
 }
 
 /* Runner */
+
+.runner * {
+    margin: 0;
+}
+
+.runner dl {
+    display: grid;
+    grid: auto-flow / max-content 1fr;
+    column-gap: 1ch;
+}
 
 .runner .name {
     color: #380;

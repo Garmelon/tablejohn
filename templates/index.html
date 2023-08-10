@@ -10,11 +10,7 @@
     <dl>
         {% for ref in tracked_refs %}
         <dt>{{ ref.name }}</dt>
-        <dd>
-            <a href="{{ base.root }}commit/{{ ref.hash }}">
-                {% call util::commit_short(ref.short, ref.reachable) %}
-            </a>
-        </dd>
+        <dd>{{ ref.commit|safe }}</dd>
         {% endfor %}
     </dl>
 </details>
@@ -23,11 +19,7 @@
     <dl>
         {% for ref in untracked_refs %}
         <dt>{{ ref.name }}</dt>
-        <dd>
-            <a href="{{ base.root }}commit/{{ ref.hash }}">
-                {% call util::commit_short(ref.short, ref.reachable) %}
-            </a>
-        </dd>
+        <dd>{{ ref.commit|safe }}</dd>
         {% endfor %}
     </dl>
 </details>
