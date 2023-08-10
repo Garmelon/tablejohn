@@ -66,34 +66,29 @@ think them through.
 ## Runner interaction
 
 Runner interaction happens via endpoints located at `/api/runner/`. All of these
-are behind BASIC authentication with a token the runner must present. Once the
-runner presents the correct token, the server trusts the data the runner sends,
-including the name, current state, and run ids.
+are behind BASIC authentication. The username is `runner` and the password must
+be the server's runner token. When the runner presents the correct token, the
+server trusts the data the runner sends, including the name, current state, and
+run ids.
 
 On the server side, runners are identified by the runner's self-reported
-identifier. This allows more permanent links to runners than something like
-session ids.
+identifier. This allows more human-readable and permanent links to runners than
+something like session ids.
 
-- POST `/api/runner/update`
+- POST `/api/runner/status`
     - Main endpoint for runner/server coordination
     - Runner periodically sends current status to server
-        - Includes a token randomly chosen by the runner
-        - Subsequent requests must include exactly the same token
+        - Includes a secret randomly chosen by the runner
+        - Subsequent requests must include exactly the same secret
         - Protects against the case where multiple runners share the same name
-    - Runner may include request for new task
-        - If so, server may respond with a new task
-        - The new task includes a run id along with commit info
-    - Runner may include task it is currently working on
-        - If so, server may respond with request to abort task
-- GET `/api/runner/bench`
-    - Get current bench script specification
-    - One of: Built-in, command, path-in-project, path-in-dir?
-- GET `/api/runner/bench/tar`
-    - If bench script is path-in-dir, get the dir files here
-- GET `/api/runner/run/<rid>/tar`
-    - Download tar of worktree for specified run
-- GET `/api/runner/run/<rid>/submit`
-    - Submit data when a run is done
+    - Runner may include request for new work
+        - If so, server may respond with a commit hash and bench method
+    - Runner may include current work
+        - If so, server may respond with request to abort the work
+- GET `/api/runner/repo/<hash>/tar`
+    - Get tar-ed commit from the server's repo, if any exists
+- GET `/api/runner/bench-repo/<hash>/tar`
+    - Get tar-ed commit from the server's bench repo, if any exist
 
 ## CLI Args
 
