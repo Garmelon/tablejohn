@@ -86,4 +86,8 @@ impl Runners {
     pub fn get(&self, name: &str) -> Option<RunnerInfo> {
         self.runners.get(name).cloned()
     }
+
+    pub fn get_all(&self) -> HashMap<String, RunnerInfo> {
+        self.runners.clone()
+    }
 }

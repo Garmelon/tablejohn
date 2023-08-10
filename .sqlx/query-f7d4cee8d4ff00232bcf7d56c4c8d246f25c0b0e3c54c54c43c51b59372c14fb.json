@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT message FROM commits WHERE hash = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "message",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f7d4cee8d4ff00232bcf7d56c4c8d246f25c0b0e3c54c54c43c51b59372c14fb"
+}

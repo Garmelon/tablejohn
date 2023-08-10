@@ -1,0 +1,56 @@
+{% import "util.html" as util %}
+
+<h2>Runners</h2>
+{% if runners.is_empty() %}
+<p>No runners connected</p>
+{% else %}
+<table>
+    <thead>
+        <tr>
+            <th>runner</th>
+            <th>status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for runner in runners %}
+        <tr>
+            <td>{{ runner.link|safe }}</td>
+            {% match runner.status %}
+            {% when Status::Idle %}
+            <td>idle</td>
+            {% when Status::Busy %}
+            <td>busy</td>
+            {% when Status::Working with (link) %}
+            <td>{{ link|safe }}</td>
+            {% endmatch %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<h2>Queue ({{ tasks.len() }})</h2>
+<table id="queue" data-count="{{ tasks.len() }}">
+    <thead>
+        <tr>
+            <th>commit</th>
+            <th>since</th>
+            <th>prio</th>
+            <th>runner</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for task in tasks %}
+        <tr {% if task.odd %} class="odd" {% endif %}>
+            <td>{{ task.commit|safe }}</td>
+            <td>{{ task.since }}</td>
+            <td>{{ task.priority }}</td>
+            {% if task.runners.is_empty() %}
+            <td>-</td>
+            {% else %}
+            <td>{{ task.runners|join(", ")|safe }}</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

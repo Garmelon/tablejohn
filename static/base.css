@@ -146,15 +146,15 @@ nav a:hover {
 
 /* Queue */
 
-.queue td:nth-child(2),
-.queue td:nth-child(3) {
+#queue td:nth-child(2),
+#queue td:nth-child(3) {
     text-align: right;
 }
 
-.queue .odd {
+#queue .odd {
     background-color: #eee;
 }
 
-.queue .odd:hover {
+#queue .odd:hover {
     background-color: #ddd;
 }

@@ -1,14 +1,13 @@
 const COUNT = document.getElementById("count")!;
-const QUEUE = document.getElementById("queue")!;
+const INNER = document.getElementById("inner")!;
 const REFRESH_SECONDS = 10;
 
 function update() {
-    fetch("table")
+    fetch("inner")
         .then(response => response.text())
         .then(text => {
-            QUEUE.innerHTML = text;
-            let count = QUEUE.querySelectorAll("tbody tr").length;
-            COUNT.textContent = String(count);
+            INNER.innerHTML = text;
+            let count = INNER.querySelector<HTMLElement>("#queue")?.dataset["count"]!;
             document.title = document.title.replace(/^queue \(\d+\)/, `queue (${count})`);
         });
 }

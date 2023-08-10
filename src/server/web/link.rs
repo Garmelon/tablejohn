@@ -7,9 +7,8 @@ use super::Base;
 #[derive(Template)]
 #[template(
     ext = "html",
-    source = "
+    source = "\
 {% import \"util.html\" as util %}
-
 <a href=\"{{ root }}commit/{{ hash }}\"
    class=\"{% call util::commit_class(reachable) %}\"
    title=\"{% call util::commit_title(reachable) %}\">
@@ -31,6 +30,53 @@ impl CommitLink {
             short: util::format_commit_short(&hash, message),
             hash,
             reachable,
+        }
+    }
+}
+
+#[derive(Template)]
+#[template(
+    ext = "html",
+    source = "\
+<a href=\"{{ root }}run/{{ id }}\">
+   Run of {{ short }}
+</a>
+"
+)]
+pub struct RunLink {
+    root: String,
+    id: String,
+    short: String,
+}
+
+impl RunLink {
+    pub fn new(base: &Base, id: String, hash: &str, message: &str) -> Self {
+        Self {
+            root: base.root.clone(),
+            id,
+            short: util::format_commit_short(hash, message),
+        }
+    }
+}
+#[derive(Template)]
+#[template(
+    ext = "html",
+    source = "\
+<a href=\"{{ root }}runner/{{ name }}\">
+   {{ name }}
+</a>
+"
+)]
+pub struct RunnerLink {
+    root: String,
+    name: String,
+}
+
+impl RunnerLink {
+    pub fn new(base: &Base, name: String) -> Self {
+        Self {
+            root: base.root.clone(),
+            name,
         }
     }
 }
