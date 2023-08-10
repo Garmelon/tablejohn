@@ -15,7 +15,7 @@ use tracing::{debug, info};
 
 use crate::{
     args::{Args, Command, ServerCommand},
-    somehow,
+    id, somehow,
 };
 
 mod default {
@@ -28,6 +28,10 @@ mod default {
     pub fn web_address() -> SocketAddr {
         // Port chosen by fair dice roll
         "[::1]:8221".parse().unwrap()
+    }
+
+    pub fn web_runner_timeout() -> Duration {
+        Duration::from_secs(60)
     }
 
     pub fn repo_update_delay() -> Duration {
@@ -43,8 +47,14 @@ mod default {
 struct Web {
     #[serde(default = "default::web_base")]
     base: String,
+
     #[serde(default = "default::web_address")]
     address: SocketAddr,
+
+    runner_token: Option<String>,
+
+    #[serde(default = "default::web_runner_timeout")]
+    runner_timeout: Duration,
 }
 
 impl Default for Web {
@@ -52,6 +62,8 @@ impl Default for Web {
         Self {
             base: default::web_base(),
             address: default::web_address(),
+            runner_token: None,
+            runner_timeout: default::web_runner_timeout(),
         }
     }
 }
@@ -59,6 +71,7 @@ impl Default for Web {
 #[derive(Debug, Deserialize)]
 struct Repo {
     name: Option<String>,
+
     #[serde(default = "default::repo_update_delay", with = "humantime_serde")]
     update_delay: Duration,
 }
@@ -81,8 +94,10 @@ struct RunnerServer {
 #[derive(Debug, Deserialize)]
 struct Runner {
     name: Option<String>,
+
     #[serde(default = "default::runner_ping_delay", with = "humantime_serde")]
     ping_delay: Duration,
+
     servers: HashMap<String, RunnerServer>,
 }
 
@@ -100,8 +115,10 @@ impl Default for Runner {
 struct ConfigFile {
     #[serde(default)]
     web: Web,
+
     #[serde(default)]
     repo: Repo,
+
     #[serde(default)]
     runner: Runner,
 }
@@ -128,6 +145,13 @@ impl ConfigFile {
             .strip_suffix('/')
             .unwrap_or(&self.web.base)
             .to_string()
+    }
+
+    fn web_runner_token(&self) -> String {
+        self.web
+            .runner_token
+            .clone()
+            .unwrap_or_else(id::random_runner_token)
     }
 
     fn repo_name(&self, args: &Args) -> somehow::Result<String> {
@@ -182,6 +206,8 @@ pub struct RunnerServerConfig {
 pub struct Config {
     pub web_base: String,
     pub web_address: SocketAddr,
+    pub web_runner_token: String,
+    pub web_runner_timeout: Duration,
     pub repo_name: String,
     pub repo_update_delay: Duration,
     pub runner_name: String,
@@ -208,6 +234,7 @@ impl Config {
         debug!("Loaded config file:\n{config_file:#?}");
 
         let web_base = config_file.web_base();
+        let web_runner_token = config_file.web_runner_token();
         let repo_name = config_file.repo_name(args)?;
         let runner_name = config_file.runner_name();
         let runner_servers = config_file.runner_servers();
@@ -215,6 +242,8 @@ impl Config {
         Ok(Self {
             web_base,
             web_address: config_file.web.address,
+            web_runner_token,
+            web_runner_timeout: config_file.web.runner_timeout,
             repo_name,
             repo_update_delay: config_file.repo.update_delay,
             runner_name,
