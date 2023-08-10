@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use tokio::task::JoinSet;
 use tracing::{debug, error};
 
-use crate::config::Config;
+use crate::config::{Config, RunnerServerConfig};
 
 use self::{coordinator::Coordinator, server::Server};
 
@@ -41,4 +41,14 @@ impl Runner {
 
         while tasks.join_next().await.is_some() {}
     }
+}
+
+pub fn launch_standalone_server_task(
+    config: &'static Config,
+    server_name: String,
+    server_config: &'static RunnerServerConfig,
+) {
+    let coordinator = Arc::new(Mutex::new(Coordinator::new()));
+    let mut server = Server::new(server_name, config, server_config, coordinator);
+    tokio::task::spawn(async move { server.run().await });
 }

@@ -9,6 +9,7 @@ mod somehow;
 use std::{io, process, time::Duration};
 
 use clap::Parser;
+use config::RunnerServerConfig;
 use tokio::{select, signal::unix::SignalKind};
 use tracing::{debug, error, info, Level};
 use tracing_subscriber::{
@@ -92,6 +93,30 @@ async fn open_in_browser(config: &Config) {
     }
 }
 
+async fn launch_local_runners(config: &'static Config, amount: u8) {
+    let server_name = "localhost";
+    let server_config = Box::leak(Box::new(RunnerServerConfig {
+        url: format!("http://{}{}", config.web_address, config.web_base),
+        token: config.web_runner_token.clone(),
+    }));
+
+    // Wait a bit to ensure the server is ready to serve requests.
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    for i in 0..amount {
+        let mut runner_config = config.clone();
+        runner_config.runner_name = format!("{}-{i}", config.runner_name);
+        let runner_config = Box::leak(Box::new(runner_config));
+
+        info!("Launching local runner {}", runner_config.runner_name);
+        runner::launch_standalone_server_task(
+            runner_config,
+            server_name.to_string(),
+            server_config,
+        );
+    }
+}
+
 async fn run() -> somehow::Result<()> {
     let args = Args::parse();
 
@@ -106,8 +131,11 @@ async fn run() -> somehow::Result<()> {
                 tokio::task::spawn(open_in_browser(config));
             }
 
-            let server = Server::new(config, command).await?;
+            if command.local_runner > 0 {
+                tokio::task::spawn(launch_local_runners(config, command.local_runner));
+            }
 
+            let server = Server::new(config, command).await?;
             select! {
                 _ = wait_for_signal() => {}
                 _ = server.run() => {}

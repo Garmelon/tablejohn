@@ -198,12 +198,14 @@ impl ConfigFile {
     }
 }
 
+#[derive(Clone)]
 pub struct RunnerServerConfig {
     /// Always ends with a `/`.
     pub url: String,
     pub token: String,
 }
 
+#[derive(Clone)]
 pub struct Config {
     /// Always starts and ends with a `/`.
     pub web_base: String,

@@ -5,24 +5,30 @@ pub const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("VERGEN_
 
 #[derive(Debug, clap::Parser)]
 pub struct ServerCommand {
-    /// Path to the repo's tablejohn database.
+    /// Path to a tablejohn database.
     pub db: PathBuf,
 
-    /// Path to the git repo.
+    /// Path to a git repo.
     pub repo: Option<PathBuf>,
 
-    /// Path to the bench repo.
+    /// Path to a bench repo.
     #[arg(long, short)]
     pub bench_repo: Option<PathBuf>,
 
     /// Open the UI in your browser.
     #[arg(long, short)]
     pub open: bool,
+
+    /// Start one or more local runners for this server.
+    #[arg(long, short, action = clap::ArgAction::Count)]
+    pub local_runner: u8,
 }
 
 #[derive(Debug, clap::Parser)]
 pub enum Command {
+    /// Start a tablejohn server.
     Server(ServerCommand),
+    /// Start a tablejohn benchmark runner.
     Runner,
     // TODO bench script command?
 }
