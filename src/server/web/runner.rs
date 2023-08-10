@@ -29,7 +29,8 @@ pub async fn get(
     State(config): State<&'static Config>,
     State(runners): State<Arc<Mutex<Runners>>>,
 ) -> somehow::Result<Response> {
-    let Some(info) = runners.lock().unwrap().get(&name) else {
+    let info = runners.lock().unwrap().clean().get(&name);
+    let Some(info) = info else {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
 

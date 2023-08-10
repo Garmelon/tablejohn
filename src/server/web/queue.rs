@@ -46,6 +46,7 @@ fn sorted_runners(runners: &Mutex<Runners>) -> Vec<(String, RunnerInfo)> {
     let mut runners = runners
         .lock()
         .unwrap()
+        .clean()
         .get_all()
         .into_iter()
         .collect::<Vec<_>>();

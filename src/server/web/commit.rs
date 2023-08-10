@@ -9,8 +9,7 @@ use sqlx::SqlitePool;
 
 use crate::{config::Config, server::util, somehow};
 
-use super::{Base, Tab, link::CommitLink};
-
+use super::{link::CommitLink, Base, Tab};
 
 #[derive(Template)]
 #[template(path = "commit.html")]

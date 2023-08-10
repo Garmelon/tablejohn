@@ -35,9 +35,11 @@ impl Runners {
         }
     }
 
-    pub fn clean(&mut self, now: OffsetDateTime) {
+    pub fn clean(&mut self) -> &mut Self {
+        let now = OffsetDateTime::now_utc();
         self.runners
-            .retain(|_, v| now <= v.last_seen + self.config.web_runner_timeout)
+            .retain(|_, v| now <= v.last_seen + self.config.web_runner_timeout);
+        self
     }
 
     pub fn verify(&self, name: &str, secret: &str) -> bool {

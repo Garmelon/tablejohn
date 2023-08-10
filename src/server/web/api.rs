@@ -37,7 +37,6 @@ async fn post_status(
         Err(response) => return Ok(response),
     };
 
-    let now = OffsetDateTime::now_utc();
     let queue = sqlx::query_scalar!(
         "\
         SELECT hash FROM queue \
@@ -48,13 +47,13 @@ async fn post_status(
     .await?;
 
     let mut guard = runners.lock().unwrap();
-    guard.clean(now);
+    guard.clean();
     if !guard.verify(&name, &request.secret) {
         return Ok((StatusCode::UNAUTHORIZED, "invalid secret").into_response());
     }
     guard.update(
         name.clone(),
-        RunnerInfo::new(request.secret, now, request.status),
+        RunnerInfo::new(request.secret, OffsetDateTime::now_utc(), request.status),
     );
     let work = match request.request_work {
         true => guard.find_free_work(&queue),
