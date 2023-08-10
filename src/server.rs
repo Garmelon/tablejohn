@@ -49,22 +49,34 @@ async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
     Ok(pool)
 }
 
-fn open_repo(repo_path: &Path) -> somehow::Result<ThreadSafeRepository> {
-    info!(path = %repo_path.display(), "Opening repo");
-    Ok(ThreadSafeRepository::open(repo_path)?)
-}
+#[derive(Clone)]
+pub(self) struct Repo(Arc<ThreadSafeRepository>);
+
+#[derive(Clone)]
+pub(self) struct BenchRepo(Arc<ThreadSafeRepository>);
 
 #[derive(Clone, FromRef)]
 pub struct Server {
     config: &'static Config,
     db: SqlitePool,
-    repo: Option<Arc<ThreadSafeRepository>>,
+    repo: Option<Repo>,
+    bench_repo: Option<BenchRepo>,
 }
 
 impl Server {
     pub async fn new(config: &'static Config, command: ServerCommand) -> somehow::Result<Self> {
-        let repo = if let Some(repo) = command.repo.as_ref() {
-            Some(Arc::new(open_repo(repo)?))
+        let repo = if let Some(path) = command.repo.as_ref() {
+            info!(path = %path.display(), "Opening repo");
+            let repo = ThreadSafeRepository::open(path)?;
+            Some(Repo(Arc::new(repo)))
+        } else {
+            None
+        };
+
+        let bench_repo = if let Some(path) = command.bench_repo.as_ref() {
+            info!(path = %path.display(), "Opening repo");
+            let repo = ThreadSafeRepository::open(path)?;
+            Some(BenchRepo(Arc::new(repo)))
         } else {
             None
         };
@@ -73,6 +85,7 @@ impl Server {
             config,
             db: open_db(&command.db).await?,
             repo,
+            bench_repo,
         })
     }
 
@@ -80,7 +93,7 @@ impl Server {
         if let Some(repo) = self.repo.clone() {
             select! {
                 e = web::run(self.clone()) => e,
-                () = recurring::run(self.clone(), repo) => Ok(()),
+                () = recurring::run(self.clone(), repo, self.bench_repo.clone()) => Ok(()),
             }
         } else {
             web::run(self.clone()).await

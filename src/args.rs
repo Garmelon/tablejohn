@@ -7,14 +7,20 @@ pub const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("VERGEN_
 pub struct ServerCommand {
     /// Path to the repo's tablejohn database.
     pub db: PathBuf,
+
     /// Path to the git repo.
     pub repo: Option<PathBuf>,
+
+    /// Path to the bench repo.
+    #[arg(long, short)]
+    pub bench_repo: Option<PathBuf>,
 }
 
 #[derive(Debug, clap::Parser)]
 pub enum Command {
     Server(ServerCommand),
     Runner,
+    // TODO bench script command?
 }
 
 #[derive(Debug, clap::Parser)]
@@ -23,9 +29,11 @@ pub struct Args {
     /// Path to the config file.
     #[arg(long, short)]
     pub config: Option<PathBuf>,
+
     /// Enable increasingly more verbose output
     #[arg(long, short, action = clap::ArgAction::Count)]
     pub verbose: u8,
+
     #[command(subcommand)]
     pub command: Command,
 }

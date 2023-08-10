@@ -2,8 +2,8 @@ mod args;
 mod config;
 mod runner;
 mod server;
-mod somehow;
 mod shared;
+mod somehow;
 
 use std::{io, process};
 

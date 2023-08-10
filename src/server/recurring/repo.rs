@@ -1,15 +1,16 @@
 //! Add new commits to the database and update the tracked refs.
 
-use std::{collections::HashSet, sync::Arc};
+use std::collections::HashSet;
 
 use futures::TryStreamExt;
-use gix::{
-    objs::Kind, prelude::ObjectIdExt, refs::Reference, ObjectId, Repository, ThreadSafeRepository,
-};
+use gix::{objs::Kind, prelude::ObjectIdExt, refs::Reference, ObjectId, Repository};
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use tracing::{debug, info};
 
-use crate::{server::util, somehow};
+use crate::{
+    server::{util, Repo},
+    somehow,
+};
 
 async fn get_all_commit_hashes_from_db(
     conn: &mut SqliteConnection,
@@ -227,9 +228,9 @@ async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::R
     Ok(())
 }
 
-pub async fn update(db: &SqlitePool, repo: Arc<ThreadSafeRepository>) -> somehow::Result<()> {
+pub(super) async fn update(db: &SqlitePool, repo: Repo) -> somehow::Result<()> {
     debug!("Updating repo");
-    let thread_local_repo = repo.to_thread_local();
+    let thread_local_repo = repo.0.to_thread_local();
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
@@ -244,7 +245,7 @@ pub async fn update(db: &SqlitePool, repo: Arc<ThreadSafeRepository>) -> somehow
     // This can take a while for larger repos. Running it via spawn_blocking
     // keeps it from blocking the entire tokio worker.
     let (refs, new) = tokio::task::spawn_blocking(move || {
-        get_all_refs_and_new_commits_from_repo(&repo.to_thread_local(), &old)
+        get_all_refs_and_new_commits_from_repo(&repo.0.to_thread_local(), &old)
     })
     .await??;
     debug!("Found {} new commits in repo", new.len());

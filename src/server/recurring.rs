@@ -6,14 +6,11 @@
 mod queue;
 mod repo;
 
-use std::sync::Arc;
-
-use gix::ThreadSafeRepository;
 use tracing::{debug_span, error, Instrument};
 
-use super::Server;
+use super::{BenchRepo, Repo, Server};
 
-async fn recurring_task(state: &Server, repo: Arc<ThreadSafeRepository>) {
+async fn recurring_task(state: &Server, repo: Repo) {
     async {
         if let Err(e) = repo::update(&state.db, repo).await {
             error!("Error updating repo:\n{e:?}");
@@ -31,7 +28,7 @@ async fn recurring_task(state: &Server, repo: Arc<ThreadSafeRepository>) {
     .await;
 }
 
-pub async fn run(server: Server, repo: Arc<ThreadSafeRepository>) {
+pub(super) async fn run(server: Server, repo: Repo, bench_repo: Option<BenchRepo>) {
     loop {
         recurring_task(&server, repo.clone()).await;
         tokio::time::sleep(server.config.repo_update_delay).await;
