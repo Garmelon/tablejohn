@@ -12,6 +12,7 @@ use axum::{
 };
 use sqlx::SqlitePool;
 use time::OffsetDateTime;
+use tracing::debug;
 
 use crate::{
     config::Config,
@@ -24,7 +25,7 @@ use crate::{
 };
 
 async fn post_status(
-    TypedHeader(auth): TypedHeader<Authorization<Basic>>,
+    auth: Option<TypedHeader<Authorization<Basic>>>,
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
     State(bench_repo): State<Option<BenchRepo>>,
@@ -62,6 +63,8 @@ async fn post_status(
     let abort_work = guard.should_abort_work(&name);
     drop(guard);
 
+    // TODO Insert finished work into DB
+
     // Find new work
     let work = if let Some(hash) = work {
         let bench = match bench_repo {
@@ -78,14 +81,16 @@ async fn post_status(
         None
     };
 
+    debug!("Received status update from {name}");
     Ok(Json(ServerResponse { work, abort_work }).into_response())
 }
 
 pub fn router(server: &Server) -> Router<Server> {
     if server.repo.is_none() {
-        return Router::new().route("/api/runner/status", post(post_status));
+        return Router::new();
     }
 
-    // TODO Add routes
-    Router::new()
+    // TODO Get repo tar
+    // TODO Get bench repo tar
+    Router::new().route("/api/runner/status", post(post_status))
 }

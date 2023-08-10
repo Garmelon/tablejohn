@@ -3,6 +3,7 @@ use axum::{
     headers::{authorization::Basic, Authorization},
     http::{header, HeaderValue, StatusCode},
     response::Response,
+    TypedHeader,
 };
 
 use crate::config::Config;
@@ -23,10 +24,12 @@ fn is_password_valid(password: &str, config: &'static Config) -> bool {
 
 pub fn authenticate(
     config: &'static Config,
-    auth: Authorization<Basic>,
+    auth: Option<TypedHeader<Authorization<Basic>>>,
 ) -> Result<String, Response> {
-    if is_username_valid(auth.username()) && is_password_valid(auth.password(), config) {
-        return Ok(auth.username().to_string());
+    if let Some(auth) = auth {
+        if is_username_valid(auth.username()) && is_password_valid(auth.password(), config) {
+            return Ok(auth.username().to_string());
+        }
     }
 
     Err((

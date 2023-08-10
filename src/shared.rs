@@ -23,7 +23,7 @@ pub struct Measurement {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename = "snake_case")]
+#[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum Line {
     Stdout(String),
@@ -41,7 +41,7 @@ pub struct FinishedRun {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename = "snake_case")]
+#[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum RunnerStatus {
     /// The runner is not performing any work.
@@ -74,6 +74,7 @@ pub struct RunnerRequest {
     ///
     /// If the server has a commit available, it should respond with a non-null
     /// [`Response::work`].
+    #[serde(default)]
     pub request_work: bool,
 
     /// The runner has finished a run and wants to submit the results.
@@ -81,7 +82,7 @@ pub struct RunnerRequest {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename = "snake_case")]
+#[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum BenchMethod {
     /// Use internal (deterministic) benchmarking code.
