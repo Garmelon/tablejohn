@@ -67,7 +67,7 @@ async fn post_status(
     // Find new work
     let work = if let Some(hash) = work {
         let bench = match bench_repo {
-            Some(bench_repo) => BenchMethod::BenchRepo {
+            Some(bench_repo) => BenchMethod::Repo {
                 hash: bench_repo.0.to_thread_local().head_id()?.to_string(),
             },
             None => BenchMethod::Internal,

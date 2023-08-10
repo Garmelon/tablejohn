@@ -55,7 +55,7 @@ impl Runners {
         self.runners
             .iter()
             .filter_map(|(name, info)| match &info.status {
-                RunnerStatus::Working { hash: h, since, .. } if h == hash => Some((name, *since)),
+                RunnerStatus::Working(run) if run.hash == hash => Some((name, run.start)),
                 _ => None,
             })
             .max_by_key(|(_, since)| *since)
@@ -64,8 +64,8 @@ impl Runners {
 
     pub fn should_abort_work(&self, name: &str) -> bool {
         let Some(info) = self.runners.get(name) else { return false; };
-        let RunnerStatus::Working { hash, .. } = &info.status else { return false; };
-        let Some(oldest) = self.oldest_working_on(hash) else { return false; };
+        let RunnerStatus::Working ( run) = &info.status else { return false; };
+        let Some(oldest) = self.oldest_working_on(&run.hash) else { return false; };
         name != oldest
     }
 
@@ -74,7 +74,7 @@ impl Runners {
             .runners
             .values()
             .filter_map(|info| match &info.status {
-                RunnerStatus::Working { hash, .. } => Some(hash),
+                RunnerStatus::Working(run) => Some(&run.hash),
                 _ => None,
             })
             .collect::<HashSet<_>>();

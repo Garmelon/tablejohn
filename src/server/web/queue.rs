@@ -64,12 +64,12 @@ async fn get_runners(
         let status = match &info.status {
             RunnerStatus::Idle => Status::Idle,
             RunnerStatus::Busy => Status::Busy,
-            RunnerStatus::Working { id, hash, .. } => {
+            RunnerStatus::Working(run) => {
                 let message =
-                    sqlx::query_scalar!("SELECT message FROM commits WHERE hash = ?", hash)
+                    sqlx::query_scalar!("SELECT message FROM commits WHERE hash = ?", run.hash)
                         .fetch_one(db)
                         .await?;
-                Status::Working(RunLink::new(base, id.clone(), hash, &message))
+                Status::Working(RunLink::new(base, run.id.clone(), &run.hash, &message))
             }
         };
 
@@ -89,9 +89,9 @@ async fn get_queue(
     // Group runners by commit hash
     let mut runners_by_commit: HashMap<String, Vec<RunnerLink>> = HashMap::new();
     for (name, info) in runners {
-        if let RunnerStatus::Working { hash, .. } = &info.status {
+        if let RunnerStatus::Working(run) = &info.status {
             runners_by_commit
-                .entry(hash.clone())
+                .entry(run.hash.clone())
                 .or_default()
                 .push(RunnerLink::new(base, name.clone()));
         }
