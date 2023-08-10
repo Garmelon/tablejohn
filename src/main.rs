@@ -6,7 +6,7 @@ mod server;
 mod shared;
 mod somehow;
 
-use std::{io, process};
+use std::{io, process, time::Duration};
 
 use clap::Parser;
 use tokio::{select, signal::unix::SignalKind};
@@ -82,6 +82,16 @@ async fn die_on_signal() -> io::Result<()> {
     process::exit(1);
 }
 
+async fn open_in_browser(config: &Config) {
+    // Wait a bit to ensure the server is ready to serve requests.
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    let url = format!("http://{}{}", config.web_address, config.web_base);
+    if let Err(e) = open::that_detached(&url) {
+        error!("Error opening {url} in browser: {e:?}");
+    }
+}
+
 async fn run() -> somehow::Result<()> {
     let args = Args::parse();
 
@@ -92,6 +102,10 @@ async fn run() -> somehow::Result<()> {
 
     match args.command {
         Command::Server(command) => {
+            if command.open {
+                tokio::task::spawn(open_in_browser(config));
+            }
+
             let server = Server::new(config, command).await?;
 
             select! {

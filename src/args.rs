@@ -14,6 +14,10 @@ pub struct ServerCommand {
     /// Path to the bench repo.
     #[arg(long, short)]
     pub bench_repo: Option<PathBuf>,
+
+    /// Open the UI in your browser.
+    #[arg(long, short)]
+    pub open: bool,
 }
 
 #[derive(Debug, clap::Parser)]
