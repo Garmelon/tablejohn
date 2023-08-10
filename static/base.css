@@ -77,12 +77,11 @@ nav>* {
     border-right: 0.1em solid black;
 }
 
-nav> :first-child {
-    padding: 0;
-    border: none;
+nav>:first-child {
+    padding-left: 0;
 }
 
-nav> :last-child {
+nav>:last-child {
     padding-right: 0;
     border: none;
 }
@@ -91,18 +90,19 @@ nav>.current {
     font-weight: bold;
 }
 
+nav>:first-child img {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: -20%;
+    padding-right: 0.3em;
+}
+
 nav a {
     text-decoration: none;
 }
 
 nav a:hover {
     text-decoration: underline;
-}
-
-nav img {
-    width: 1.2em;
-    height: 1.2em;
-    vertical-align: -20%;
 }
 
 /* Commit */

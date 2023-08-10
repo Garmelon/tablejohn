@@ -12,9 +12,8 @@
 
 <body>
     <nav>
-        <a href="{{ base.root }}/"><img src="{{ base.root }}/logo.svg"></a>
         <a href="{{ base.root }}/" {% if base.current=="index" %} class="current" {% endif %}>
-            {{ base.repo_name }}
+            <img src="{{ base.root }}/logo.svg" alt="">{{ base.repo_name }}
         </a>
         <a href="{{ base.root }}/commit/" {% if base.current=="commit" %} class="current" {% endif %}>
             commit
