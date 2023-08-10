@@ -25,16 +25,15 @@ impl Runner {
             return;
         }
 
-        let names = self.config.runner_servers.keys().cloned().collect();
-        let coordinator = Arc::new(Mutex::new(Coordinator::new(names)));
+        let coordinator = Arc::new(Mutex::new(Coordinator::new()));
 
         let mut tasks = JoinSet::new();
-        for (name, config) in self.config.runner_servers.iter() {
+        for (name, server_config) in self.config.runner_servers.iter() {
             debug!("Launching task for server {name}");
             let mut server = Server::new(
                 name.clone(),
-                config,
-                self.config.runner_ping_delay,
+                self.config,
+                server_config,
                 coordinator.clone(),
             );
             tasks.spawn(async move { server.run().await });
