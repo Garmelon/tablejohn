@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use time::OffsetDateTime;
 
-#[derive(Serialize_repr, Deserialize_repr)]
+#[derive(Clone, Serialize_repr, Deserialize_repr)]
 #[repr(i8)]
 pub enum Direction {
     LessIsBetter = -1,
@@ -14,7 +14,7 @@ pub enum Direction {
     MoreIsBetter = 1,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Measurement {
     pub value: f64,
     pub stddev: Option<f64>,
@@ -22,7 +22,7 @@ pub struct Measurement {
     pub direction: Option<i8>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename = "snake_case")]
 #[serde(tag = "type")]
 pub enum Line {
@@ -30,7 +30,7 @@ pub enum Line {
     Stderr(String),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct FinishedRun {
     pub id: String,
     pub start: OffsetDateTime,
@@ -40,7 +40,7 @@ pub struct FinishedRun {
     pub measurements: HashMap<String, Measurement>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename = "snake_case")]
 #[serde(tag = "type")]
 pub enum RunnerStatus {
@@ -57,7 +57,7 @@ pub enum RunnerStatus {
     },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct RunnerRequest {
     /// Additional free-form info about the runner.
     ///
@@ -80,7 +80,7 @@ pub struct RunnerRequest {
     pub submit_work: Option<FinishedRun>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename = "snake_case")]
 #[serde(tag = "type")]
 pub enum BenchMethod {
@@ -90,7 +90,7 @@ pub enum BenchMethod {
     BenchRepo { hash: String },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Work {
     /// Hash of commit to benchmark.
     pub hash: String,

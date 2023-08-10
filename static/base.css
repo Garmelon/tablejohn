@@ -21,6 +21,12 @@ a:hover {
     font-weight: bold;
 }
 
+dl {
+    display: grid;
+    grid: auto-flow / min-content 1fr;
+    column-gap: 1ch;
+}
+
 dd {
     margin-left: 4ch;
 }
@@ -116,32 +122,16 @@ nav a:hover {
     font-weight: bold;
 }
 
-.commit dl {
-    display: grid;
-    grid: auto-flow / min-content 1fr;
-    column-gap: 1ch;
-}
-
 .commit pre {
     margin: 1em 0ch 1em 4ch;
     white-space: pre-wrap;
 }
 
-/* Task */
+/* Runner */
 
-.task * {
-    margin: 0;
-}
-
-.task .id {
+.runner .name {
     color: #380;
     font-weight: bold;
-}
-
-.task dl {
-    display: grid;
-    grid: auto-flow / min-content 1fr;
-    column-gap: 1ch;
 }
 
 /* Queue */

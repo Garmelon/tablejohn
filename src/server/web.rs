@@ -2,6 +2,7 @@ mod api;
 mod commit;
 mod index;
 mod queue;
+mod runner;
 mod r#static;
 
 use axum::{routing::get, Router};
@@ -44,6 +45,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
     let app = Router::new()
         .route("/", get(index::get))
         .route("/commit/:hash", get(commit::get))
+        .route("/runner/:name", get(runner::get))
         .route("/queue/", get(queue::get))
         .route("/queue/table", get(queue::get_table))
         .merge(api::router(&server))

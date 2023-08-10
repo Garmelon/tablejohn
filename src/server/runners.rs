@@ -5,6 +5,7 @@ use time::OffsetDateTime;
 
 use crate::{config::Config, shared::RunnerStatus};
 
+#[derive(Clone)]
 pub struct RunnerInfo {
     pub secret: String,
     pub last_seen: OffsetDateTime,
@@ -80,5 +81,9 @@ impl Runners {
             .iter()
             .find(|hash| !covered.contains(hash))
             .map(|hash| hash as &str)
+    }
+
+    pub fn get(&self, name: &str) -> Option<RunnerInfo> {
+        self.runners.get(name).cloned()
     }
 }
