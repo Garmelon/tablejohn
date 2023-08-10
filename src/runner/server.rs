@@ -1,10 +1,13 @@
 use std::sync::{Arc, Mutex};
 
+use reqwest::Client;
 use tokio::sync::mpsc;
 use tracing::{debug, info_span, warn, Instrument};
 
 use crate::{
     config::{Config, RunnerServerConfig},
+    id,
+    shared::{RunnerRequest, RunnerStatus},
     somehow,
 };
 
@@ -15,6 +18,8 @@ pub struct Server {
     config: &'static Config,
     server_config: &'static RunnerServerConfig,
     coordinator: Arc<Mutex<Coordinator>>,
+    client: Client,
+    secret: String,
 }
 
 impl Server {
@@ -29,6 +34,8 @@ impl Server {
             config,
             server_config,
             coordinator,
+            client: Client::new(),
+            secret: id::random_runner_secret(),
         }
     }
 
@@ -62,8 +69,22 @@ impl Server {
         .await;
     }
 
-    async fn ping(&mut self) -> somehow::Result<()> {
+    async fn ping(&self) -> somehow::Result<()> {
         debug!("Pinging");
+        let request = RunnerRequest {
+            info: None,
+            secret: self.secret.clone(),
+            status: RunnerStatus::Idle,
+            request_work: false,
+            submit_work: None,
+        };
+        let url = format!("{}api/runner/status", self.server_config.url);
+        self.client
+            .post(url)
+            .basic_auth(&self.config.runner_name, Some(&self.server_config.token))
+            .json(&request)
+            .send()
+            .await?;
         Ok(())
     }
 }

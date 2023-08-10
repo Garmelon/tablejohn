@@ -187,11 +187,10 @@ impl ConfigFile {
             .servers
             .iter()
             .map(|(name, server)| {
-                let url = server
-                    .url
-                    .strip_suffix('/')
-                    .unwrap_or(&server.url)
-                    .to_string();
+                let mut url = server.url.clone();
+                if !url.ends_with('/') {
+                    url.push('/');
+                }
                 let token = server.token.to_string();
                 (name.to_string(), RunnerServerConfig { url, token })
             })
@@ -200,6 +199,7 @@ impl ConfigFile {
 }
 
 pub struct RunnerServerConfig {
+    /// Always ends with a `/`.
     pub url: String,
     pub token: String,
 }
