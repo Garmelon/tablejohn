@@ -3,6 +3,7 @@ mod config;
 mod runner;
 mod server;
 mod somehow;
+mod shared;
 
 use std::{io, process};
 
