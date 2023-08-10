@@ -11,7 +11,7 @@
         {% for ref in tracked_refs %}
         <dt>{{ ref.name }}</dt>
         <dd>
-            <a href="{{ base.root }}/commit/{{ ref.hash }}">
+            <a href="{{ base.root }}commit/{{ ref.hash }}">
                 {% call util::commit_short(ref.short, ref.reachable) %}
             </a>
         </dd>
@@ -24,7 +24,7 @@
         {% for ref in untracked_refs %}
         <dt>{{ ref.name }}</dt>
         <dd>
-            <a href="{{ base.root }}/commit/{{ ref.hash }}">
+            <a href="{{ base.root }}commit/{{ ref.hash }}">
                 {% call util::commit_short(ref.short, ref.reachable) %}
             </a>
         </dd>

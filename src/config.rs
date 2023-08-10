@@ -22,7 +22,7 @@ mod default {
     use std::{net::SocketAddr, time::Duration};
 
     pub fn web_base() -> String {
-        "".to_string()
+        "/".to_string()
     }
 
     pub fn web_address() -> SocketAddr {
@@ -138,13 +138,14 @@ impl ConfigFile {
     }
 
     fn web_base(&self) -> String {
-        self.web
-            .base
-            .strip_prefix('/')
-            .unwrap_or(&self.web.base)
-            .strip_suffix('/')
-            .unwrap_or(&self.web.base)
-            .to_string()
+        let mut base = self.web.base.clone();
+        if !base.starts_with('/') {
+            base.insert(0, '/');
+        }
+        if !base.ends_with('/') {
+            base.push('/');
+        }
+        base
     }
 
     fn web_runner_token(&self) -> String {
@@ -204,6 +205,7 @@ pub struct RunnerServerConfig {
 }
 
 pub struct Config {
+    /// Always starts and ends with a `/`.
     pub web_base: String,
     pub web_address: SocketAddr,
     pub web_runner_token: String,
