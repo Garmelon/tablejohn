@@ -1,5 +1,6 @@
 mod coordinator;
 mod server;
+mod tree;
 
 use std::sync::{Arc, Mutex};
 

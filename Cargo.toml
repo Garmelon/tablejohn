@@ -23,6 +23,7 @@ serde = { version = "1.0.181", features = ["derive"] }
 serde_repr = "0.1.16"
 sqlx = { version = "0.7.1", features = ["runtime-tokio", "sqlite", "time"] }
 tar = { version = "0.4.40", default-features = false }
+tempfile = "3.7.1"
 tokio = { version = "1.29.1", features = ["full"] }
 tokio-stream = "0.1.14"
 toml = "0.7.6"
@@ -37,7 +38,7 @@ features = ["max-performance-safe", "worktree-stream"]
 [dependencies.reqwest]
 version = "0.11.18"
 default-features = false
-features = ["json", "rustls-tls-native-roots"]
+features = ["json", "stream", "rustls-tls-native-roots"]
 
 [dependencies.time]
 version = "0.3.25"
