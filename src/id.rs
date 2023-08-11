@@ -10,9 +10,9 @@ fn random_id(prefix: &str, length: usize) -> String {
 }
 
 pub fn random_worker_token() -> String {
-    random_id("t", 30)
+    random_id("t-", 30)
 }
 
 pub fn random_worker_secret() -> String {
-    random_id("s", 30)
+    random_id("s-", 30)
 }
