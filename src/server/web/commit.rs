@@ -100,6 +100,7 @@ pub async fn get(
     .into_response())
 }
 
+// TODO Move to /admin/queue/add
 pub async fn post_enqueue(
     Path(hash): Path<String>,
     State(config): State<&'static Config>,

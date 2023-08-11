@@ -63,6 +63,7 @@ impl Workers {
     }
 
     pub fn should_abort_work(&self, name: &str) -> bool {
+        // TODO Abort if not in queue
         let Some(info) = self.workers.get(name) else { return false; };
         let WorkerStatus::Working ( run) = &info.status else { return false; };
         let Some(oldest) = self.oldest_working_on(&run.hash) else { return false; };
