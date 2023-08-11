@@ -33,4 +33,8 @@
     <pre class="{% call util::commit_class(reachable) %}"
         title="{% call util::commit_title(reachable) %}">{{ message }}</pre>
 </div>
+
+<form method="post" action="{{ base.root }}commit/{{ hash }}/enqueue">
+    <button>Enqueue</button>
+</form>
 {% endblock %}

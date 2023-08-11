@@ -6,7 +6,10 @@ mod queue;
 mod r#static;
 mod worker;
 
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 
 use crate::{config::Config, somehow};
 
@@ -46,9 +49,10 @@ pub async fn run(server: Server) -> somehow::Result<()> {
     let app = Router::new()
         .route("/", get(index::get))
         .route("/commit/:hash", get(commit::get))
-        .route("/worker/:name", get(worker::get))
+        .route("/commit/:hash/enqueue", post(commit::post_enqueue))
         .route("/queue/", get(queue::get))
         .route("/queue/inner", get(queue::get_inner))
+        .route("/worker/:name", get(worker::get))
         .merge(api::router(&server))
         .fallback(get(r#static::static_handler))
         .with_state(server.clone());
