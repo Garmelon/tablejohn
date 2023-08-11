@@ -1,15 +1,19 @@
 mod auth;
+mod stream;
 
 use std::sync::{Arc, Mutex};
 
-use askama_axum::{IntoResponse, Response};
 use axum::{
-    extract::State,
+    body::StreamBody,
+    extract::{Path, State},
     headers::{authorization::Basic, Authorization},
     http::StatusCode,
-    routing::post,
+    http::{header, HeaderValue},
+    response::{IntoResponse, Response},
+    routing::{get, post},
     Json, Router, TypedHeader,
 };
+use gix::{ObjectId, ThreadSafeRepository};
 use sqlx::SqlitePool;
 use time::OffsetDateTime;
 use tracing::debug;
@@ -18,18 +22,18 @@ use crate::{
     config::Config,
     server::{
         workers::{WorkerInfo, Workers},
-        BenchRepo, Server,
+        BenchRepo, Repo, Server,
     },
     shared::{BenchMethod, ServerResponse, Work, WorkerRequest},
     somehow,
 };
 
 async fn post_status(
-    auth: Option<TypedHeader<Authorization<Basic>>>,
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
     State(bench_repo): State<Option<BenchRepo>>,
     State(workers): State<Arc<Mutex<Workers>>>,
+    auth: Option<TypedHeader<Authorization<Basic>>>,
     Json(request): Json<WorkerRequest>,
 ) -> somehow::Result<Response> {
     let name = match auth::authenticate(config, auth) {
@@ -84,12 +88,70 @@ async fn post_status(
     Ok(Json(ServerResponse { work, abort_work }).into_response())
 }
 
+fn stream_response(repo: Arc<ThreadSafeRepository>, id: ObjectId) -> impl IntoResponse {
+    (
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/gzip"),
+            ),
+            (
+                header::CONTENT_DISPOSITION,
+                HeaderValue::from_static("attachment; filename=\"tree.tar.gz\""),
+            ),
+        ],
+        StreamBody::new(stream::tar_and_gzip(repo, id)),
+    )
+}
+
+async fn get_repo(
+    State(config): State<&'static Config>,
+    State(repo): State<Option<Repo>>,
+    auth: Option<TypedHeader<Authorization<Basic>>>,
+    Path(hash): Path<String>,
+) -> somehow::Result<Response> {
+    let _name = match auth::authenticate(config, auth) {
+        Ok(name) => name,
+        Err(response) => return Ok(response),
+    };
+
+    let Some(repo) = repo else {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    };
+
+    let id = hash.parse::<ObjectId>()?;
+    Ok(stream_response(repo.0, id).into_response())
+}
+
+async fn get_bench_repo(
+    State(config): State<&'static Config>,
+    State(bench_repo): State<Option<BenchRepo>>,
+    auth: Option<TypedHeader<Authorization<Basic>>>,
+    Path(hash): Path<String>,
+) -> somehow::Result<Response> {
+    let _name = match auth::authenticate(config, auth) {
+        Ok(name) => name,
+        Err(response) => return Ok(response),
+    };
+
+    let Some(bench_repo) = bench_repo else {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    };
+
+    let id = hash.parse::<ObjectId>()?;
+    Ok(stream_response(bench_repo.0, id).into_response())
+}
+
 pub fn router(server: &Server) -> Router<Server> {
     if server.repo.is_none() {
         return Router::new();
     }
 
-    // TODO Get repo tar
-    // TODO Get bench repo tar
-    Router::new().route("/api/worker/status", post(post_status))
+    Router::new()
+        .route("/api/worker/status", post(post_status))
+        .route("/api/worker/repo/:hash/tree.tar.gz", get(get_repo))
+        .route(
+            "/api/worker/bench_repo/:hash/tree.tar.gz",
+            get(get_bench_repo),
+        )
 }

@@ -1,8 +1,9 @@
-use askama_axum::IntoResponse;
+//! Verify worker basic authentication headers.
+
 use axum::{
     headers::{authorization::Basic, Authorization},
     http::{header, HeaderValue, StatusCode},
-    response::Response,
+    response::{IntoResponse, Response},
     TypedHeader,
 };
 
@@ -36,7 +37,7 @@ pub fn authenticate(
         StatusCode::UNAUTHORIZED,
         [(
             header::WWW_AUTHENTICATE,
-            HeaderValue::from_str("Basic realm=\"worker api\"").unwrap(),
+            HeaderValue::from_static("Basic realm=\"worker api\""),
         )],
         "invalid credentials",
     )

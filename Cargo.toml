@@ -10,6 +10,7 @@ askama_axum = "0.3.0"
 axum = { version = "0.6.19", features = ["macros", "headers"] }
 clap = { version = "4.3.19", features = ["derive", "deprecated"] }
 directories = "5.0.1"
+flate2 = "1.0.26"
 futures = "0.3.28"
 gethostname = "0.4.3"
 humantime = "2.1.0"
@@ -21,7 +22,9 @@ rust-embed = { version = "6.8.1", features = ["interpolate-folder-path"] }
 serde = { version = "1.0.181", features = ["derive"] }
 serde_repr = "0.1.16"
 sqlx = { version = "0.7.1", features = ["runtime-tokio", "sqlite", "time"] }
+tar = { version = "0.4.40", default-features = false }
 tokio = { version = "1.29.1", features = ["full"] }
+tokio-stream = "0.1.14"
 toml = "0.7.6"
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
@@ -29,7 +32,7 @@ tracing-subscriber = "0.3.17"
 [dependencies.gix]
 version = "0.51.0"
 default-features = false
-features = ["max-performance-safe", "extras"]
+features = ["max-performance-safe", "worktree-stream"]
 
 [dependencies.reqwest]
 version = "0.11.18"

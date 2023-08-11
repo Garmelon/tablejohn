@@ -887,7 +887,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ce5c049b1afcae9bb9e10c0f6dd8eb1335e8647fb7fd34732a66133ca3b9886"
 dependencies = [
  "gix-actor",
- "gix-archive",
  "gix-attributes",
  "gix-commitgraph",
  "gix-config",
@@ -942,19 +941,6 @@ dependencies = [
  "gix-date",
  "itoa",
  "nom",
- "thiserror",
-]
-
-[[package]]
-name = "gix-archive"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc89a798842b519048e947339a9c9f3cfd8fb9c2d9b66b6ebcb0c3cc8fe5874d"
-dependencies = [
- "bstr",
- "gix-date",
- "gix-object",
- "gix-worktree-stream",
  "thiserror",
 ]
 
@@ -3112,6 +3098,7 @@ dependencies = [
  "axum",
  "clap",
  "directories",
+ "flate2",
  "futures",
  "gethostname",
  "gix",
@@ -3125,13 +3112,25 @@ dependencies = [
  "serde",
  "serde_repr",
  "sqlx",
+ "tar",
  "time",
  "tokio",
+ "tokio-stream",
  "toml",
  "tracing",
  "tracing-subscriber",
  "vergen",
  "walkdir",
+]
+
+[[package]]
+name = "tar"
+version = "0.4.40"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b16afcea1f22891c49a00c751c7b63b2233284064f11a200fc624137c51e2ddb"
+dependencies = [
+ "filetime",
+ "libc",
 ]
 
 [[package]]

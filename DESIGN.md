@@ -85,9 +85,9 @@ like session ids.
         - If so, server may respond with a commit hash and bench method
     - Worker may include current work
         - If so, server may respond with request to abort the work
-- GET `/api/worker/repo/<hash>/tar`
+- GET `/api/worker/repo/<hash>/tree.tar.gz`
     - Get tar-ed commit from the server's repo, if any exists
-- GET `/api/worker/bench-repo/<hash>/tar`
+- GET `/api/worker/bench-repo/<hash>/tree.tar.gz`
     - Get tar-ed commit from the server's bench repo, if any exist
 
 ## CLI Args
