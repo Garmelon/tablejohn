@@ -10,7 +10,7 @@ fn is_false(b: &bool) -> bool {
     !b
 }
 
-#[derive(Clone, Serialize_repr, Deserialize_repr)]
+#[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
 #[repr(i8)]
 pub enum Direction {
     LessIsBetter = -1,
@@ -29,7 +29,7 @@ pub struct Measurement {
     pub direction: Option<Direction>,
 }
 
-#[derive(Clone, Serialize_repr, Deserialize_repr)]
+#[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
 #[repr(u8)]
 pub enum Source {
     // Stdin would be fd 0

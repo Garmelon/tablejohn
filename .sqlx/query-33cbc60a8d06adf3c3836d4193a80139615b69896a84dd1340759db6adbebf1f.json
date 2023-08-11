@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO run_measurements ( id, name, value, stddev, unit, direction ) VALUES (?, ?, ?, ?, ?, ?) ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "33cbc60a8d06adf3c3836d4193a80139615b69896a84dd1340759db6adbebf1f"
+}

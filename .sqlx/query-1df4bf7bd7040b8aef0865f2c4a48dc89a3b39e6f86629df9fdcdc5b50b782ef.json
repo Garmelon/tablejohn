@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM queue WHERE hash = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "1df4bf7bd7040b8aef0865f2c4a48dc89a3b39e6f86629df9fdcdc5b50b782ef"
+}

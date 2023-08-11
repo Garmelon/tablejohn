@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO run_output ( id, idx, source, text ) VALUES (?, ?, ?, ?) ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "6b74f746c36091274ad5477aad2d64a24e0f4a33d5b792394d39c82aca2487dd"
+}
