@@ -1,6 +1,5 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use gix::hashtable::HashSet;
 use time::OffsetDateTime;
 
 use crate::{config::Config, shared::WorkerStatus};
