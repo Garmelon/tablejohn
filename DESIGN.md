@@ -16,9 +16,9 @@ think them through.
     - Runs and their measurements
     - Queue of commits
 - The in-memory state also contains...
-    - Connected runners and their state
+    - Connected workers and their state
     - From this follows the list of in-progress runs
-- Runners...
+- Workers...
     - Should be robust
         - Noone wants to lose a run a few hours in, for any reason
         - Explicitly design for loss of connection, server restarts
@@ -43,7 +43,7 @@ think them through.
     - Change scope interactively
     - Change metrics interactively
 - GET `/queue/`
-    - List of runners and their state
+    - List of workers and their state
     - List of unfinished runs
     - "What's the state of the infrastructure?"
 - GET `/commit/<hash>/`
@@ -63,46 +63,46 @@ think them through.
     - Show changes from rid2 to rid1
     - Resolve refs, branch names and commits to their latest runs -> redirect
 
-## Runner interaction
+## Worker interaction
 
-Runner interaction happens via endpoints located at `/api/runner/`. To access
-any endpoint, the runner must use Basic authentication. The username is the name
-of the runner and the password is the server's runner token. When the runner
-presents the correct token, the server trusts the data the runner sends,
+Worker interaction happens via endpoints located at `/api/worker/`. To access
+any endpoint, the worker must use Basic authentication. The username is the name
+of the worker and the password is the server's worker token. When the worker
+presents the correct token, the server trusts the data the worker sends,
 including the name, current state, and run ids.
 
-On the server side, runners are identified by the runner's self-reported name.
-This allows more human-readable and permanent links to runners than something
+On the server side, workers are identified by the worker's self-reported name.
+This allows more human-readable and permanent links to workers than something
 like session ids.
 
-- POST `/api/runner/status`
-    - Main endpoint for runner/server coordination
-    - Runner periodically sends current status to server
-        - Includes a secret randomly chosen by the runner
+- POST `/api/worker/status`
+    - Main endpoint for worker/server coordination
+    - Worker periodically sends current status to server
+        - Includes a secret randomly chosen by the worker
         - Subsequent requests must include exactly the same secret
-        - Protects against the case where multiple runners share the same name
-    - Runner may include request for new work
+        - Protects against the case where multiple workers share the same name
+    - Worker may include request for new work
         - If so, server may respond with a commit hash and bench method
-    - Runner may include current work
+    - Worker may include current work
         - If so, server may respond with request to abort the work
-- GET `/api/runner/repo/<hash>/tar`
+- GET `/api/worker/repo/<hash>/tar`
     - Get tar-ed commit from the server's repo, if any exists
-- GET `/api/runner/bench-repo/<hash>/tar`
+- GET `/api/worker/bench-repo/<hash>/tar`
     - Get tar-ed commit from the server's bench repo, if any exist
 
 ## CLI Args
 
-tablejohn can be run in one of two modes: Server mode, and runner mode.
+tablejohn can be run in one of two modes: Server mode, and worker mode.
 
 - server
     - Run a web server that serves the contents of a db
     - Optionally, specify repo to update the db from
-    - Optionally, launch local runner (only if repo is specified)
-    - When local runner is enabled, it ignores the runner section of the config
-        - Instead, a runner section is generated from the server config
-        - This approach should make `--local-runner` more fool-proof
-- runner
-    - Run only as runner (when using external machine for runners)
+    - Optionally, launch local worker (only if repo is specified)
+    - When local worker is enabled, it ignores the worker section of the config
+        - Instead, a worker section is generated from the server config
+        - This approach should make `--local-worker` more fool-proof
+- worker
+    - Run only as worker (when using external machine for workers)
     - Same config file format as server, just uses different parts
 
 ## Config file and options
@@ -110,17 +110,17 @@ tablejohn can be run in one of two modes: Server mode, and runner mode.
 Regardless of the mode, the config file is always loaded the same way and has
 the same format. It is split into these chunks:
 
-- web (ignored in runner mode)
+- web (ignored in worker mode)
     - Everything to do with the web server
     - What address and port to bind on
     - What url the site is being served under
-- repo (ignored in runner mode)
+- repo (ignored in worker mode)
     - Everything to do with the repo the server is inspecting
     - Name (derived from repo path if not specified here)
     - How frequently to update the db from the repo
     - A remote URL to update the repo from
     - Whether to clone the repo if it doesn't yet exist
-- runner (ignored in server mode)
+- worker (ignored in server mode)
     - Name (uses system name by default)
     - Custom bench dir path (creates temporary dir by default)
     - List of servers, each of which has...

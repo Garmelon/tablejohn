@@ -1,15 +1,15 @@
 mod args;
 mod config;
 mod id;
-mod runner;
 mod server;
 mod shared;
 mod somehow;
+mod worker;
 
 use std::{io, process, time::Duration};
 
 use clap::Parser;
-use config::RunnerServerConfig;
+use config::WorkerServerConfig;
 use tokio::{select, signal::unix::SignalKind};
 use tracing::{debug, error, info, Level};
 use tracing_subscriber::{
@@ -19,8 +19,8 @@ use tracing_subscriber::{
 use crate::{
     args::{Args, Command, NAME, VERSION},
     config::Config,
-    runner::Runner,
     server::Server,
+    worker::Worker,
 };
 
 fn set_up_logging(verbose: u8) {
@@ -93,24 +93,24 @@ async fn open_in_browser(config: &Config) {
     }
 }
 
-async fn launch_local_runners(config: &'static Config, amount: u8) {
+async fn launch_local_workers(config: &'static Config, amount: u8) {
     let server_name = "localhost";
-    let server_config = Box::leak(Box::new(RunnerServerConfig {
+    let server_config = Box::leak(Box::new(WorkerServerConfig {
         url: format!("http://{}{}", config.web_address, config.web_base),
-        token: config.web_runner_token.clone(),
+        token: config.web_worker_token.clone(),
     }));
 
     // Wait a bit to ensure the server is ready to serve requests.
     tokio::time::sleep(Duration::from_millis(100)).await;
 
     for i in 0..amount {
-        let mut runner_config = config.clone();
-        runner_config.runner_name = format!("{}-{i}", config.runner_name);
-        let runner_config = Box::leak(Box::new(runner_config));
+        let mut worker_config = config.clone();
+        worker_config.worker_name = format!("{}-{i}", config.worker_name);
+        let worker_config = Box::leak(Box::new(worker_config));
 
-        info!("Launching local runner {}", runner_config.runner_name);
-        runner::launch_standalone_server_task(
-            runner_config,
+        info!("Launching local worker {}", worker_config.worker_name);
+        worker::launch_standalone_server_task(
+            worker_config,
             server_name.to_string(),
             server_config,
         );
@@ -131,8 +131,8 @@ async fn run() -> somehow::Result<()> {
                 tokio::task::spawn(open_in_browser(config));
             }
 
-            if command.local_runner > 0 {
-                tokio::task::spawn(launch_local_runners(config, command.local_runner));
+            if command.local_worker > 0 {
+                tokio::task::spawn(launch_local_workers(config, command.local_worker));
             }
 
             let server = Server::new(config, command).await?;
@@ -155,12 +155,12 @@ async fn run() -> somehow::Result<()> {
                 _ = server.shut_down() => {}
             }
         }
-        Command::Runner => {
-            let runner = Runner::new(config);
+        Command::Worker => {
+            let worker = Worker::new(config);
 
             select! {
                 _ = wait_for_signal() => {}
-                _ = runner.run() => {}
+                _ = worker.run() => {}
             }
         }
     }

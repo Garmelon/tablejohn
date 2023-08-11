@@ -6,21 +6,21 @@ use std::sync::{Arc, Mutex};
 use tokio::task::JoinSet;
 use tracing::{debug, error};
 
-use crate::config::{Config, RunnerServerConfig};
+use crate::config::{Config, WorkerServerConfig};
 
 use self::{coordinator::Coordinator, server::Server};
 
-pub struct Runner {
+pub struct Worker {
     config: &'static Config,
 }
 
-impl Runner {
+impl Worker {
     pub fn new(config: &'static Config) -> Self {
         Self { config }
     }
 
     pub async fn run(&self) {
-        if self.config.runner_servers.is_empty() {
+        if self.config.worker_servers.is_empty() {
             error!("No servers specified in config");
             return;
         }
@@ -28,7 +28,7 @@ impl Runner {
         let coordinator = Arc::new(Mutex::new(Coordinator::new()));
 
         let mut tasks = JoinSet::new();
-        for (name, server_config) in self.config.runner_servers.iter() {
+        for (name, server_config) in self.config.worker_servers.iter() {
             debug!("Launching task for server {name}");
             let mut server = Server::new(
                 name.clone(),
@@ -46,7 +46,7 @@ impl Runner {
 pub fn launch_standalone_server_task(
     config: &'static Config,
     server_name: String,
-    server_config: &'static RunnerServerConfig,
+    server_config: &'static WorkerServerConfig,
 ) {
     let coordinator = Arc::new(Mutex::new(Coordinator::new()));
     let mut server = Server::new(server_name, config, server_config, coordinator);

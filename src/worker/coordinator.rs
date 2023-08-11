@@ -45,12 +45,12 @@ impl Coordinator {
         self.current += 1;
         self.current %= self.servers.len();
 
-        // When the runner seeks work and a queue is idle, the next server
+        // When the worker seeks work and a queue is idle, the next server
         // should be queried immediately. Otherwise, we'd introduce lots of
         // delay in the multi-server case were most queues are empty.
         //
         // However, if all server's queues were empty, this would generate a
-        // slippery cycle of requests that the runner sends as quickly as
+        // slippery cycle of requests that the worker sends as quickly as
         // possible, only limited by the roundtrip time. Because we don't want
         // this, we let the first task wait its full timeout. Effectively, this
         // results in iterations starting at least the ping delay apart, which

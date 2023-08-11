@@ -19,7 +19,7 @@ fn is_username_valid(username: &str) -> bool {
 }
 
 fn is_password_valid(password: &str, config: &'static Config) -> bool {
-    password == config.web_runner_token
+    password == config.web_worker_token
 }
 
 pub fn authenticate(
@@ -36,7 +36,7 @@ pub fn authenticate(
         StatusCode::UNAUTHORIZED,
         [(
             header::WWW_AUTHENTICATE,
-            HeaderValue::from_str("Basic realm=\"runner api\"").unwrap(),
+            HeaderValue::from_str("Basic realm=\"worker api\"").unwrap(),
         )],
         "invalid credentials",
     )

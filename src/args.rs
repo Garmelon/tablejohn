@@ -19,17 +19,17 @@ pub struct ServerCommand {
     #[arg(long, short)]
     pub open: bool,
 
-    /// Start one or more local runners for this server.
+    /// Start one or more local workers for this server.
     #[arg(long, short, action = clap::ArgAction::Count)]
-    pub local_runner: u8,
+    pub local_worker: u8,
 }
 
 #[derive(Debug, clap::Parser)]
 pub enum Command {
     /// Start a tablejohn server.
     Server(ServerCommand),
-    /// Start a tablejohn benchmark runner.
-    Runner,
+    /// Start a tablejohn worker.
+    Worker,
     // TODO bench script command?
 }
 

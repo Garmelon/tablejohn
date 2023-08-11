@@ -9,15 +9,15 @@ use axum::{
 
 use crate::{
     config::Config,
-    server::{runners::Runners, util},
+    server::{util, workers::Workers},
     somehow,
 };
 
 use super::{Base, Tab};
 
 #[derive(Template)]
-#[template(path = "runner.html")]
-struct RunnerTemplate {
+#[template(path = "worker.html")]
+struct WorkerTemplate {
     base: Base,
     name: String,
     last_seen: String,
@@ -27,14 +27,14 @@ struct RunnerTemplate {
 pub async fn get(
     Path(name): Path<String>,
     State(config): State<&'static Config>,
-    State(runners): State<Arc<Mutex<Runners>>>,
+    State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<Response> {
-    let info = runners.lock().unwrap().clean().get(&name);
+    let info = workers.lock().unwrap().clean().get(&name);
     let Some(info) = info else {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
 
-    Ok(RunnerTemplate {
+    Ok(WorkerTemplate {
         base: Base::new(config, Tab::None),
         name,
         last_seen: util::format_time(info.last_seen),

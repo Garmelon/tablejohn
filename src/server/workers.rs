@@ -3,17 +3,17 @@ use std::collections::HashMap;
 use gix::hashtable::HashSet;
 use time::OffsetDateTime;
 
-use crate::{config::Config, shared::RunnerStatus};
+use crate::{config::Config, shared::WorkerStatus};
 
 #[derive(Clone)]
-pub struct RunnerInfo {
+pub struct WorkerInfo {
     pub secret: String,
     pub last_seen: OffsetDateTime,
-    pub status: RunnerStatus,
+    pub status: WorkerStatus,
 }
 
-impl RunnerInfo {
-    pub fn new(secret: String, last_seen: OffsetDateTime, status: RunnerStatus) -> Self {
+impl WorkerInfo {
+    pub fn new(secret: String, last_seen: OffsetDateTime, status: WorkerStatus) -> Self {
         Self {
             secret,
             last_seen,
@@ -22,40 +22,40 @@ impl RunnerInfo {
     }
 }
 
-pub struct Runners {
+pub struct Workers {
     config: &'static Config,
-    runners: HashMap<String, RunnerInfo>,
+    workers: HashMap<String, WorkerInfo>,
 }
 
-impl Runners {
+impl Workers {
     pub fn new(config: &'static Config) -> Self {
         Self {
             config,
-            runners: HashMap::new(),
+            workers: HashMap::new(),
         }
     }
 
     pub fn clean(&mut self) -> &mut Self {
         let now = OffsetDateTime::now_utc();
-        self.runners
-            .retain(|_, v| now <= v.last_seen + self.config.web_runner_timeout);
+        self.workers
+            .retain(|_, v| now <= v.last_seen + self.config.web_worker_timeout);
         self
     }
 
     pub fn verify(&self, name: &str, secret: &str) -> bool {
-        let Some(runner) = self.runners.get(name) else { return true; };
-        runner.secret == secret
+        let Some(worker) = self.workers.get(name) else { return true; };
+        worker.secret == secret
     }
 
-    pub fn update(&mut self, name: String, info: RunnerInfo) {
-        self.runners.insert(name, info);
+    pub fn update(&mut self, name: String, info: WorkerInfo) {
+        self.workers.insert(name, info);
     }
 
     fn oldest_working_on(&self, hash: &str) -> Option<&str> {
-        self.runners
+        self.workers
             .iter()
             .filter_map(|(name, info)| match &info.status {
-                RunnerStatus::Working(run) if run.hash == hash => Some((name, run.start)),
+                WorkerStatus::Working(run) if run.hash == hash => Some((name, run.start)),
                 _ => None,
             })
             .max_by_key(|(_, since)| *since)
@@ -63,18 +63,18 @@ impl Runners {
     }
 
     pub fn should_abort_work(&self, name: &str) -> bool {
-        let Some(info) = self.runners.get(name) else { return false; };
-        let RunnerStatus::Working ( run) = &info.status else { return false; };
+        let Some(info) = self.workers.get(name) else { return false; };
+        let WorkerStatus::Working ( run) = &info.status else { return false; };
         let Some(oldest) = self.oldest_working_on(&run.hash) else { return false; };
         name != oldest
     }
 
     pub fn find_free_work<'a>(&self, hashes: &'a [String]) -> Option<&'a str> {
         let covered = self
-            .runners
+            .workers
             .values()
             .filter_map(|info| match &info.status {
-                RunnerStatus::Working(run) => Some(&run.hash),
+                WorkerStatus::Working(run) => Some(&run.hash),
                 _ => None,
             })
             .collect::<HashSet<_>>();
@@ -85,11 +85,11 @@ impl Runners {
             .map(|hash| hash as &str)
     }
 
-    pub fn get(&self, name: &str) -> Option<RunnerInfo> {
-        self.runners.get(name).cloned()
+    pub fn get(&self, name: &str) -> Option<WorkerInfo> {
+        self.workers.get(name).cloned()
     }
 
-    pub fn get_all(&self) -> HashMap<String, RunnerInfo> {
-        self.runners.clone()
+    pub fn get_all(&self) -> HashMap<String, WorkerInfo> {
+        self.workers.clone()
     }
 }

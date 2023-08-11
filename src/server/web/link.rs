@@ -62,17 +62,17 @@ impl RunLink {
 #[template(
     ext = "html",
     source = "\
-<a href=\"{{ root }}runner/{{ name }}\">
+<a href=\"{{ root }}worker/{{ name }}\">
    {{ name }}
 </a>
 "
 )]
-pub struct RunnerLink {
+pub struct WorkerLink {
     root: String,
     name: String,
 }
 
-impl RunnerLink {
+impl WorkerLink {
     pub fn new(base: &Base, name: String) -> Self {
         Self {
             root: base.root.clone(),

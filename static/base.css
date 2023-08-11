@@ -127,19 +127,19 @@ nav a:hover {
     white-space: pre-wrap;
 }
 
-/* Runner */
+/* Worker */
 
-.runner * {
+.worker * {
     margin: 0;
 }
 
-.runner dl {
+.worker dl {
     display: grid;
     grid: auto-flow / max-content 1fr;
     column-gap: 1ch;
 }
 
-.runner .name {
+.worker .name {
     color: #380;
     font-weight: bold;
 }

@@ -3,8 +3,8 @@ mod commit;
 mod index;
 mod link;
 mod queue;
-mod runner;
 mod r#static;
+mod worker;
 
 use axum::{routing::get, Router};
 
@@ -46,7 +46,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
     let app = Router::new()
         .route("/", get(index::get))
         .route("/commit/:hash", get(commit::get))
-        .route("/runner/:name", get(runner::get))
+        .route("/worker/:name", get(worker::get))
         .route("/queue/", get(queue::get))
         .route("/queue/inner", get(queue::get_inner))
         .merge(api::router(&server))

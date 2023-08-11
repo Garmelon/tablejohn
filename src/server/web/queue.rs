@@ -11,15 +11,15 @@ use sqlx::SqlitePool;
 use crate::{
     config::Config,
     server::{
-        runners::{RunnerInfo, Runners},
         util,
+        workers::{WorkerInfo, Workers},
     },
-    shared::RunnerStatus,
+    shared::WorkerStatus,
     somehow,
 };
 
 use super::{
-    link::{CommitLink, RunLink, RunnerLink},
+    link::{CommitLink, RunLink, WorkerLink},
     Base, Tab,
 };
 
@@ -29,8 +29,8 @@ enum Status {
     Working(RunLink),
 }
 
-struct Runner {
-    link: RunnerLink,
+struct Worker {
+    link: WorkerLink,
     status: Status,
 }
 
@@ -38,33 +38,33 @@ struct Task {
     commit: CommitLink,
     since: String,
     priority: i64,
-    runners: Vec<RunnerLink>,
+    workers: Vec<WorkerLink>,
     odd: bool,
 }
 
-fn sorted_runners(runners: &Mutex<Runners>) -> Vec<(String, RunnerInfo)> {
-    let mut runners = runners
+fn sorted_workers(workers: &Mutex<Workers>) -> Vec<(String, WorkerInfo)> {
+    let mut workers = workers
         .lock()
         .unwrap()
         .clean()
         .get_all()
         .into_iter()
         .collect::<Vec<_>>();
-    runners.sort_unstable_by(|(a, _), (b, _)| a.cmp(b));
-    runners
+    workers.sort_unstable_by(|(a, _), (b, _)| a.cmp(b));
+    workers
 }
 
-async fn get_runners(
+async fn get_workers(
     db: &SqlitePool,
-    runners: &[(String, RunnerInfo)],
+    workers: &[(String, WorkerInfo)],
     base: &Base,
-) -> somehow::Result<Vec<Runner>> {
+) -> somehow::Result<Vec<Worker>> {
     let mut result = vec![];
-    for (name, info) in runners {
+    for (name, info) in workers {
         let status = match &info.status {
-            RunnerStatus::Idle => Status::Idle,
-            RunnerStatus::Busy => Status::Busy,
-            RunnerStatus::Working(run) => {
+            WorkerStatus::Idle => Status::Idle,
+            WorkerStatus::Busy => Status::Busy,
+            WorkerStatus::Working(run) => {
                 let message =
                     sqlx::query_scalar!("SELECT message FROM commits WHERE hash = ?", run.hash)
                         .fetch_one(db)
@@ -73,8 +73,8 @@ async fn get_runners(
             }
         };
 
-        result.push(Runner {
-            link: RunnerLink::new(base, name.clone()),
+        result.push(Worker {
+            link: WorkerLink::new(base, name.clone()),
             status,
         })
     }
@@ -83,17 +83,17 @@ async fn get_runners(
 
 async fn get_queue(
     db: &SqlitePool,
-    runners: &[(String, RunnerInfo)],
+    workers: &[(String, WorkerInfo)],
     base: &Base,
 ) -> somehow::Result<Vec<Task>> {
-    // Group runners by commit hash
-    let mut runners_by_commit: HashMap<String, Vec<RunnerLink>> = HashMap::new();
-    for (name, info) in runners {
-        if let RunnerStatus::Working(run) = &info.status {
-            runners_by_commit
+    // Group workers by commit hash
+    let mut workers_by_commit: HashMap<String, Vec<WorkerLink>> = HashMap::new();
+    for (name, info) in workers {
+        if let WorkerStatus::Working(run) = &info.status {
+            workers_by_commit
                 .entry(run.hash.clone())
                 .or_default()
-                .push(RunnerLink::new(base, name.clone()));
+                .push(WorkerLink::new(base, name.clone()));
         }
     }
 
@@ -112,7 +112,7 @@ async fn get_queue(
     )
     .fetch(db)
     .map_ok(|r| Task {
-        runners: runners_by_commit.remove(&r.hash).unwrap_or_default(),
+        workers: workers_by_commit.remove(&r.hash).unwrap_or_default(),
         commit: CommitLink::new(base, r.hash, &r.message, r.reachable),
         since: util::format_delta_from_now(r.date),
         priority: r.priority,
@@ -137,20 +137,20 @@ async fn get_queue(
 #[derive(Template)]
 #[template(path = "queue_inner.html")]
 struct QueueInnerTemplate {
-    runners: Vec<Runner>,
+    workers: Vec<Worker>,
     tasks: Vec<Task>,
 }
 
 pub async fn get_inner(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
-    State(runners): State<Arc<Mutex<Runners>>>,
+    State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Queue);
-    let sorted_runners = sorted_runners(&runners);
-    let runners = get_runners(&db, &sorted_runners, &base).await?;
-    let tasks = get_queue(&db, &sorted_runners, &base).await?;
-    Ok(QueueInnerTemplate { runners, tasks })
+    let sorted_workers = sorted_workers(&workers);
+    let workers = get_workers(&db, &sorted_workers, &base).await?;
+    let tasks = get_queue(&db, &sorted_workers, &base).await?;
+    Ok(QueueInnerTemplate { workers, tasks })
 }
 #[derive(Template)]
 #[template(path = "queue.html")]
@@ -162,14 +162,14 @@ struct QueueTemplate {
 pub async fn get(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
-    State(runners): State<Arc<Mutex<Runners>>>,
+    State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Queue);
-    let sorted_runners = sorted_runners(&runners);
-    let runners = get_runners(&db, &sorted_runners, &base).await?;
-    let tasks = get_queue(&db, &sorted_runners, &base).await?;
+    let sorted_workers = sorted_workers(&workers);
+    let workers = get_workers(&db, &sorted_workers, &base).await?;
+    let tasks = get_queue(&db, &sorted_workers, &base).await?;
     Ok(QueueTemplate {
         base,
-        inner: QueueInnerTemplate { runners, tasks },
+        inner: QueueInnerTemplate { workers, tasks },
     })
 }

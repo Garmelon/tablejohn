@@ -1,7 +1,7 @@
 mod recurring;
-mod runners;
 mod util;
 mod web;
+mod workers;
 
 use std::{
     path::Path,
@@ -18,13 +18,9 @@ use sqlx::{
 use tokio::select;
 use tracing::{debug, info};
 
-use crate::{
-    args::ServerCommand,
-    config::{Config, RunnerServerConfig},
-    runner, somehow,
-};
+use crate::{args::ServerCommand, config::Config, somehow};
 
-use self::runners::Runners;
+use self::workers::Workers;
 
 async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
@@ -72,7 +68,7 @@ pub struct Server {
     db: SqlitePool,
     repo: Option<Repo>,
     bench_repo: Option<BenchRepo>,
-    runners: Arc<Mutex<Runners>>,
+    workers: Arc<Mutex<Workers>>,
 }
 
 impl Server {
@@ -98,7 +94,7 @@ impl Server {
             db: open_db(&command.db).await?,
             repo,
             bench_repo,
-            runners: Arc::new(Mutex::new(Runners::new(config))),
+            workers: Arc::new(Mutex::new(Workers::new(config))),
         })
     }
 

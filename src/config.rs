@@ -30,7 +30,7 @@ mod default {
         "[::1]:8221".parse().unwrap()
     }
 
-    pub fn web_runner_timeout() -> Duration {
+    pub fn web_worker_timeout() -> Duration {
         Duration::from_secs(60)
     }
 
@@ -38,7 +38,7 @@ mod default {
         Duration::from_secs(60)
     }
 
-    pub fn runner_ping_delay() -> Duration {
+    pub fn worker_ping_delay() -> Duration {
         Duration::from_secs(10)
     }
 }
@@ -51,10 +51,10 @@ struct Web {
     #[serde(default = "default::web_address")]
     address: SocketAddr,
 
-    runner_token: Option<String>,
+    worker_token: Option<String>,
 
-    #[serde(default = "default::web_runner_timeout")]
-    runner_timeout: Duration,
+    #[serde(default = "default::web_worker_timeout")]
+    worker_timeout: Duration,
 }
 
 impl Default for Web {
@@ -62,8 +62,8 @@ impl Default for Web {
         Self {
             base: default::web_base(),
             address: default::web_address(),
-            runner_token: None,
-            runner_timeout: default::web_runner_timeout(),
+            worker_token: None,
+            worker_timeout: default::web_worker_timeout(),
         }
     }
 }
@@ -86,26 +86,26 @@ impl Default for Repo {
 }
 
 #[derive(Debug, Deserialize)]
-struct RunnerServer {
+struct WorkerServer {
     url: String,
     token: String,
 }
 
 #[derive(Debug, Deserialize)]
-struct Runner {
+struct Worker {
     name: Option<String>,
 
-    #[serde(default = "default::runner_ping_delay", with = "humantime_serde")]
+    #[serde(default = "default::worker_ping_delay", with = "humantime_serde")]
     ping_delay: Duration,
 
-    servers: HashMap<String, RunnerServer>,
+    servers: HashMap<String, WorkerServer>,
 }
 
-impl Default for Runner {
+impl Default for Worker {
     fn default() -> Self {
         Self {
             name: None,
-            ping_delay: default::runner_ping_delay(),
+            ping_delay: default::worker_ping_delay(),
             servers: HashMap::new(),
         }
     }
@@ -120,7 +120,7 @@ struct ConfigFile {
     repo: Repo,
 
     #[serde(default)]
-    runner: Runner,
+    worker: Worker,
 }
 
 impl ConfigFile {
@@ -148,11 +148,11 @@ impl ConfigFile {
         base
     }
 
-    fn web_runner_token(&self) -> String {
+    fn web_worker_token(&self) -> String {
         self.web
-            .runner_token
+            .worker_token
             .clone()
-            .unwrap_or_else(id::random_runner_token)
+            .unwrap_or_else(id::random_worker_token)
     }
 
     fn repo_name(&self, args: &Args) -> somehow::Result<String> {
@@ -174,16 +174,16 @@ impl ConfigFile {
         Ok("unnamed repo".to_string())
     }
 
-    fn runner_name(&self) -> String {
-        if let Some(name) = &self.runner.name {
+    fn worker_name(&self) -> String {
+        if let Some(name) = &self.worker.name {
             return name.clone();
         }
 
         gethostname::gethostname().to_string_lossy().to_string()
     }
 
-    fn runner_servers(&self) -> HashMap<String, RunnerServerConfig> {
-        self.runner
+    fn worker_servers(&self) -> HashMap<String, WorkerServerConfig> {
+        self.worker
             .servers
             .iter()
             .map(|(name, server)| {
@@ -192,14 +192,14 @@ impl ConfigFile {
                     url.push('/');
                 }
                 let token = server.token.to_string();
-                (name.to_string(), RunnerServerConfig { url, token })
+                (name.to_string(), WorkerServerConfig { url, token })
             })
             .collect()
     }
 }
 
 #[derive(Clone)]
-pub struct RunnerServerConfig {
+pub struct WorkerServerConfig {
     /// Always ends with a `/`.
     pub url: String,
     pub token: String,
@@ -210,13 +210,13 @@ pub struct Config {
     /// Always starts and ends with a `/`.
     pub web_base: String,
     pub web_address: SocketAddr,
-    pub web_runner_token: String,
-    pub web_runner_timeout: Duration,
+    pub web_worker_token: String,
+    pub web_worker_timeout: Duration,
     pub repo_name: String,
     pub repo_update_delay: Duration,
-    pub runner_name: String,
-    pub runner_ping_delay: Duration,
-    pub runner_servers: HashMap<String, RunnerServerConfig>,
+    pub worker_name: String,
+    pub worker_ping_delay: Duration,
+    pub worker_servers: HashMap<String, WorkerServerConfig>,
 }
 
 impl Config {
@@ -238,21 +238,21 @@ impl Config {
         debug!("Loaded config file:\n{config_file:#?}");
 
         let web_base = config_file.web_base();
-        let web_runner_token = config_file.web_runner_token();
+        let web_worker_token = config_file.web_worker_token();
         let repo_name = config_file.repo_name(args)?;
-        let runner_name = config_file.runner_name();
-        let runner_servers = config_file.runner_servers();
+        let worker_name = config_file.worker_name();
+        let worker_servers = config_file.worker_servers();
 
         Ok(Self {
             web_base,
             web_address: config_file.web.address,
-            web_runner_token,
-            web_runner_timeout: config_file.web.runner_timeout,
+            web_worker_token,
+            web_worker_timeout: config_file.web.worker_timeout,
             repo_name,
             repo_update_delay: config_file.repo.update_delay,
-            runner_name,
-            runner_ping_delay: config_file.runner.ping_delay,
-            runner_servers,
+            worker_name,
+            worker_ping_delay: config_file.worker.ping_delay,
+            worker_servers,
         })
     }
 }

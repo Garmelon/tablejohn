@@ -1,21 +1,21 @@
 {% import "util.html" as util %}
 
-<h2>Runners</h2>
-{% if runners.is_empty() %}
-<p>No runners connected</p>
+<h2>Workers</h2>
+{% if workers.is_empty() %}
+<p>No workers connected</p>
 {% else %}
 <table>
     <thead>
         <tr>
-            <th>runner</th>
+            <th>worker</th>
             <th>status</th>
         </tr>
     </thead>
     <tbody>
-        {% for runner in runners %}
+        {% for worker in workers %}
         <tr>
-            <td>{{ runner.link|safe }}</td>
-            {% match runner.status %}
+            <td>{{ worker.link|safe }}</td>
+            {% match worker.status %}
             {% when Status::Idle %}
             <td>idle</td>
             {% when Status::Busy %}
@@ -36,7 +36,7 @@
             <th>commit</th>
             <th>since</th>
             <th>prio</th>
-            <th>runner</th>
+            <th>worker</th>
         </tr>
     </thead>
     <tbody>
@@ -45,10 +45,10 @@
             <td>{{ task.commit|safe }}</td>
             <td>{{ task.since }}</td>
             <td>{{ task.priority }}</td>
-            {% if task.runners.is_empty() %}
+            {% if task.workers.is_empty() %}
             <td>-</td>
             {% else %}
-            <td>{{ task.runners|join(", ")|safe }}</td>
+            <td>{{ task.workers|join(", ")|safe }}</td>
             {% endif %}
         </tr>
         {% endfor %}

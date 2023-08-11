@@ -17,10 +17,10 @@ use tracing::debug;
 use crate::{
     config::Config,
     server::{
-        runners::{RunnerInfo, Runners},
+        workers::{WorkerInfo, Workers},
         BenchRepo, Server,
     },
-    shared::{BenchMethod, RunnerRequest, ServerResponse, Work},
+    shared::{BenchMethod, ServerResponse, Work, WorkerRequest},
     somehow,
 };
 
@@ -29,8 +29,8 @@ async fn post_status(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
     State(bench_repo): State<Option<BenchRepo>>,
-    State(runners): State<Arc<Mutex<Runners>>>,
-    Json(request): Json<RunnerRequest>,
+    State(workers): State<Arc<Mutex<Workers>>>,
+    Json(request): Json<WorkerRequest>,
 ) -> somehow::Result<Response> {
     let name = match auth::authenticate(config, auth) {
         Ok(name) => name,
@@ -46,14 +46,14 @@ async fn post_status(
     .fetch_all(&db)
     .await?;
 
-    let mut guard = runners.lock().unwrap();
+    let mut guard = workers.lock().unwrap();
     guard.clean();
     if !guard.verify(&name, &request.secret) {
         return Ok((StatusCode::UNAUTHORIZED, "invalid secret").into_response());
     }
     guard.update(
         name.clone(),
-        RunnerInfo::new(request.secret, OffsetDateTime::now_utc(), request.status),
+        WorkerInfo::new(request.secret, OffsetDateTime::now_utc(), request.status),
     );
     let work = match request.request_work {
         true => guard.find_free_work(&queue),
@@ -91,5 +91,5 @@ pub fn router(server: &Server) -> Router<Server> {
 
     // TODO Get repo tar
     // TODO Get bench repo tar
-    Router::new().route("/api/runner/status", post(post_status))
+    Router::new().route("/api/worker/status", post(post_status))
 }
