@@ -5,6 +5,7 @@ mod tree;
 use std::sync::{Arc, Mutex};
 
 use reqwest::Client;
+use tokio::sync::Mutex as AsyncMutex;
 use tracing::{error, info};
 
 use crate::{config::Config, id, worker::server::Server};
@@ -33,6 +34,7 @@ impl Worker {
                 secret: id::random_worker_secret(),
                 client: client.clone(),
                 current_run: current_run.clone(),
+                status_lock: Arc::new(AsyncMutex::new(())),
             })
             .collect::<Vec<_>>();
 

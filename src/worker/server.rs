@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use reqwest::Client;
 use tempfile::TempDir;
+use tokio::sync::Mutex as AsyncMutex;
 use tracing::{debug, warn};
 
 use crate::{
@@ -21,8 +22,23 @@ pub struct Server {
     pub config: &'static Config,
     pub server_config: &'static WorkerServerConfig,
     pub secret: String,
+
     pub client: Client,
     pub current_run: Arc<Mutex<Option<RunInProgress>>>,
+
+    /// You must hold this lock while sending status updates to the server and
+    /// while processing the response.
+    ///
+    /// This lock prevents the following race condition that would lead to
+    /// multiple runners receiving runs for the same commit in unlucky
+    /// circumstances:
+    ///
+    /// 1. The main task requests a run
+    /// 2. The ping task sends a status update where the worker is idle
+    /// 3. The server receives 1, reserves a run and replies
+    /// 4. The server receives 2 and clears the reservatio
+    /// 5. Another worker requests a run before this worker's next ping
+    pub status_lock: Arc<AsyncMutex<()>>,
 }
 
 impl Server {
@@ -89,6 +105,7 @@ impl Server {
 
     async fn ping(&self) -> somehow::Result<()> {
         debug!("Pinging server");
+        let guard = self.status_lock.lock().await;
 
         let status = match &*self.current_run.lock().unwrap() {
             Some(run) if run.server_name == self.name => WorkerStatus::Working(UnfinishedRun {
@@ -112,6 +129,7 @@ impl Server {
 
         // TODO Signal that run should be aborted
 
+        drop(guard);
         Ok(())
     }
 
