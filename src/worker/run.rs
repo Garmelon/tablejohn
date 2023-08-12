@@ -1,3 +1,5 @@
+mod internal;
+
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -7,9 +9,12 @@ use tokio::sync::Notify;
 use tracing::error;
 
 use crate::{
+    config::WorkerServerConfig,
     shared::{BenchMethod, FinishedRun, Measurement, Run, Source, UnfinishedRun},
     somehow,
 };
+
+use super::server::Server;
 
 struct Finished {
     exit_code: i32,
@@ -21,15 +26,17 @@ const SCROLLBACK: usize = 50;
 #[derive(Clone)]
 pub struct RunInProgress {
     server_name: String,
+    server_config: &'static WorkerServerConfig,
     run: Run,
     output: Arc<Mutex<Vec<(Source, String)>>>,
     abort: Arc<Notify>,
 }
 
 impl RunInProgress {
-    pub fn new(server_name: String, run: Run) -> Self {
+    pub fn new(server_name: String, server_config: &'static WorkerServerConfig, run: Run) -> Self {
         Self {
             server_name,
+            server_config,
             run,
             output: Arc::new(Mutex::new(vec![])),
             abort: Arc::new(Notify::new()),
@@ -63,13 +70,14 @@ impl RunInProgress {
         self.output.lock().unwrap().push((Source::Stderr, line));
     }
 
-    pub async fn perform(&self) -> Option<FinishedRun> {
+    pub async fn perform(&self, server: &Server) -> Option<FinishedRun> {
         // TODO Remove type annotations
         // TODO Handle aborts
         let result: somehow::Result<_> = match &self.run.bench_method {
-            BenchMethod::Internal => todo!(),
+            BenchMethod::Internal => self.perform_internal(server),
             BenchMethod::Repo { hash } => todo!(),
-        };
+        }
+        .await;
 
         let finished = match result {
             Ok(outcome) => outcome,

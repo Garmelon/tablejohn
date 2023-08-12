@@ -2,23 +2,19 @@ use std::{
     collections::HashMap,
     fs::File,
     io::{BufRead, BufReader},
-    path::Path,
-    sync::{Arc, Mutex},
+    path::{Path, PathBuf},
 };
 
 use regex::RegexBuilder;
-use tokio::{select, sync::mpsc};
-use tracing::debug;
 use walkdir::WalkDir;
 
 use crate::{
-    config::WorkerServerConfig,
     shared::{Direction, Measurement},
     somehow,
-    worker::{run::RunStatus, tree::UnpackedTree},
+    worker::server::Server,
 };
 
-use super::Run;
+use super::{Finished, RunInProgress};
 
 #[derive(Default)]
 struct Counts {
@@ -27,7 +23,7 @@ struct Counts {
     todos_by_ext: HashMap<String, usize>,
 }
 
-fn count(path: &Path) -> somehow::Result<Counts> {
+fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
     let todo_regex = RegexBuilder::new(r"[^a-z]todo[^a-z]")
         .case_insensitive(true)
         .build()
@@ -60,6 +56,22 @@ fn count(path: &Path) -> somehow::Result<Counts> {
         *counts.files_by_ext.entry(extension.clone()).or_default() += 1;
         *counts.lines_by_ext.entry(extension.clone()).or_default() += lines;
         *counts.todos_by_ext.entry(extension.clone()).or_default() += todos;
+
+        let relative_path = entry
+            .path()
+            .components()
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .take(entry.depth())
+            .rev()
+            .collect::<PathBuf>();
+        run.log_stdout(format!(
+            "{} has {lines} line{}, {todos} todo{}",
+            relative_path.display(),
+            if lines == 1 { "" } else { "s" },
+            if todos == 1 { "" } else { "s" },
+        ));
     }
 
     Ok(counts)
@@ -137,24 +149,18 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     measurements
 }
 
-pub async fn run(
-    server_config: &'static WorkerServerConfig,
-    run: Arc<Mutex<Run>>,
-    mut abort_rx: mpsc::UnboundedReceiver<()>,
-) -> somehow::Result<RunStatus> {
-    let hash = run.lock().unwrap().hash.clone();
-    let url = format!("{}api/worker/repo/{}", server_config.url, hash);
-    let tree = select! {
-        r = UnpackedTree::download(&url, hash) => Some(r?),
-        _ = abort_rx.recv() => None,
-    };
-    let Some(tree) = tree else {
-        debug!("Run aborted while downloading commit");
-        return Ok(RunStatus::Aborted);
-    };
-
-    let path = tree.dir.path().to_path_buf();
-    let counts = tokio::task::spawn_blocking(move || count(&path)).await??;
-
-    Ok(RunStatus::finished(0, measurements(counts)))
+impl RunInProgress {
+    pub(super) async fn perform_internal(
+        &self,
+        server: &Server,
+    ) -> somehow::Result<Option<Finished>> {
+        let run = self.clone();
+        let dir = server.download_repo(&self.run.hash).await?;
+        let path = dir.path().to_path_buf();
+        let counts = tokio::task::spawn_blocking(move || count(&run, &path)).await??;
+        Ok(Some(Finished {
+            exit_code: 0,
+            measurements: measurements(counts),
+        }))
+    }
 }
