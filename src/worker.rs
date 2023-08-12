@@ -1,4 +1,5 @@
 mod coordinator;
+mod run;
 mod server;
 mod tree;
 

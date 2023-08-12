@@ -41,6 +41,10 @@ mod default {
     pub fn worker_ping_delay() -> Duration {
         Duration::from_secs(10)
     }
+
+    pub fn worker_batch_duration() -> Duration {
+        Duration::from_secs(60 * 10)
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -98,6 +102,9 @@ struct Worker {
     #[serde(default = "default::worker_ping_delay", with = "humantime_serde")]
     ping_delay: Duration,
 
+    #[serde(default = "default::worker_batch_duration", with = "humantime_serde")]
+    batch_duration: Duration,
+
     servers: HashMap<String, WorkerServer>,
 }
 
@@ -106,6 +113,7 @@ impl Default for Worker {
         Self {
             name: None,
             ping_delay: default::worker_ping_delay(),
+            batch_duration: default::worker_batch_duration(),
             servers: HashMap::new(),
         }
     }
@@ -216,6 +224,7 @@ pub struct Config {
     pub repo_update_delay: Duration,
     pub worker_name: String,
     pub worker_ping_delay: Duration,
+    pub worker_batch_duration: Duration,
     pub worker_servers: HashMap<String, WorkerServerConfig>,
 }
 
@@ -252,6 +261,7 @@ impl Config {
             repo_update_delay: config_file.repo.update_delay,
             worker_name,
             worker_ping_delay: config_file.worker.ping_delay,
+            worker_batch_duration: config_file.worker.batch_duration,
             worker_servers,
         })
     }

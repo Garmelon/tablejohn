@@ -9,6 +9,10 @@ fn random_id(prefix: &str, length: usize) -> String {
         .collect()
 }
 
+pub fn random_run_id() -> String {
+    random_id("r-", 30)
+}
+
 pub fn random_worker_token() -> String {
     random_id("t-", 30)
 }
