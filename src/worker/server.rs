@@ -47,8 +47,8 @@ impl Server {
             info: None,
             secret: self.secret.clone(),
             status,
-            request_work,
-            submit_work,
+            request_run: request_work,
+            submit_run: submit_work,
         };
 
         let response = self

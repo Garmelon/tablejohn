@@ -11,6 +11,14 @@ fn is_false(b: &bool) -> bool {
 }
 
 #[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
+#[repr(u8)]
+pub enum Source {
+    // Stdin would be fd 0
+    Stdout = 1,
+    Stderr = 2,
+}
+
+#[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
 #[repr(i8)]
 pub enum Direction {
     LessIsBetter = -1,
@@ -29,34 +37,40 @@ pub struct Measurement {
     pub direction: Option<Direction>,
 }
 
-#[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
-#[repr(u8)]
-pub enum Source {
-    // Stdin would be fd 0
-    Stdout = 1,
-    Stderr = 2,
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(tag = "type")]
+pub enum BenchMethod {
+    Internal,
+    Repo { hash: String },
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Run {
+    pub id: String,
+    pub hash: String,
+    pub bench_method: BenchMethod,
+    pub start: OffsetDateTime,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UnfinishedRun {
-    pub id: String,
-    pub hash: String,
-    pub start: OffsetDateTime,
+    #[serde(flatten)]
+    pub run: Run,
     #[serde(default)]
     pub last_output: Vec<(Source, String)>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct FinishedRun {
-    pub id: String,
-    pub hash: String,
-    pub start: OffsetDateTime,
-    pub end: OffsetDateTime,
+    #[serde(flatten)]
+    pub run: Run,
     #[serde(default)]
     pub exit_code: i32,
-    pub measurements: HashMap<String, Measurement>,
     #[serde(default)]
     pub output: Vec<(Source, String)>,
+    #[serde(default)]
+    pub measurements: HashMap<String, Measurement>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -84,48 +98,28 @@ pub struct WorkerRequest {
     /// What the worker is currently working on.
     pub status: WorkerStatus,
 
-    /// Whether the worker wants new work from the server.
+    /// The worker wants a new run from the server.
     ///
     /// If the server has a commit available, it should respond with a non-null
-    /// [`Response::work`].
+    /// [`ServerResponse::work`].
     #[serde(default, skip_serializing_if = "is_false")]
-    pub request_work: bool,
+    pub request_run: bool,
 
     /// The worker has finished a run and wants to submit the results.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub submit_work: Option<FinishedRun>,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[serde(tag = "type")]
-pub enum BenchMethod {
-    /// Use internal (deterministic) benchmarking code.
-    Internal,
-    /// Use a commit from a bench repo.
-    Repo { hash: String },
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Work {
-    /// Id of the run.
-    pub id: String,
-    /// Hash of commit to benchmark.
-    pub hash: String,
-    /// How to benchmark the commit.
-    pub bench: BenchMethod,
+    pub submit_run: Option<FinishedRun>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerResponse {
-    /// Work the worker requested using [`Request::request_work].
+    /// Run the worker requested using [`RunnerRequest::request_run`].
     ///
-    /// The worker may ignore this work and do something else. However, until
-    /// the next update request sent by the worker, the server will consider the
+    /// The worker may ignore this run and do something else. However, until the
+    /// next update request sent by the worker, the server will consider the
     /// worker as preparing to work on the commit, and will not give out the
     /// same commit to other workers.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub work: Option<Work>,
+    pub run: Option<Run>,
 
     /// The worker should abort the current run.
     ///
@@ -133,5 +127,5 @@ pub struct ServerResponse {
     /// the same commit as another worker and has broken the tie in favor of the
     /// other worker. The worker may continue the run despite this flag.
     #[serde(default, skip_serializing_if = "is_false")]
-    pub abort_work: bool,
+    pub abort_run: bool,
 }

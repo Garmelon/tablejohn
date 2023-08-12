@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 use crate::{
     config::Config,
     id,
-    shared::{BenchMethod, UnfinishedRun, Work, WorkerStatus},
+    shared::{BenchMethod, Run, UnfinishedRun, WorkerStatus},
 };
 
 #[derive(Clone)]
@@ -54,42 +54,49 @@ impl Workers {
         self.workers.insert(name, info);
     }
 
-    /// Find and reserve work for a worker.
-    pub fn find_work(&mut self, name: &str, queue: &[String], bench: BenchMethod) -> Option<Work> {
+    pub fn find_and_reserve_run(
+        &mut self,
+        name: &str,
+        queue: &[String],
+        bench_method: BenchMethod,
+    ) -> Option<Run> {
         let covered = self
             .workers
             .values()
             .filter_map(|info| match &info.status {
                 WorkerStatus::Idle | WorkerStatus::Busy => None,
-                WorkerStatus::Working(run) => Some(&run.hash),
+                WorkerStatus::Working(unfinished) => Some(&unfinished.run.hash),
             })
             .collect::<HashSet<_>>();
 
         // Find work not already covered by another worker
         let hash = queue.iter().find(|hash| !covered.contains(hash))?.clone();
         let id = id::random_run_id();
-        let work = Work { id, hash, bench };
+        let run = Run {
+            id,
+            hash,
+            bench_method,
+            start: OffsetDateTime::now_utc(),
+        };
 
         // Reserve work so other workers don't choose it
         if let Some(info) = self.workers.get_mut(name) {
             info.status = WorkerStatus::Working(UnfinishedRun {
-                id: work.id.clone(),
-                hash: work.hash.clone(),
-                start: OffsetDateTime::now_utc(),
+                run: run.clone(),
                 last_output: vec![],
             });
         }
 
-        Some(work)
+        Some(run)
     }
 
     pub fn should_abort_work(&self, name: &str, queue: &[String]) -> bool {
         // A runner should abort work if...
         let Some(info) = self.workers.get(name) else { return false; };
-        let WorkerStatus::Working (run) = &info.status else { return false; };
+        let WorkerStatus::Working (unfinished) = &info.status else { return false; };
 
         // The commit isn't in the queue
-        if !queue.contains(&run.hash) {
+        if !queue.contains(&unfinished.run.hash) {
             return true;
         }
 
@@ -98,7 +105,9 @@ impl Workers {
             .workers
             .iter()
             .filter_map(|(name, info)| match &info.status {
-                WorkerStatus::Working(r) if r.hash == run.hash => Some((name, r.start)),
+                WorkerStatus::Working(u) if u.run.hash == unfinished.run.hash => {
+                    Some((name, u.run.start))
+                }
                 _ => None,
             })
             .max_by_key(|(_, start)| *start)

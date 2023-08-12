@@ -28,31 +28,39 @@ use crate::{
     somehow,
 };
 
-async fn save_work(run: FinishedRun, db: &SqlitePool) -> somehow::Result<()> {
+async fn save_work(finished: FinishedRun, db: &SqlitePool) -> somehow::Result<()> {
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
+
+    let end = OffsetDateTime::now_utc();
+    let bench_method = match finished.run.bench_method {
+        BenchMethod::Internal => "internal".to_string(),
+        BenchMethod::Repo { hash } => format!("bench repo, hash {hash}"),
+    };
 
     sqlx::query!(
         "\
         INSERT INTO runs ( \
             id, \
             hash, \
+            bench_method, \
             start, \
             end, \
             exit_code \
         ) \
-        VALUES (?, ?, ?, ?, ?) \
+        VALUES (?, ?, ?, ?, ?, ?) \
         ",
-        run.id,
-        run.hash,
-        run.start,
-        run.end,
-        run.exit_code,
+        finished.run.id,
+        finished.run.hash,
+        bench_method,
+        finished.run.start,
+        end,
+        finished.exit_code,
     )
     .execute(&mut *conn)
     .await?;
 
-    for (name, measurement) in run.measurements {
+    for (name, measurement) in finished.measurements {
         sqlx::query!(
             "\
             INSERT INTO run_measurements ( \
@@ -65,7 +73,7 @@ async fn save_work(run: FinishedRun, db: &SqlitePool) -> somehow::Result<()> {
             ) \
             VALUES (?, ?, ?, ?, ?, ?) \
             ",
-            run.id,
+            finished.run.id,
             name,
             measurement.value,
             measurement.stddev,
@@ -76,7 +84,7 @@ async fn save_work(run: FinishedRun, db: &SqlitePool) -> somehow::Result<()> {
         .await?;
     }
 
-    for (idx, (source, text)) in run.output.into_iter().enumerate() {
+    for (idx, (source, text)) in finished.output.into_iter().enumerate() {
         // Hopefully we won't need more than 4294967296 output chunks per run :P
         let idx = idx as u32;
         sqlx::query!(
@@ -89,7 +97,7 @@ async fn save_work(run: FinishedRun, db: &SqlitePool) -> somehow::Result<()> {
             ) \
             VALUES (?, ?, ?, ?) \
             ",
-            run.id,
+            finished.run.id,
             idx,
             source,
             text,
@@ -99,7 +107,7 @@ async fn save_work(run: FinishedRun, db: &SqlitePool) -> somehow::Result<()> {
     }
 
     // The thing has been done :D
-    sqlx::query!("DELETE FROM queue WHERE hash = ?", run.hash)
+    sqlx::query!("DELETE FROM queue WHERE hash = ?", finished.run.hash)
         .execute(&mut *conn)
         .await?;
 
@@ -120,7 +128,7 @@ async fn post_status(
         Err(response) => return Ok(response),
     };
 
-    if let Some(run) = request.submit_work {
+    if let Some(run) = request.submit_run {
         save_work(run, &db).await?;
     }
 
@@ -153,8 +161,8 @@ async fn post_status(
             name.clone(),
             WorkerInfo::new(request.secret, OffsetDateTime::now_utc(), request.status),
         );
-        let work = match request.request_work {
-            true => guard.find_work(&name, &queue, bench_method),
+        let work = match request.request_run {
+            true => guard.find_and_reserve_run(&name, &queue, bench_method),
             false => None,
         };
         let abort_work = guard.should_abort_work(&name, &queue);
@@ -162,7 +170,11 @@ async fn post_status(
     };
 
     debug!("Received status update from {name}");
-    Ok(Json(ServerResponse { work, abort_work }).into_response())
+    Ok(Json(ServerResponse {
+        run: work,
+        abort_run: abort_work,
+    })
+    .into_response())
 }
 
 fn stream_response(repo: Arc<ThreadSafeRepository>, id: ObjectId) -> impl IntoResponse {

@@ -1,9 +1,10 @@
 CREATE TABLE runs (
-    id        TEXT NOT NULL PRIMARY KEY,
-    hash      TEXT NOT NULL,
-    start     TEXT NOT NULL,
-    end       TEXT NOT NULL,
-    exit_code INT  NOT NULL,
+    id           TEXT NOT NULL PRIMARY KEY,
+    hash         TEXT NOT NULL,
+    bench_method TEXT NOT NULL,
+    start        TEXT NOT NULL,
+    end          TEXT NOT NULL,
+    exit_code    INT  NOT NULL,
 
     FOREIGN KEY (hash) REFERENCES commits (hash) ON DELETE CASCADE
 ) STRICT;
