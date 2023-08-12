@@ -28,7 +28,7 @@ use crate::{
     somehow,
 };
 
-async fn save_work(run: FinishedRun, db: SqlitePool) -> somehow::Result<()> {
+async fn save_work(run: FinishedRun, db: &SqlitePool) -> somehow::Result<()> {
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
@@ -120,6 +120,10 @@ async fn post_status(
         Err(response) => return Ok(response),
     };
 
+    if let Some(run) = request.submit_work {
+        save_work(run, &db).await?;
+    }
+
     // Fetch queue
     let queue = sqlx::query_scalar!(
         "\
@@ -156,10 +160,6 @@ async fn post_status(
         let abort_work = guard.should_abort_work(&name, &queue);
         (work, abort_work)
     };
-
-    if let Some(run) = request.submit_work {
-        save_work(run, db).await?;
-    }
 
     debug!("Received status update from {name}");
     Ok(Json(ServerResponse { work, abort_work }).into_response())
