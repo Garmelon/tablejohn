@@ -1,3 +1,6 @@
+mod internal;
+mod repo;
+
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -5,6 +8,7 @@ use std::{
 
 use time::OffsetDateTime;
 use tokio::sync::mpsc;
+use tracing::{debug_span, error, Instrument};
 
 use crate::{
     id,
@@ -89,5 +93,16 @@ pub async fn run(
     abort_rx: mpsc::UnboundedReceiver<()>,
     bench_method: BenchMethod,
 ) {
-    // TODO Implement
+    async {
+        let result = match bench_method {
+            BenchMethod::Internal => internal::run(run, abort_rx).await,
+            BenchMethod::Repo { hash } => repo::run(run, hash, abort_rx).await,
+        };
+        match result {
+            Ok(()) => {}
+            Err(e) => error!("Error during run:\n{e:?}"),
+        }
+    }
+    .instrument(debug_span!("run"))
+    .await;
 }
