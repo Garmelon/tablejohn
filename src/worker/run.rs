@@ -44,9 +44,9 @@ pub struct Run {
 }
 
 impl Run {
-    pub fn new(hash: String) -> Self {
+    pub fn new(id: String, hash: String) -> Self {
         Self {
-            id: id::random_run_id(),
+            id,
             hash,
             start: OffsetDateTime::now_utc(),
             output: vec![],

@@ -2,7 +2,11 @@ use std::collections::{HashMap, HashSet};
 
 use time::OffsetDateTime;
 
-use crate::{config::Config, shared::WorkerStatus};
+use crate::{
+    config::Config,
+    id,
+    shared::{BenchMethod, UnfinishedRun, Work, WorkerStatus},
+};
 
 #[derive(Clone)]
 pub struct WorkerInfo {
@@ -50,39 +54,60 @@ impl Workers {
         self.workers.insert(name, info);
     }
 
-    fn oldest_working_on(&self, hash: &str) -> Option<&str> {
-        self.workers
-            .iter()
-            .filter_map(|(name, info)| match &info.status {
-                WorkerStatus::Working(run) if run.hash == hash => Some((name, run.start)),
-                _ => None,
-            })
-            .max_by_key(|(_, since)| *since)
-            .map(|(name, _)| name as &str)
-    }
-
-    pub fn should_abort_work(&self, name: &str) -> bool {
-        // TODO Abort if not in queue
-        let Some(info) = self.workers.get(name) else { return false; };
-        let WorkerStatus::Working ( run) = &info.status else { return false; };
-        let Some(oldest) = self.oldest_working_on(&run.hash) else { return false; };
-        name != oldest
-    }
-
-    pub fn find_free_work<'a>(&self, hashes: &'a [String]) -> Option<&'a str> {
+    /// Find and reserve work for a worker.
+    pub fn find_work(&mut self, name: &str, queue: &[String], bench: BenchMethod) -> Option<Work> {
         let covered = self
             .workers
             .values()
             .filter_map(|info| match &info.status {
+                WorkerStatus::Idle | WorkerStatus::Busy => None,
                 WorkerStatus::Working(run) => Some(&run.hash),
-                _ => None,
             })
             .collect::<HashSet<_>>();
 
-        hashes
+        // Find work not already covered by another worker
+        let hash = queue.iter().find(|hash| !covered.contains(hash))?.clone();
+        let id = id::random_run_id();
+        let work = Work { id, hash, bench };
+
+        // Reserve work so other workers don't choose it
+        if let Some(info) = self.workers.get_mut(name) {
+            info.status = WorkerStatus::Working(UnfinishedRun {
+                id: work.id.clone(),
+                hash: work.hash.clone(),
+                start: OffsetDateTime::now_utc(),
+                last_output: vec![],
+            });
+        }
+
+        Some(work)
+    }
+
+    pub fn should_abort_work(&self, name: &str, queue: &[String]) -> bool {
+        // A runner should abort work if...
+        let Some(info) = self.workers.get(name) else { return false; };
+        let WorkerStatus::Working (run) = &info.status else { return false; };
+
+        // The commit isn't in the queue
+        if !queue.contains(&run.hash) {
+            return true;
+        }
+
+        // Another runner has been working on the same commit for longer
+        let oldest_working_on_commit = self
+            .workers
             .iter()
-            .find(|hash| !covered.contains(hash))
-            .map(|hash| hash as &str)
+            .filter_map(|(name, info)| match &info.status {
+                WorkerStatus::Working(r) if r.hash == run.hash => Some((name, r.start)),
+                _ => None,
+            })
+            .max_by_key(|(_, start)| *start)
+            .map(|(name, _)| name as &str);
+        if oldest_working_on_commit != Some(name) {
+            return true;
+        }
+
+        false
     }
 
     pub fn get(&self, name: &str) -> Option<WorkerInfo> {

@@ -161,7 +161,7 @@ impl Server {
             assert!(!unfinished);
             assert!(self.run.is_none());
 
-            let run = Arc::new(Mutex::new(Run::new(work.hash)));
+            let run = Arc::new(Mutex::new(Run::new(work.id, work.hash)));
             let (abort_tx, abort_rx) = mpsc::unbounded_channel();
 
             self.run = Some((run.clone(), abort_tx));

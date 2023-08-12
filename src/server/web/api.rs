@@ -24,7 +24,7 @@ use crate::{
         workers::{WorkerInfo, Workers},
         BenchRepo, Repo, Server,
     },
-    shared::{BenchMethod, FinishedRun, ServerResponse, Work, WorkerRequest},
+    shared::{BenchMethod, FinishedRun, ServerResponse, WorkerRequest},
     somehow,
 };
 
@@ -107,26 +107,6 @@ async fn save_work(run: FinishedRun, db: SqlitePool) -> somehow::Result<()> {
     Ok(())
 }
 
-fn prepare_work(
-    work: Option<&str>,
-    bench_repo: Option<BenchRepo>,
-) -> somehow::Result<Option<Work>> {
-    Ok(if let Some(hash) = work {
-        let bench = match bench_repo {
-            Some(bench_repo) => BenchMethod::Repo {
-                hash: bench_repo.0.to_thread_local().head_id()?.to_string(),
-            },
-            None => BenchMethod::Internal,
-        };
-        Some(Work {
-            hash: hash.to_string(),
-            bench,
-        })
-    } else {
-        None
-    })
-}
-
 async fn post_status(
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
@@ -140,6 +120,7 @@ async fn post_status(
         Err(response) => return Ok(response),
     };
 
+    // Fetch queue
     let queue = sqlx::query_scalar!(
         "\
         SELECT hash FROM queue \
@@ -149,6 +130,15 @@ async fn post_status(
     .fetch_all(&db)
     .await?;
 
+    // Fetch bench method
+    let bench_method = match bench_repo {
+        Some(bench_repo) => BenchMethod::Repo {
+            hash: bench_repo.0.to_thread_local().head_id()?.to_string(),
+        },
+        None => BenchMethod::Internal,
+    };
+
+    // Update internal state
     let (work, abort_work) = {
         let mut guard = workers.lock().unwrap();
         guard.clean();
@@ -160,10 +150,10 @@ async fn post_status(
             WorkerInfo::new(request.secret, OffsetDateTime::now_utc(), request.status),
         );
         let work = match request.request_work {
-            true => guard.find_free_work(&queue),
+            true => guard.find_work(&name, &queue, bench_method),
             false => None,
         };
-        let abort_work = guard.should_abort_work(&name);
+        let abort_work = guard.should_abort_work(&name, &queue);
         (work, abort_work)
     };
 
@@ -171,8 +161,6 @@ async fn post_status(
         save_work(run, db).await?;
     }
 
-    let work = prepare_work(work, bench_repo)?;
-    // TODO Reserve this work
     debug!("Received status update from {name}");
     Ok(Json(ServerResponse { work, abort_work }).into_response())
 }

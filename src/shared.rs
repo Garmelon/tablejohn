@@ -108,6 +108,8 @@ pub enum BenchMethod {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Work {
+    /// Id of the run.
+    pub id: String,
     /// Hash of commit to benchmark.
     pub hash: String,
     /// How to benchmark the commit.
