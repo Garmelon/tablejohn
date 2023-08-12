@@ -45,17 +45,35 @@ impl Server {
     // TODO Limit status requests to one in flight at a time (per server)
     pub async fn post_status(
         &self,
-        status: WorkerStatus,
-        request_work: bool,
-        submit_work: Option<FinishedRun>,
+        request_run: bool,
+        submit_run: Option<FinishedRun>,
     ) -> somehow::Result<ServerResponse> {
         let url = format!("{}api/worker/status", self.server_config.url);
+
+        let status = match &*self.current_run.lock().unwrap() {
+            Some(run) if run.server_name == self.name => WorkerStatus::Working(UnfinishedRun {
+                run: run.run.clone(),
+                last_output: run
+                    .output
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .rev()
+                    .take(SCROLLBACK)
+                    .rev()
+                    .cloned()
+                    .collect(),
+            }),
+            Some(_) => WorkerStatus::Busy,
+            None => WorkerStatus::Idle,
+        };
+
         let request = WorkerRequest {
             info: None,
             secret: self.secret.clone(),
             status,
-            request_run: request_work,
-            submit_run: submit_work,
+            request_run,
+            submit_run,
         };
 
         let response = self
@@ -107,25 +125,7 @@ impl Server {
         debug!("Pinging server");
         let guard = self.status_lock.lock().await;
 
-        let status = match &*self.current_run.lock().unwrap() {
-            Some(run) if run.server_name == self.name => WorkerStatus::Working(UnfinishedRun {
-                run: run.run.clone(),
-                last_output: run
-                    .output
-                    .lock()
-                    .unwrap()
-                    .iter()
-                    .rev()
-                    .take(SCROLLBACK)
-                    .rev()
-                    .cloned()
-                    .collect(),
-            }),
-            Some(_) => WorkerStatus::Busy,
-            None => WorkerStatus::Idle,
-        };
-
-        let response = self.post_status(status, false, None).await?;
+        let response = self.post_status(false, None).await?;
 
         // TODO Signal that run should be aborted
 
