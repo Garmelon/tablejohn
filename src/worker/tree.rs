@@ -5,9 +5,9 @@ use std::{io, path::PathBuf};
 use axum::body::Bytes;
 use flate2::read::GzDecoder;
 use futures::{Stream, StreamExt};
+use reqwest::Response;
 use tempfile::TempDir;
-use tokio::{select, sync::mpsc};
-use tracing::debug;
+use tokio::sync::mpsc;
 
 use crate::somehow;
 
@@ -41,47 +41,37 @@ impl io::Read for ReceiverReader {
     }
 }
 
-pub struct UnpackedTree {
-    pub hash: String,
-    pub dir: TempDir,
+async fn receive_bytes(
+    mut stream: impl Stream<Item = reqwest::Result<Bytes>> + Unpin,
+    tx: mpsc::Sender<Bytes>,
+) -> somehow::Result<()> {
+    while let Some(bytes) = stream.next().await {
+        tx.send(bytes?).await?;
+    }
+    Ok(())
 }
 
-impl UnpackedTree {
-    async fn stream(
-        mut stream: impl Stream<Item = reqwest::Result<Bytes>> + Unpin,
-        tx: mpsc::Sender<Bytes>,
-    ) -> somehow::Result<()> {
-        while let Some(bytes) = stream.next().await {
-            tx.send(bytes?).await?;
-        }
-        Ok(())
-    }
+fn unpack_archive(rx: mpsc::Receiver<Bytes>, path: PathBuf) -> somehow::Result<()> {
+    let reader = ReceiverReader::new(rx);
+    let reader = GzDecoder::new(reader);
+    let mut reader = tar::Archive::new(reader);
+    reader.unpack(path)?;
+    Ok(())
+}
 
-    fn unpack(rx: mpsc::Receiver<Bytes>, path: PathBuf) -> somehow::Result<()> {
-        let reader = ReceiverReader::new(rx);
-        let reader = GzDecoder::new(reader);
-        let mut reader = tar::Archive::new(reader);
-        reader.unpack(path)?;
-        Ok(())
-    }
+pub async fn download(response: Response) -> somehow::Result<TempDir> {
+    let stream = response.error_for_status()?.bytes_stream();
 
-    pub async fn download(url: &str, hash: String) -> somehow::Result<Self> {
-        let dir = TempDir::new()?;
-        debug!(
-            "Downloading and unpacking {url} to {}",
-            dir.path().display()
-        );
-        let (tx, rx) = mpsc::channel(1);
-        let stream = reqwest::get(url).await?.bytes_stream();
+    let dir = TempDir::new()?;
+    let path = dir.path().to_path_buf();
+    let (tx, rx) = mpsc::channel(1);
 
-        let path = dir.path().to_path_buf();
-        let unpack_task = tokio::task::spawn_blocking(move || Self::unpack(rx, path));
+    let (received, unpacked) = tokio::join!(
+        receive_bytes(stream, tx),
+        tokio::task::spawn_blocking(move || unpack_archive(rx, path)),
+    );
+    received?;
+    unpacked??;
 
-        select! {
-            r = Self::stream(stream, tx) => r?,
-            r = unpack_task => r??,
-        }
-
-        Ok(Self { hash, dir })
-    }
+    Ok(dir)
 }

@@ -1,3 +1,5 @@
+mod tree;
+
 use tracing::error;
 
 use crate::config::Config;
