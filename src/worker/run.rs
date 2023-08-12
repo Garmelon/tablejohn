@@ -11,7 +11,7 @@ use tokio::sync::mpsc;
 use tracing::{debug_span, error, Instrument};
 
 use crate::{
-    id,
+    config::WorkerServerConfig,
     shared::{BenchMethod, FinishedRun, Measurement, Source, UnfinishedRun},
 };
 
@@ -34,6 +34,16 @@ pub enum RunStatus {
     Aborted,
 }
 
+impl RunStatus {
+    pub fn finished(exit_code: i32, measurements: HashMap<String, Measurement>) -> Self {
+        Self::Finished {
+            end: OffsetDateTime::now_utc(),
+            exit_code,
+            measurements,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Run {
     id: String,
@@ -52,6 +62,14 @@ impl Run {
             output: vec![],
             status: RunStatus::Unfinished,
         }
+    }
+
+    pub fn log_stdout(&mut self, line: String) {
+        self.output.push((Source::Stdout, line));
+    }
+
+    pub fn log_stderr(&mut self, line: String) {
+        self.output.push((Source::Stderr, line));
     }
 
     pub fn into_full_status(self) -> FullRunStatus {
@@ -89,19 +107,31 @@ impl Run {
 }
 
 pub async fn run(
+    server_config: &'static WorkerServerConfig,
+    poke_tx: mpsc::UnboundedSender<()>,
     run: Arc<Mutex<Run>>,
+    bench: BenchMethod,
     abort_rx: mpsc::UnboundedReceiver<()>,
-    bench_method: BenchMethod,
 ) {
     async {
-        let result = match bench_method {
-            BenchMethod::Internal => internal::run(run, abort_rx).await,
-            BenchMethod::Repo { hash } => repo::run(run, hash, abort_rx).await,
+        let result = match bench {
+            BenchMethod::Internal => internal::run(server_config, run.clone(), abort_rx).await,
+            BenchMethod::Repo { hash } => repo::run(run.clone(), hash, abort_rx).await,
         };
         match result {
-            Ok(()) => {}
-            Err(e) => error!("Error during run:\n{e:?}"),
+            Ok(status) => {
+                assert!(!matches!(status, RunStatus::Unfinished));
+                run.lock().unwrap().status = status;
+            }
+            Err(e) => {
+                error!("Error during run:\n{e:?}");
+                let mut guard = run.lock().unwrap();
+                guard.log_stderr("Internal error:".to_string());
+                guard.log_stderr(format!("{e:?}"));
+                guard.status = RunStatus::finished(-1, HashMap::new());
+            }
         }
+        let _ = poke_tx.send(());
     }
     .instrument(debug_span!("run"))
     .await;

@@ -59,7 +59,7 @@ impl Server {
         let name = self.name.clone();
         async {
             loop {
-                match self.ping().await {
+                match self.ping(&poke_tx).await {
                     Ok(()) => {}
                     Err(e) => warn!("Error talking to server:\n{e:?}"),
                 }
@@ -82,12 +82,12 @@ impl Server {
         while poke_rx.try_recv().is_ok() {}
     }
 
-    async fn ping(&mut self) -> somehow::Result<()> {
+    async fn ping(&mut self, poke_tx: &mpsc::UnboundedSender<()>) -> somehow::Result<()> {
         debug!("Pinging server");
 
         let info = self.coordinator.lock().unwrap().active(&self.name);
         if info.active {
-            self.ping_active(info).await?;
+            self.ping_active(info, poke_tx).await?;
         } else {
             self.ping_inactive(info).await?;
         }
@@ -106,7 +106,11 @@ impl Server {
         Ok(())
     }
 
-    async fn ping_active(&mut self, info: ActiveInfo) -> somehow::Result<()> {
+    async fn ping_active(
+        &mut self,
+        info: ActiveInfo,
+        poke_tx: &mpsc::UnboundedSender<()>,
+    ) -> somehow::Result<()> {
         let run = self
             .run
             .as_ref()
@@ -166,7 +170,13 @@ impl Server {
 
             self.run = Some((run.clone(), abort_tx));
             self.coordinator.lock().unwrap().look_busy(&self.name);
-            tokio::spawn(run::run(run, abort_rx, work.bench));
+            tokio::spawn(run::run(
+                self.server_config,
+                poke_tx.clone(),
+                run,
+                work.bench,
+                abort_rx,
+            ));
         }
 
         // Finally, advance to the next server if it makes sense to do so

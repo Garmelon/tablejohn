@@ -65,7 +65,7 @@ impl UnpackedTree {
         Ok(())
     }
 
-    async fn download(url: &str, hash: String) -> somehow::Result<Self> {
+    pub async fn download(url: &str, hash: String) -> somehow::Result<Self> {
         let dir = TempDir::new()?;
         debug!(
             "Downloading and unpacking {url} to {}",
