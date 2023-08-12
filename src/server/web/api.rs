@@ -172,6 +172,7 @@ async fn post_status(
     }
 
     let work = prepare_work(work, bench_repo)?;
+    // TODO Reserve this work
     debug!("Received status update from {name}");
     Ok(Json(ServerResponse { work, abort_work }).into_response())
 }
