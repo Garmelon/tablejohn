@@ -28,7 +28,7 @@ pub struct Server {
     /// while processing the response.
     ///
     /// This lock prevents the following race condition that would lead to
-    /// multiple runners receiving runs for the same commit in unlucky
+    /// multiple workers receiving runs for the same commit in unlucky
     /// circumstances:
     ///
     /// 1. The main task requests a run
@@ -40,7 +40,8 @@ pub struct Server {
 }
 
 impl Server {
-    // TODO Limit status requests to one in flight at a time (per server)
+    /// **Important:** Before using this function, read the documentation of
+    /// [`Self::status_lock`]!
     pub async fn post_status(
         &self,
         request_run: bool,

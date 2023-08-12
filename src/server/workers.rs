@@ -91,7 +91,7 @@ impl Workers {
     }
 
     pub fn should_abort_work(&self, name: &str, queue: &[String]) -> bool {
-        // A runner should abort work if...
+        // A worker should abort work if...
         let Some(info) = self.workers.get(name) else { return false; };
         let WorkerStatus::Working (unfinished) = &info.status else { return false; };
 
@@ -100,7 +100,7 @@ impl Workers {
             return true;
         }
 
-        // Another runner has been working on the same commit for longer
+        // Another worker has been working on the same commit for longer
         let oldest_working_on_commit = self
             .workers
             .iter()

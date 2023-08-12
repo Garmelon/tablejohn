@@ -101,7 +101,7 @@ pub struct WorkerRequest {
     /// The worker wants a new run from the server.
     ///
     /// If the server has a commit available, it should respond with a non-null
-    /// [`ServerResponse::work`].
+    /// [`ServerResponse::run`].
     #[serde(default, skip_serializing_if = "is_false")]
     pub request_run: bool,
 
@@ -112,7 +112,7 @@ pub struct WorkerRequest {
 
 #[derive(Serialize, Deserialize)]
 pub struct ServerResponse {
-    /// Run the worker requested using [`RunnerRequest::request_run`].
+    /// Run the worker requested using [`WorkerRequest::request_run`].
     ///
     /// The worker may ignore this run and do something else. However, until the
     /// next update request sent by the worker, the server will consider the
