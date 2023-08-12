@@ -7,7 +7,7 @@ use tokio::sync::Notify;
 use tracing::error;
 
 use crate::{
-    shared::{BenchMethod, FinishedRun, Measurement, Run, Source},
+    shared::{BenchMethod, FinishedRun, Measurement, Run, Source, UnfinishedRun},
     somehow,
 };
 
@@ -16,13 +16,14 @@ struct Finished {
     measurements: HashMap<String, Measurement>,
 }
 
-// TODO Make fields private
+const SCROLLBACK: usize = 50;
+
 #[derive(Clone)]
 pub struct RunInProgress {
-    pub server_name: String,
-    pub run: Run,
-    pub output: Arc<Mutex<Vec<(Source, String)>>>,
-    pub abort: Arc<Notify>,
+    server_name: String,
+    run: Run,
+    output: Arc<Mutex<Vec<(Source, String)>>>,
+    abort: Arc<Notify>,
 }
 
 impl RunInProgress {
@@ -33,6 +34,25 @@ impl RunInProgress {
             output: Arc::new(Mutex::new(vec![])),
             abort: Arc::new(Notify::new()),
         }
+    }
+
+    pub fn is_for_server(&self, name: &str) -> bool {
+        self.server_name == name
+    }
+
+    pub fn as_unfinished_run(&self) -> UnfinishedRun {
+        let run = self.run.clone();
+        let last_output = self
+            .output
+            .lock()
+            .unwrap()
+            .iter()
+            .rev()
+            .take(SCROLLBACK)
+            .rev()
+            .cloned()
+            .collect();
+        UnfinishedRun { run, last_output }
     }
 
     pub fn log_stdout(&self, line: String) {

@@ -7,14 +7,12 @@ use tracing::{debug, warn};
 
 use crate::{
     config::{Config, WorkerServerConfig},
-    shared::{FinishedRun, ServerResponse, UnfinishedRun, WorkerRequest, WorkerStatus},
+    shared::{FinishedRun, ServerResponse, WorkerRequest, WorkerStatus},
     somehow,
     worker::tree,
 };
 
 use super::run::RunInProgress;
-
-const SCROLLBACK: usize = 50;
 
 #[derive(Clone)]
 pub struct Server {
@@ -51,19 +49,9 @@ impl Server {
         let url = format!("{}api/worker/status", self.server_config.url);
 
         let status = match &*self.current_run.lock().unwrap() {
-            Some(run) if run.server_name == self.name => WorkerStatus::Working(UnfinishedRun {
-                run: run.run.clone(),
-                last_output: run
-                    .output
-                    .lock()
-                    .unwrap()
-                    .iter()
-                    .rev()
-                    .take(SCROLLBACK)
-                    .rev()
-                    .cloned()
-                    .collect(),
-            }),
+            Some(run) if run.is_for_server(&self.name) => {
+                WorkerStatus::Working(run.as_unfinished_run())
+            }
             Some(_) => WorkerStatus::Busy,
             None => WorkerStatus::Idle,
         };
