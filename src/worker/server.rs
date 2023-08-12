@@ -1,40 +1,31 @@
+use std::sync::{Arc, Mutex};
+
 use reqwest::Client;
 use tempfile::TempDir;
 use tracing::{debug, warn};
 
 use crate::{
     config::{Config, WorkerServerConfig},
-    id,
-    shared::{FinishedRun, ServerResponse, WorkerRequest, WorkerStatus},
+    shared::{FinishedRun, ServerResponse, UnfinishedRun, WorkerRequest, WorkerStatus},
     somehow,
     worker::tree,
 };
 
+use super::run::RunInProgress;
+
+const SCROLLBACK: usize = 50;
+
 #[derive(Clone)]
 pub struct Server {
-    name: String,
-    config: &'static Config,
-    server_config: &'static WorkerServerConfig,
-    client: Client,
-    secret: String,
+    pub name: String,
+    pub config: &'static Config,
+    pub server_config: &'static WorkerServerConfig,
+    pub secret: String,
+    pub client: Client,
+    pub current_run: Arc<Mutex<Option<RunInProgress>>>,
 }
 
 impl Server {
-    pub fn new(
-        name: String,
-        config: &'static Config,
-        server_config: &'static WorkerServerConfig,
-        client: Client,
-    ) -> Self {
-        Self {
-            name,
-            config,
-            server_config,
-            client,
-            secret: id::random_worker_secret(),
-        }
-    }
-
     // TODO Limit status requests to one in flight at a time (per server)
     pub async fn post_status(
         &self,
@@ -99,8 +90,23 @@ impl Server {
     async fn ping(&self) -> somehow::Result<()> {
         debug!("Pinging server");
 
-        // TODO Use actual status
-        let status = WorkerStatus::Idle;
+        let status = match &*self.current_run.lock().unwrap() {
+            Some(run) if run.server_name == self.name => WorkerStatus::Working(UnfinishedRun {
+                run: run.run.clone(),
+                last_output: run
+                    .output
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .rev()
+                    .take(SCROLLBACK)
+                    .rev()
+                    .cloned()
+                    .collect(),
+            }),
+            Some(_) => WorkerStatus::Busy,
+            None => WorkerStatus::Idle,
+        };
 
         let response = self.post_status(status, false, None).await?;
 

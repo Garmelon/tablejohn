@@ -1,10 +1,13 @@
+mod run;
 mod server;
 mod tree;
 
-use reqwest::Client;
-use tracing::error;
+use std::sync::{Arc, Mutex};
 
-use crate::{config::Config, worker::server::Server};
+use reqwest::Client;
+use tracing::{error, info};
+
+use crate::{config::Config, id, worker::server::Server};
 
 pub struct Worker {
     config: &'static Config,
@@ -17,17 +20,24 @@ impl Worker {
 
     pub async fn run(&self) {
         let client = Client::new();
+        let current_run = Arc::new(Mutex::new(None));
 
         let mut servers = self
             .config
             .worker_servers
             .iter()
-            .map(|(name, server_config)| {
-                Server::new(name.clone(), self.config, server_config, client.clone())
+            .map(|(name, server_config)| Server {
+                name: name.clone(),
+                config: self.config,
+                server_config,
+                secret: id::random_worker_secret(),
+                client: client.clone(),
+                current_run: current_run.clone(),
             })
             .collect::<Vec<_>>();
 
         for server in &servers {
+            info!("Connecting to server {}", server.name);
             tokio::spawn(server.clone().ping_periodically());
         }
 
