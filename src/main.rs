@@ -94,26 +94,25 @@ async fn open_in_browser(config: &Config) {
 }
 
 async fn launch_local_workers(config: &'static Config, amount: u8) {
-    let server_name = "localhost";
-    let server_config = Box::leak(Box::new(WorkerServerConfig {
-        url: format!("http://{}{}", config.web_address, config.web_base),
-        token: config.web_worker_token.clone(),
-    }));
-
     // Wait a bit to ensure the server is ready to serve requests.
     tokio::time::sleep(Duration::from_millis(100)).await;
 
     for i in 0..amount {
-        let mut worker_config = config.clone();
-        worker_config.worker_name = format!("{}-{i}", config.worker_name);
-        let worker_config = Box::leak(Box::new(worker_config));
-
-        info!("Launching local worker {}", worker_config.worker_name);
-        worker::launch_standalone_server_task(
-            worker_config,
-            server_name.to_string(),
-            server_config,
+        let mut config = config.clone();
+        config.worker_name = format!("{}-{i}", config.worker_name);
+        config.worker_servers.clear();
+        config.worker_servers.insert(
+            "localhost".to_string(),
+            WorkerServerConfig {
+                url: format!("http://{}{}", config.web_address, config.web_base),
+                token: config.web_worker_token.clone(),
+            },
         );
+        let config = Box::leak(Box::new(config));
+
+        info!("Launching local worker {}", config.worker_name);
+        let worker = Worker::new(config);
+        tokio::spawn(async move { worker.run().await });
     }
 }
 
