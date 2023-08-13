@@ -34,7 +34,9 @@
         title="{% call util::commit_title(reachable) %}">{{ message }}</pre>
 </div>
 
-<form method="post" action="{{ base.root }}commit/{{ hash }}/enqueue">
-    <button>Enqueue</button>
+<form method="post" action="{{ base.root }}{{ link_admin_queue_add }}">
+    <input type="hidden" name="hash" value="{{ hash }}">
+    <label>Priority: <input type="number" name="priority" value="0" min="-2147483648" max="2147483647"></label>
+    <button>Add to queue</button>
 </form>
 {% endblock %}

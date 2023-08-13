@@ -2,15 +2,14 @@ use askama::Template;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{IntoResponse, Redirect, Response},
+    response::{IntoResponse, Response},
 };
 use futures::TryStreamExt;
 use sqlx::SqlitePool;
-use time::OffsetDateTime;
 
 use crate::{config::Config, server::util, somehow};
 
-use super::{link::CommitLink, Base, Tab};
+use super::{admin::queue::PathAdminQueueAdd, link::CommitLink, Base, Tab};
 
 #[derive(Template)]
 #[template(path = "commit.html")]
@@ -26,6 +25,7 @@ struct CommitTemplate {
     summary: String,
     message: String,
     reachable: i64,
+    link_admin_queue_add: PathAdminQueueAdd,
 }
 
 pub async fn get(
@@ -96,24 +96,7 @@ pub async fn get(
         summary: util::format_commit_summary(&commit.message),
         message: commit.message.trim_end().to_string(),
         reachable: commit.reachable,
+        link_admin_queue_add: PathAdminQueueAdd {},
     }
     .into_response())
-}
-
-// TODO Move to /admin/queue/add
-pub async fn post_enqueue(
-    Path(hash): Path<String>,
-    State(config): State<&'static Config>,
-    State(db): State<SqlitePool>,
-) -> somehow::Result<impl IntoResponse> {
-    let date = OffsetDateTime::now_utc();
-    sqlx::query!(
-        "INSERT OR IGNORE INTO queue (hash, date, priority) VALUES (?, ?, 1)",
-        hash,
-        date,
-    )
-    .execute(&db)
-    .await?;
-
-    Ok(Redirect::to(&format!("{}queue/", config.web_base)))
 }
