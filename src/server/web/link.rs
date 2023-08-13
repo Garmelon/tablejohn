@@ -1,4 +1,5 @@
 use askama::Template;
+use time::OffsetDateTime;
 
 use crate::server::util;
 
@@ -47,6 +48,25 @@ impl LinkRunShort {
         Self {
             link: base.link(PathRunById { id }),
             short: util::format_commit_short(hash, message),
+        }
+    }
+}
+
+#[derive(Template)]
+#[template(
+    ext = "html",
+    source = "<a href=\"{{ link }}\">Run from {{ date }}</a>"
+)]
+pub struct LinkRunDate {
+    link: Link,
+    date: String, // TODO base.date(...)?
+}
+
+impl LinkRunDate {
+    pub fn new(base: &Base, id: String, start: OffsetDateTime) -> Self {
+        Self {
+            link: base.link(PathRunById { id }),
+            date: util::format_time(start),
         }
     }
 }

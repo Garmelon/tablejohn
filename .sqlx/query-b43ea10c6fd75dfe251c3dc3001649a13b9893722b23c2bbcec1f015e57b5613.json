@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, start AS \"start: time::OffsetDateTime\" FROM runs WHERE hash = ? ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "start: time::OffsetDateTime",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "b43ea10c6fd75dfe251c3dc3001649a13b9893722b23c2bbcec1f015e57b5613"
+}

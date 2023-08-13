@@ -7,7 +7,14 @@ use serde::Deserialize;
 use sqlx::SqlitePool;
 use time::OffsetDateTime;
 
-use crate::{config::Config, server::web::paths::PathAdminQueueAdd, somehow};
+use crate::{
+    config::Config,
+    server::web::{
+        base::{Base, Tab},
+        paths::{PathAdminQueueAdd, PathQueue},
+    },
+    somehow,
+};
 
 #[derive(Deserialize)]
 pub struct FormAdminQueueAdd {
@@ -36,6 +43,6 @@ pub async fn post_admin_queue_add(
     .execute(&db)
     .await?;
 
-    // TODO Replace with typed link
-    Ok(Redirect::to(&format!("{}queue/", config.web_base)))
+    let link = Base::new(config, Tab::None).link(PathQueue {});
+    Ok(Redirect::to(&format!("{link}")))
 }

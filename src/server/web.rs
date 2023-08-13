@@ -1,7 +1,6 @@
 mod admin;
 mod api;
 mod base;
-mod commit;
 mod index;
 mod link;
 mod pages;
@@ -21,8 +20,8 @@ use self::{
         get_api_worker_bench_repo_by_hash_tree_tar_gz, get_api_worker_repo_by_hash_tree_tar_gz,
         post_api_worker_status,
     },
-    commit::get_commit_by_hash,
     index::get_index,
+    pages::commit::get_commit_by_hash,
     queue::{get_queue, get_queue_inner},
     worker::get_worker_by_name,
 };

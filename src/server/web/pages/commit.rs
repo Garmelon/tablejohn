@@ -7,19 +7,26 @@ use axum::{
 use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
-use crate::{config::Config, server::util, somehow};
-
-use super::{
-    base::{Base, Link, Tab},
-    link::LinkCommit,
-    paths::{PathAdminQueueAdd, PathCommitByHash},
+use crate::{
+    config::Config,
+    server::{
+        util,
+        web::{
+            base::{Base, Link, Tab},
+            link::{LinkCommit, LinkRunDate},
+            paths::{PathAdminQueueAdd, PathCommitByHash},
+        },
+    },
+    somehow,
 };
 
 #[derive(Template)]
-#[template(path = "commit.html")]
-struct CommitTemplate {
+#[template(path = "pages/commit.html")]
+struct Page {
     link_admin_queue_add: Link,
     base: Base,
+
+    summary: String,
     hash: String,
     author: String,
     author_date: String,
@@ -27,9 +34,9 @@ struct CommitTemplate {
     commit_date: String,
     parents: Vec<LinkCommit>,
     children: Vec<LinkCommit>,
-    summary: String,
     message: String,
     reachable: i64,
+    runs: Vec<LinkRunDate>,
 }
 
 pub async fn get_commit_by_hash(
@@ -88,9 +95,25 @@ pub async fn get_commit_by_hash(
     .try_collect::<Vec<_>>()
     .await?;
 
-    Ok(CommitTemplate {
+    let runs = sqlx::query!(
+        "\
+        SELECT \
+            id, \
+            start AS \"start: time::OffsetDateTime\" \
+        FROM runs WHERE hash = ? \
+        ",
+        path.hash
+    )
+    .fetch(&db)
+    .map_ok(|r| LinkRunDate::new(&base, r.id, r.start))
+    .try_collect::<Vec<_>>()
+    .await?;
+
+    Ok(Page {
         link_admin_queue_add: base.link(PathAdminQueueAdd {}),
         base,
+
+        summary: util::format_commit_summary(&commit.message),
         hash: commit.hash,
         author: commit.author,
         author_date: util::format_time(commit.author_date),
@@ -98,9 +121,9 @@ pub async fn get_commit_by_hash(
         commit_date: util::format_time(commit.committer_date),
         parents,
         children,
-        summary: util::format_commit_summary(&commit.message),
         message: commit.message.trim_end().to_string(),
         reachable: commit.reachable,
+        runs,
     }
     .into_response())
 }
