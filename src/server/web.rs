@@ -1,5 +1,6 @@
 mod admin;
 mod api;
+mod base;
 mod commit;
 mod index;
 mod link;
