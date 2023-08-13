@@ -18,9 +18,15 @@ use super::{Finished, RunInProgress};
 
 #[derive(Default)]
 struct Counts {
+    files: usize,
+    lines: usize,
+    todos: usize,
     files_by_ext: HashMap<String, usize>,
     lines_by_ext: HashMap<String, usize>,
     todos_by_ext: HashMap<String, usize>,
+    files_by_dir: HashMap<String, usize>,
+    lines_by_dir: HashMap<String, usize>,
+    todos_by_dir: HashMap<String, usize>,
 }
 
 fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
@@ -36,10 +42,29 @@ fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
             continue;
         }
 
-        let extension = entry
+        let relative_path = entry
+            .path()
+            .components()
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .take(entry.depth())
+            .rev()
+            .collect::<PathBuf>();
+
+        let ext = entry
             .path()
             .extension()
-            .unwrap_or_default()
+            .unwrap_or("none".as_ref())
+            .to_string_lossy()
+            .to_string();
+
+        let dir = relative_path
+            .components()
+            .next()
+            .filter(|_| relative_path.components().count() > 1)
+            .map(|c| c.as_os_str())
+            .unwrap_or("none".as_ref())
             .to_string_lossy()
             .to_string();
 
@@ -53,19 +78,16 @@ fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
             }
         }
 
-        *counts.files_by_ext.entry(extension.clone()).or_default() += 1;
-        *counts.lines_by_ext.entry(extension.clone()).or_default() += lines;
-        *counts.todos_by_ext.entry(extension.clone()).or_default() += todos;
+        counts.files += 1;
+        counts.lines += lines;
+        counts.todos += todos;
+        *counts.files_by_ext.entry(ext.clone()).or_default() += 1;
+        *counts.lines_by_ext.entry(ext.clone()).or_default() += lines;
+        *counts.todos_by_ext.entry(ext.clone()).or_default() += todos;
+        *counts.files_by_dir.entry(dir.clone()).or_default() += 1;
+        *counts.lines_by_dir.entry(dir.clone()).or_default() += lines;
+        *counts.todos_by_dir.entry(dir.clone()).or_default() += todos;
 
-        let relative_path = entry
-            .path()
-            .components()
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .take(entry.depth())
-            .rev()
-            .collect::<PathBuf>();
         run.log_stdout(format!(
             "{} has {lines} line{}, {todos} todo{}",
             relative_path.display(),
@@ -77,72 +99,69 @@ fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
     Ok(counts)
 }
 
+fn measurement(value: f64, direction: Direction) -> Measurement {
+    Measurement {
+        value,
+        stddev: None,
+        unit: None,
+        direction: Some(direction),
+    }
+}
+
 fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     let mut measurements = HashMap::new();
 
     // Files
     measurements.insert(
         "files".to_string(),
-        Measurement {
-            value: counts.files_by_ext.values().sum::<usize>() as f64,
-            stddev: None,
-            unit: None,
-            direction: Some(Direction::Neutral),
-        },
+        measurement(counts.files as f64, Direction::Neutral),
     );
-    for (extension, count) in counts.files_by_ext {
+    for (ext, count) in counts.files_by_ext {
         measurements.insert(
-            format!("files.{extension}"),
-            Measurement {
-                value: count as f64,
-                stddev: None,
-                unit: None,
-                direction: Some(Direction::Neutral),
-            },
+            format!("files.by ext.{ext}"),
+            measurement(count as f64, Direction::Neutral),
+        );
+    }
+    for (dir, count) in counts.files_by_dir {
+        measurements.insert(
+            format!("files.by dir.{dir}"),
+            measurement(count as f64, Direction::Neutral),
         );
     }
 
     // Lines
     measurements.insert(
         "lines".to_string(),
-        Measurement {
-            value: counts.lines_by_ext.values().sum::<usize>() as f64,
-            stddev: None,
-            unit: None,
-            direction: Some(Direction::Neutral),
-        },
+        measurement(counts.lines as f64, Direction::Neutral),
     );
-    for (extension, count) in counts.lines_by_ext {
+    for (ext, count) in counts.lines_by_ext {
         measurements.insert(
-            format!("lines.{extension}"),
-            Measurement {
-                value: count as f64,
-                stddev: None,
-                unit: None,
-                direction: Some(Direction::Neutral),
-            },
+            format!("lines.by ext.{ext}"),
+            measurement(count as f64, Direction::Neutral),
+        );
+    }
+    for (dir, count) in counts.lines_by_dir {
+        measurements.insert(
+            format!("lines.by dir.{dir}"),
+            measurement(count as f64, Direction::Neutral),
         );
     }
 
     // Todos
     measurements.insert(
         "todos".to_string(),
-        Measurement {
-            value: counts.todos_by_ext.values().sum::<usize>() as f64,
-            stddev: None,
-            unit: None,
-            direction: Some(Direction::LessIsBetter),
-        },
+        measurement(counts.todos as f64, Direction::LessIsBetter),
     );
-    for (extension, count) in counts.todos_by_ext {
+    for (ext, count) in counts.todos_by_ext {
         measurements.insert(
-            format!("todos.{extension}"),
-            Measurement {
-                value: count as f64,
-                stddev: None,
-                unit: None,
-                direction: Some(Direction::LessIsBetter),
-            },
+            format!("todos.by ext.{ext}"),
+            measurement(count as f64, Direction::LessIsBetter),
+        );
+    }
+    for (dir, count) in counts.todos_by_dir {
+        measurements.insert(
+            format!("todos.by dir.{dir}"),
+            measurement(count as f64, Direction::LessIsBetter),
         );
     }
 
