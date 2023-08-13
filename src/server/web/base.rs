@@ -32,25 +32,29 @@ impl Base {
             Tab::Queue => "queue",
         };
         Self {
-            link_logo_svg: Self::link_from_base(&config.web_base, LOGO_SVG),
-            link_base_css: Self::link_from_base(&config.web_base, BASE_CSS),
-            link_index: Self::link_from_base(&config.web_base, PathIndex {}),
-            link_queue: Self::link_from_base(&config.web_base, PathQueue {}),
+            link_logo_svg: Self::link_with_config(config, LOGO_SVG),
+            link_base_css: Self::link_with_config(config, BASE_CSS),
+            link_index: Self::link_with_config(config, PathIndex {}),
+            link_queue: Self::link_with_config(config, PathQueue {}),
             web_base: config.web_base.clone(),
             repo_name: config.repo_name.clone(),
             tab,
         }
     }
 
-    fn link_from_base<P: fmt::Display>(base: &str, to: P) -> Link {
+    fn link_with_base<P: fmt::Display>(base: &str, to: P) -> Link {
         let to = format!("{to}");
         assert!(!base.ends_with('/'));
         assert!(to.starts_with('/'));
         Link(format!("{base}{to}"))
     }
 
+    pub fn link_with_config<P: fmt::Display>(config: &Config, to: P) -> Link {
+        Self::link_with_base(&config.web_base, to)
+    }
+
     pub fn link<P: fmt::Display>(&self, to: P) -> Link {
-        Self::link_from_base(&self.web_base, to)
+        Self::link_with_base(&self.web_base, to)
     }
 }
 

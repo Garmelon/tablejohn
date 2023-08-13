@@ -10,7 +10,7 @@ use time::OffsetDateTime;
 use crate::{
     config::Config,
     server::web::{
-        base::{Base, Tab},
+        base::Base,
         paths::{PathAdminQueueAdd, PathQueue},
     },
     somehow,
@@ -43,6 +43,6 @@ pub async fn post_admin_queue_add(
     .execute(&db)
     .await?;
 
-    let link = Base::new(config, Tab::None).link(PathQueue {});
+    let link = Base::link_with_config(config, PathQueue {});
     Ok(Redirect::to(&format!("{link}")))
 }
