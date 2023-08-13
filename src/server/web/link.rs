@@ -9,7 +9,7 @@ use super::Base;
     ext = "html",
     source = "\
 {% import \"util.html\" as util %}
-<a href=\"{{ root }}commit/{{ hash }}\"
+<a href=\"{{ root }}/commit/{{ hash }}\"
    class=\"{% call util::commit_class(reachable) %}\"
    title=\"{% call util::commit_title(reachable) %}\">
    {{ short }}
@@ -38,7 +38,7 @@ impl CommitLink {
 #[template(
     ext = "html",
     source = "\
-<a href=\"{{ root }}run/{{ id }}\">
+<a href=\"{{ root }}/run/{{ id }}\">
    Run of {{ short }}
 </a>
 "
@@ -62,7 +62,7 @@ impl RunLink {
 #[template(
     ext = "html",
     source = "\
-<a href=\"{{ root }}worker/{{ name }}\">
+<a href=\"{{ root }}/worker/{{ name }}\">
    {{ name }}
 </a>
 "

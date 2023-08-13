@@ -146,14 +146,11 @@ impl ConfigFile {
     }
 
     fn web_base(&self) -> String {
-        let mut base = self.web.base.clone();
-        if !base.starts_with('/') {
-            base.insert(0, '/');
-        }
-        if !base.ends_with('/') {
-            base.push('/');
-        }
-        base
+        self.web
+            .base
+            .strip_suffix('/')
+            .unwrap_or(&self.web.base)
+            .to_string()
     }
 
     fn web_worker_token(&self) -> String {
@@ -210,14 +207,21 @@ impl ConfigFile {
 // TODO Url functions
 #[derive(Clone)]
 pub struct WorkerServerConfig {
-    /// Never ends with a `/`.
+    /// Always ends without a `/`.
+    ///
+    /// This means that you can prefix the url onto an absolute path and get a
+    /// correct url.
     pub url: String,
     pub token: String,
 }
 
 #[derive(Clone)]
 pub struct Config {
-    /// Always starts and ends with a `/`.
+    /// Always ends without a `/` (prioritizing the latter).
+    ///
+    /// This means that you can prefix the base onto an absolute path and get
+    /// another absolute path. You could also use an url here if you have a
+    /// weird reason to do so.
     pub web_base: String,
     pub web_address: SocketAddr,
     pub web_worker_token: String,

@@ -5,17 +5,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{% block title %}{% endblock %} - {{ base.repo_name }}</title>
-    <link rel="icon" href="{{ base.root }}logo.svg">
-    <link rel="stylesheet" href="{{ base.root }}base.css" />
+    <link rel="icon" href="{{ base.root }}/logo.svg">
+    <link rel="stylesheet" href="{{ base.root }}/base.css" />
     {% block head %}{% endblock %}
 </head>
 
 <body>
     <nav>
-        <a href="{{ base.root }}" {% if base.current=="index" %} class="current" {% endif %}>
-            <img src="{{ base.root }}logo.svg" alt="">{{ base.repo_name }}
+        <a href="{{ base.root }}/" {% if base.current=="index" %} class="current" {% endif %}>
+            <img src="{{ base.root }}/logo.svg" alt="">{{ base.repo_name }}
         </a>
-        <a href="{{ base.root }}queue/" {% if base.current=="queue" %} class="current" {% endif %}>
+        <a href="{{ base.root }}/queue/" {% if base.current=="queue" %} class="current" {% endif %}>
             queue
         </a>
     </nav>
