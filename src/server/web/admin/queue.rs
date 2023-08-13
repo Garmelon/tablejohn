@@ -3,16 +3,11 @@ use axum::{
     response::{IntoResponse, Redirect},
     Form,
 };
-use axum_extra::routing::TypedPath;
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use time::OffsetDateTime;
 
-use crate::{config::Config, somehow};
-
-#[derive(Deserialize, TypedPath)]
-#[typed_path("/admin/queue/add")]
-pub struct PathAdminQueueAdd {}
+use crate::{config::Config, server::web::paths::PathAdminQueueAdd, somehow};
 
 #[derive(Deserialize)]
 pub struct FormAdminQueueAdd {

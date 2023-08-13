@@ -12,9 +12,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json, TypedHeader,
 };
-use axum_extra::routing::TypedPath;
 use gix::{ObjectId, ThreadSafeRepository};
-use serde::Deserialize;
 use sqlx::{Acquire, SqlitePool};
 use time::OffsetDateTime;
 use tracing::debug;
@@ -22,6 +20,10 @@ use tracing::debug;
 use crate::{
     config::Config,
     server::{
+        web::paths::{
+            PathApiWorkerBenchRepoByHashTreeTarGz, PathApiWorkerRepoByHashTreeTarGz,
+            PathApiWorkerStatus,
+        },
         workers::{WorkerInfo, Workers},
         BenchRepo, Repo,
     },
@@ -116,10 +118,6 @@ async fn save_work(finished: FinishedRun, db: &SqlitePool) -> somehow::Result<()
     Ok(())
 }
 
-#[derive(Deserialize, TypedPath)]
-#[typed_path("/api/worker/status")]
-pub struct PathApiWorkerStatus {}
-
 pub async fn post_api_worker_status(
     _path: PathApiWorkerStatus,
     State(config): State<&'static Config>,
@@ -199,12 +197,6 @@ fn stream_response(repo: Arc<ThreadSafeRepository>, id: ObjectId) -> impl IntoRe
     )
 }
 
-#[derive(Deserialize, TypedPath)]
-#[typed_path("/api/worker/repo/:hash/tree.tar.gz")]
-pub struct PathApiWorkerRepoByHashTreeTarGz {
-    pub hash: String,
-}
-
 pub async fn get_api_worker_repo_by_hash_tree_tar_gz(
     path: PathApiWorkerRepoByHashTreeTarGz,
     State(config): State<&'static Config>,
@@ -222,12 +214,6 @@ pub async fn get_api_worker_repo_by_hash_tree_tar_gz(
 
     let id = path.hash.parse::<ObjectId>()?;
     Ok(stream_response(repo.0, id).into_response())
-}
-
-#[derive(Deserialize, TypedPath)]
-#[typed_path("/api/worker/bench_repo/:hash/tree.tar.gz")]
-pub struct PathApiWorkerBenchRepoByHashTreeTarGz {
-    pub hash: String,
 }
 
 pub async fn get_api_worker_bench_repo_by_hash_tree_tar_gz(

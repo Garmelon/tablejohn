@@ -7,7 +7,7 @@ use tracing::{debug, warn};
 
 use crate::{
     config::{Config, WorkerServerConfig},
-    server::web::api::worker::{
+    server::web::paths::{
         PathApiWorkerBenchRepoByHashTreeTarGz, PathApiWorkerRepoByHashTreeTarGz,
         PathApiWorkerStatus,
     },

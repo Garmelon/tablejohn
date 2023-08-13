@@ -1,8 +1,9 @@
 mod admin;
-pub mod api;
+mod api;
 mod commit;
 mod index;
 mod link;
+pub mod paths;
 mod queue;
 mod r#static;
 mod worker;
