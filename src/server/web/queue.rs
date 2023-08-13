@@ -22,6 +22,7 @@ use super::{
     base::{Base, Link, Tab},
     link::{LinkCommit, LinkRunShort, LinkWorker},
     paths::{PathQueue, PathQueueInner},
+    r#static::QUEUE_JS,
 };
 
 enum Status {
@@ -180,7 +181,7 @@ pub async fn get_queue(
     let workers = get_workers(&db, &sorted_workers, &base).await?;
     let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
     Ok(QueueTemplate {
-        link_queue_js: base.link("/queue.js"), // TODO Static link
+        link_queue_js: base.link(QUEUE_JS),
         base,
         inner: QueueInnerTemplate { workers, tasks },
     })

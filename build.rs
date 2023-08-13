@@ -4,7 +4,7 @@ use std::{
     process::Command,
 };
 
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
 fn watch_dir(path: &Path) {
     WalkDir::new(path)
@@ -22,6 +22,18 @@ fn run_tsc(static_out_dir: &Path) {
     assert!(status.success(), "tsc produced errors");
 }
 
+fn relative_path(entry: &DirEntry) -> PathBuf {
+    entry
+        .path()
+        .components()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .take(entry.depth())
+        .rev()
+        .collect::<PathBuf>()
+}
+
 fn copy_static_files(static_dir: &Path, static_out_dir: &Path) {
     let files = WalkDir::new(static_dir)
         .into_iter()
@@ -29,13 +41,35 @@ fn copy_static_files(static_dir: &Path, static_out_dir: &Path) {
         .filter(|e| e.file_type().is_file());
 
     for file in files {
-        let components = file.path().components().collect::<Vec<_>>();
-        let relative_path = components.into_iter().rev().take(file.depth()).rev();
-        let mut target = static_out_dir.to_path_buf();
-        target.extend(relative_path);
+        let target = static_out_dir.to_path_buf().join(relative_path(&file));
         fs::create_dir_all(target.parent().unwrap()).unwrap();
         fs::copy(file.path(), target).unwrap();
     }
+}
+
+fn make_static_constants(static_out_dir: &Path, static_out_file: &Path) {
+    let files = WalkDir::new(static_out_dir)
+        .into_iter()
+        .map(|e| e.unwrap())
+        .filter(|e| e.file_type().is_file());
+
+    let mut definitions = String::new();
+
+    for file in files {
+        let relative_path = relative_path(&file);
+        let relative_path = relative_path.to_str().unwrap();
+
+        let name = relative_path
+            .split(|c: char| !c.is_ascii_alphabetic())
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("_")
+            .to_uppercase();
+        let path = format!("/{relative_path}");
+        definitions.push_str(&format!("pub const {name}: &str = {path:?};\n"));
+    }
+
+    fs::write(static_out_file, definitions).unwrap();
 }
 
 fn main() {
@@ -45,6 +79,7 @@ fn main() {
 
     let out_dir: PathBuf = std::env::var("OUT_DIR").unwrap().into();
     let static_out_dir = out_dir.join("static");
+    let static_out_file = out_dir.join("static.rs");
 
     // Since remove_dir_all fails if the directory doesn't exist, we ensure it
     // exists before deleting it. This way, we can use the remove_dir_all Result
@@ -57,4 +92,6 @@ fn main() {
 
     watch_dir("static".as_ref());
     copy_static_files("static".as_ref(), &static_out_dir);
+
+    make_static_constants(&static_out_dir, &static_out_file);
 }

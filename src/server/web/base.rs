@@ -2,7 +2,10 @@ use std::fmt;
 
 use crate::config::Config;
 
-use super::paths::{PathIndex, PathQueue};
+use super::{
+    paths::{PathIndex, PathQueue},
+    r#static::{BASE_CSS, LOGO_SVG},
+};
 
 pub enum Tab {
     None,
@@ -29,8 +32,8 @@ impl Base {
             Tab::Queue => "queue",
         };
         Self {
-            link_logo_svg: Self::link_from_base(&config.web_base, "/logo.svg"), // TODO Static link
-            link_base_css: Self::link_from_base(&config.web_base, "/base.css"), // TODO Static link
+            link_logo_svg: Self::link_from_base(&config.web_base, LOGO_SVG),
+            link_base_css: Self::link_from_base(&config.web_base, BASE_CSS),
             link_index: Self::link_from_base(&config.web_base, PathIndex {}),
             link_queue: Self::link_from_base(&config.web_base, PathQueue {}),
             web_base: config.web_base.clone(),
