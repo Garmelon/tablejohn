@@ -1,6 +1,6 @@
 mod recurring;
 mod util;
-mod web;
+pub mod web;
 mod workers;
 
 use std::{

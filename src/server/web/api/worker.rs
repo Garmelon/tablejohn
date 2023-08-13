@@ -202,7 +202,7 @@ fn stream_response(repo: Arc<ThreadSafeRepository>, id: ObjectId) -> impl IntoRe
 #[derive(Deserialize, TypedPath)]
 #[typed_path("/api/worker/repo/:hash/tree.tar.gz")]
 pub struct PathApiWorkerRepoByHashTreeTarGz {
-    hash: String,
+    pub hash: String,
 }
 
 pub async fn get_api_worker_repo_by_hash_tree_tar_gz(
@@ -227,7 +227,7 @@ pub async fn get_api_worker_repo_by_hash_tree_tar_gz(
 #[derive(Deserialize, TypedPath)]
 #[typed_path("/api/worker/bench_repo/:hash/tree.tar.gz")]
 pub struct PathApiWorkerBenchRepoByHashTreeTarGz {
-    hash: String,
+    pub hash: String,
 }
 
 pub async fn get_api_worker_bench_repo_by_hash_tree_tar_gz(

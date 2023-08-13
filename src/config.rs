@@ -195,10 +195,11 @@ impl ConfigFile {
             .servers
             .iter()
             .map(|(name, server)| {
-                let mut url = server.url.clone();
-                if !url.ends_with('/') {
-                    url.push('/');
-                }
+                let url = server
+                    .url
+                    .strip_suffix('/')
+                    .unwrap_or(&server.url)
+                    .to_string();
                 let token = server.token.to_string();
                 (name.to_string(), WorkerServerConfig { url, token })
             })
@@ -209,7 +210,7 @@ impl ConfigFile {
 // TODO Url functions
 #[derive(Clone)]
 pub struct WorkerServerConfig {
-    /// Always ends with a `/`.
+    /// Never ends with a `/`.
     pub url: String,
     pub token: String,
 }

@@ -7,6 +7,10 @@ use tracing::{debug, warn};
 
 use crate::{
     config::{Config, WorkerServerConfig},
+    server::web::api::worker::{
+        PathApiWorkerBenchRepoByHashTreeTarGz, PathApiWorkerRepoByHashTreeTarGz,
+        PathApiWorkerStatus,
+    },
     shared::{FinishedRun, ServerResponse, WorkerRequest, WorkerStatus},
     somehow,
     worker::tree,
@@ -47,7 +51,7 @@ impl Server {
         request_run: bool,
         submit_run: Option<FinishedRun>,
     ) -> somehow::Result<ServerResponse> {
-        let url = format!("{}api/worker/status", self.server_config.url);
+        let url = format!("{}{}", self.server_config.url, PathApiWorkerStatus {});
 
         let status = match &*self.current_run.lock().unwrap() {
             Some(run) if run.is_for_server(&self.name) => {
@@ -80,8 +84,11 @@ impl Server {
 
     pub async fn download_repo(&self, hash: &str) -> somehow::Result<TempDir> {
         let url = format!(
-            "{}api/worker/repo/{hash}/tree.tar.gz",
-            self.server_config.url
+            "{}{}",
+            self.server_config.url,
+            PathApiWorkerRepoByHashTreeTarGz {
+                hash: hash.to_string()
+            },
         );
 
         let response = self
@@ -96,8 +103,11 @@ impl Server {
 
     pub async fn download_bench_repo(&self, hash: &str) -> somehow::Result<TempDir> {
         let url = format!(
-            "{}api/worker/bench_repo/{hash}/tree.tar.gz",
-            self.server_config.url
+            "{}{}",
+            self.server_config.url,
+            PathApiWorkerBenchRepoByHashTreeTarGz {
+                hash: hash.to_string()
+            },
         );
 
         let response = self
