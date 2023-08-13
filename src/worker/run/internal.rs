@@ -118,13 +118,13 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     );
     for (ext, count) in counts.files_by_ext {
         measurements.insert(
-            format!("files.by ext.{ext}"),
+            format!("files/by ext/{ext}"),
             measurement(count as f64, Direction::Neutral),
         );
     }
     for (dir, count) in counts.files_by_dir {
         measurements.insert(
-            format!("files.by dir.{dir}"),
+            format!("files/by dir/{dir}"),
             measurement(count as f64, Direction::Neutral),
         );
     }
@@ -136,13 +136,13 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     );
     for (ext, count) in counts.lines_by_ext {
         measurements.insert(
-            format!("lines.by ext.{ext}"),
+            format!("lines/by ext/{ext}"),
             measurement(count as f64, Direction::Neutral),
         );
     }
     for (dir, count) in counts.lines_by_dir {
         measurements.insert(
-            format!("lines.by dir.{dir}"),
+            format!("lines/by dir/{dir}"),
             measurement(count as f64, Direction::Neutral),
         );
     }
@@ -154,13 +154,13 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     );
     for (ext, count) in counts.todos_by_ext {
         measurements.insert(
-            format!("todos.by ext.{ext}"),
+            format!("todos/by ext/{ext}"),
             measurement(count as f64, Direction::LessIsBetter),
         );
     }
     for (dir, count) in counts.todos_by_dir {
         measurements.insert(
-            format!("todos.by dir.{dir}"),
+            format!("todos/by dir/{dir}"),
             measurement(count as f64, Direction::LessIsBetter),
         );
     }
