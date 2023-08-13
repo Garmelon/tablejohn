@@ -1,5 +1,7 @@
 use std::{
+    collections::hash_map::DefaultHasher,
     fs,
+    hash::Hasher,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -59,13 +61,17 @@ fn make_static_constants(static_out_dir: &Path, static_out_file: &Path) {
         let relative_path = relative_path(&file);
         let relative_path = relative_path.to_str().unwrap();
 
+        let mut hasher = DefaultHasher::new();
+        hasher.write(&fs::read(file.path()).unwrap());
+        let hash = hasher.finish() & 0xffffffff;
+
         let name = relative_path
             .split(|c: char| !c.is_ascii_alphabetic())
             .filter(|s| !s.is_empty())
             .collect::<Vec<_>>()
             .join("_")
             .to_uppercase();
-        let path = format!("/{relative_path}");
+        let path = format!("/{relative_path}?h={hash:x}");
         definitions.push_str(&format!("pub const {name}: &str = {path:?};\n"));
     }
 
