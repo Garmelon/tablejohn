@@ -30,7 +30,7 @@ fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
         .unwrap();
 
     let mut counts = Counts::default();
-    for entry in WalkDir::new(path) {
+    for entry in WalkDir::new(path).sort_by_file_name() {
         let entry = entry?;
         if !entry.file_type().is_file() {
             continue;
