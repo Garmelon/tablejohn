@@ -4,6 +4,7 @@ mod base;
 mod commit;
 mod index;
 mod link;
+mod pages;
 pub mod paths;
 mod queue;
 mod r#static;
