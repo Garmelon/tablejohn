@@ -2,80 +2,66 @@ use askama::Template;
 
 use crate::server::util;
 
-use super::Base;
+use super::{
+    base::{Base, Link},
+    paths::{PathCommitByHash, PathRunById, PathWorkerByName},
+};
 
 #[derive(Template)]
 #[template(
     ext = "html",
     source = "\
 {% import \"util.html\" as util %}
-<a href=\"{{ root }}/commit/{{ hash }}\"
-   class=\"{% call util::commit_class(reachable) %}\"
+<a href=\"{{ link }}\" \
+   class=\"{% call util::commit_class(reachable) %}\" \
    title=\"{% call util::commit_title(reachable) %}\">
    {{ short }}
 </a>
 "
 )]
-pub struct CommitLink {
-    root: String,
-    hash: String,
+pub struct LinkCommit {
+    link: Link,
     short: String,
     reachable: i64,
 }
 
-impl CommitLink {
+impl LinkCommit {
     pub fn new(base: &Base, hash: String, message: &str, reachable: i64) -> Self {
         Self {
-            root: base.root.clone(),
             short: util::format_commit_short(&hash, message),
-            hash,
+            link: base.link(PathCommitByHash { hash }),
             reachable,
         }
     }
 }
 
 #[derive(Template)]
-#[template(
-    ext = "html",
-    source = "\
-<a href=\"{{ root }}/run/{{ id }}\">
-   Run of {{ short }}
-</a>
-"
-)]
-pub struct RunLink {
-    root: String,
-    id: String,
+#[template(ext = "html", source = "<a href=\"{{ link }}\">Run of {{ short }}</a>")]
+pub struct LinkRunShort {
+    link: Link,
     short: String,
 }
 
-impl RunLink {
+impl LinkRunShort {
     pub fn new(base: &Base, id: String, hash: &str, message: &str) -> Self {
         Self {
-            root: base.root.clone(),
-            id,
+            link: base.link(PathRunById { id }),
             short: util::format_commit_short(hash, message),
         }
     }
 }
+
 #[derive(Template)]
-#[template(
-    ext = "html",
-    source = "\
-<a href=\"{{ root }}/worker/{{ name }}\">
-   {{ name }}
-</a>
-"
-)]
-pub struct WorkerLink {
-    root: String,
+#[template(ext = "html", source = "<a href=\"{{ link }}\">{{ name }}</a>")]
+pub struct LinkWorker {
+    link: Link,
     name: String,
 }
 
-impl WorkerLink {
+impl LinkWorker {
     pub fn new(base: &Base, name: String) -> Self {
         Self {
-            root: base.root.clone(),
+            link: base.link(PathWorkerByName { name: name.clone() }),
             name,
         }
     }

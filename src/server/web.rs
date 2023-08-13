@@ -12,7 +12,7 @@ mod worker;
 use axum::{routing::get, Router};
 use axum_extra::routing::RouterExt;
 
-use crate::{config::Config, somehow};
+use crate::somehow;
 
 use self::{
     admin::queue::post_admin_queue_add,
@@ -27,34 +27,6 @@ use self::{
 };
 
 use super::Server;
-
-pub enum Tab {
-    None,
-    Index,
-    Queue,
-}
-
-#[derive(Clone)]
-pub struct Base {
-    root: String,
-    repo_name: String,
-    current: &'static str,
-}
-
-impl Base {
-    pub fn new(config: &Config, tab: Tab) -> Self {
-        let current = match tab {
-            Tab::None => "",
-            Tab::Index => "index",
-            Tab::Queue => "queue",
-        };
-        Self {
-            root: config.web_base.clone(),
-            repo_name: config.repo_name.clone(),
-            current,
-        }
-    }
-}
 
 pub async fn run(server: Server) -> somehow::Result<()> {
     // TODO Add text body to body-less status codes

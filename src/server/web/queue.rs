@@ -19,27 +19,27 @@ use crate::{
 };
 
 use super::{
-    link::{CommitLink, RunLink, WorkerLink},
+    base::{Base, Link, Tab},
+    link::{LinkCommit, LinkRunShort, LinkWorker},
     paths::{PathQueue, PathQueueInner},
-    Base, Tab,
 };
 
 enum Status {
     Idle,
     Busy,
-    Working(RunLink),
+    Working(LinkRunShort),
 }
 
 struct Worker {
-    link: WorkerLink,
+    link: LinkWorker,
     status: Status,
 }
 
 struct Task {
-    commit: CommitLink,
+    commit: LinkCommit,
     since: String,
     priority: i64,
-    workers: Vec<WorkerLink>,
+    workers: Vec<LinkWorker>,
     odd: bool,
 }
 
@@ -72,7 +72,7 @@ async fn get_workers(
                 )
                 .fetch_one(db)
                 .await?;
-                Status::Working(RunLink::new(
+                Status::Working(LinkRunShort::new(
                     base,
                     unfinished.run.id.clone(),
                     &unfinished.run.hash,
@@ -82,7 +82,7 @@ async fn get_workers(
         };
 
         result.push(Worker {
-            link: WorkerLink::new(base, name.clone()),
+            link: LinkWorker::new(base, name.clone()),
             status,
         })
     }
@@ -95,13 +95,13 @@ async fn get_queue_data(
     base: &Base,
 ) -> somehow::Result<Vec<Task>> {
     // Group workers by commit hash
-    let mut workers_by_commit: HashMap<String, Vec<WorkerLink>> = HashMap::new();
+    let mut workers_by_commit: HashMap<String, Vec<LinkWorker>> = HashMap::new();
     for (name, info) in workers {
         if let WorkerStatus::Working(unfinished) = &info.status {
             workers_by_commit
                 .entry(unfinished.run.hash.clone())
                 .or_default()
-                .push(WorkerLink::new(base, name.clone()));
+                .push(LinkWorker::new(base, name.clone()));
         }
     }
 
@@ -121,7 +121,7 @@ async fn get_queue_data(
     .fetch(db)
     .map_ok(|r| Task {
         workers: workers_by_commit.remove(&r.hash).unwrap_or_default(),
-        commit: CommitLink::new(base, r.hash, &r.message, r.reachable),
+        commit: LinkCommit::new(base, r.hash, &r.message, r.reachable),
         since: util::format_delta_from_now(r.date),
         priority: r.priority,
         odd: false,
@@ -164,6 +164,7 @@ pub async fn get_queue_inner(
 #[derive(Template)]
 #[template(path = "queue.html")]
 struct QueueTemplate {
+    link_queue_js: Link,
     base: Base,
     inner: QueueInnerTemplate,
 }
@@ -179,6 +180,7 @@ pub async fn get_queue(
     let workers = get_workers(&db, &sorted_workers, &base).await?;
     let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
     Ok(QueueTemplate {
+        link_queue_js: base.link("/queue.js"), // TODO Static link
         base,
         inner: QueueInnerTemplate { workers, tasks },
     })

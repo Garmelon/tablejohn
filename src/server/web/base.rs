@@ -2,6 +2,8 @@ use std::fmt;
 
 use crate::config::Config;
 
+use super::paths::{PathIndex, PathQueue};
+
 pub enum Tab {
     None,
     Index,
@@ -10,9 +12,13 @@ pub enum Tab {
 
 #[derive(Clone)]
 pub struct Base {
-    web_base: String,
-    repo_name: String,
-    tab: &'static str,
+    pub link_logo_svg: Link,
+    pub link_base_css: Link,
+    pub link_index: Link,
+    pub link_queue: Link,
+    pub web_base: String,
+    pub repo_name: String,
+    pub tab: &'static str,
 }
 
 impl Base {
@@ -23,20 +29,29 @@ impl Base {
             Tab::Queue => "queue",
         };
         Self {
+            link_logo_svg: Self::link_from_base(&config.web_base, "/logo.svg"), // TODO Static link
+            link_base_css: Self::link_from_base(&config.web_base, "/base.css"), // TODO Static link
+            link_index: Self::link_from_base(&config.web_base, PathIndex {}),
+            link_queue: Self::link_from_base(&config.web_base, PathQueue {}),
             web_base: config.web_base.clone(),
             repo_name: config.repo_name.clone(),
             tab,
         }
     }
 
-    pub fn link<P: fmt::Display>(&self, to: P) -> Link {
+    fn link_from_base<P: fmt::Display>(base: &str, to: P) -> Link {
         let to = format!("{to}");
-        assert!(!self.web_base.ends_with('/'));
+        assert!(!base.ends_with('/'));
         assert!(to.starts_with('/'));
-        Link(format!("{}{to}", self.web_base))
+        Link(format!("{base}{to}"))
+    }
+
+    pub fn link<P: fmt::Display>(&self, to: P) -> Link {
+        Self::link_from_base(&self.web_base, to)
     }
 }
 
+#[derive(Clone)]
 pub struct Link(String);
 
 impl fmt::Display for Link {

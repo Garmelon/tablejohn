@@ -5,11 +5,15 @@ use sqlx::SqlitePool;
 
 use crate::{config::Config, somehow};
 
-use super::{link::CommitLink, paths::PathIndex, Base, Tab};
+use super::{
+    base::{Base, Tab},
+    link::LinkCommit,
+    paths::PathIndex,
+};
 
 struct Ref {
     name: String,
-    commit: CommitLink,
+    commit: LinkCommit,
     tracked: bool,
 }
 
@@ -39,7 +43,7 @@ pub async fn get_index(
     .fetch(&db)
     .map_ok(|r| Ref {
         name: r.name.clone(),
-        commit: CommitLink::new(&base, r.hash, &r.message, r.reachable),
+        commit: LinkCommit::new(&base, r.hash, &r.message, r.reachable),
         tracked: r.tracked != 0,
     })
     .try_collect::<Vec<_>>()

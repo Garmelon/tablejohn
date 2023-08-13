@@ -13,7 +13,10 @@ use crate::{
     somehow,
 };
 
-use super::{paths::PathWorkerByName, Base, Tab};
+use super::{
+    base::{Base, Tab},
+    paths::PathWorkerByName,
+};
 
 #[derive(Template)]
 #[template(path = "worker.html")]

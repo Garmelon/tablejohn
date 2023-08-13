@@ -10,26 +10,26 @@ use sqlx::SqlitePool;
 use crate::{config::Config, server::util, somehow};
 
 use super::{
-    link::CommitLink,
+    base::{Base, Link, Tab},
+    link::LinkCommit,
     paths::{PathAdminQueueAdd, PathCommitByHash},
-    Base, Tab,
 };
 
 #[derive(Template)]
 #[template(path = "commit.html")]
 struct CommitTemplate {
+    link_admin_queue_add: Link,
     base: Base,
     hash: String,
     author: String,
     author_date: String,
     commit: String,
     commit_date: String,
-    parents: Vec<CommitLink>,
-    children: Vec<CommitLink>,
+    parents: Vec<LinkCommit>,
+    children: Vec<LinkCommit>,
     summary: String,
     message: String,
     reachable: i64,
-    link_admin_queue_add: PathAdminQueueAdd,
 }
 
 pub async fn get_commit_by_hash(
@@ -70,7 +70,7 @@ pub async fn get_commit_by_hash(
         path.hash,
     )
     .fetch(&db)
-    .map_ok(|r| CommitLink::new(&base, r.hash, &r.message, r.reachable))
+    .map_ok(|r| LinkCommit::new(&base, r.hash, &r.message, r.reachable))
     .try_collect::<Vec<_>>()
     .await?;
 
@@ -84,11 +84,12 @@ pub async fn get_commit_by_hash(
         path.hash,
     )
     .fetch(&db)
-    .map_ok(|r| CommitLink::new(&base, r.hash, &r.message, r.reachable))
+    .map_ok(|r| LinkCommit::new(&base, r.hash, &r.message, r.reachable))
     .try_collect::<Vec<_>>()
     .await?;
 
     Ok(CommitTemplate {
+        link_admin_queue_add: base.link(PathAdminQueueAdd {}),
         base,
         hash: commit.hash,
         author: commit.author,
@@ -100,7 +101,6 @@ pub async fn get_commit_by_hash(
         summary: util::format_commit_summary(&commit.message),
         message: commit.message.trim_end().to_string(),
         reachable: commit.reachable,
-        link_admin_queue_add: PathAdminQueueAdd {},
     }
     .into_response())
 }
