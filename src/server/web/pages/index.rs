@@ -3,12 +3,14 @@ use axum::{extract::State, response::IntoResponse};
 use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
-use crate::{config::Config, somehow};
-
-use super::{
-    base::{Base, Tab},
-    link::LinkCommit,
-    paths::PathIndex,
+use crate::{
+    config::Config,
+    server::web::{
+        base::{Base, Tab},
+        link::LinkCommit,
+        paths::PathIndex,
+    },
+    somehow,
 };
 
 struct Ref {
@@ -18,7 +20,7 @@ struct Ref {
 }
 
 #[derive(Template)]
-#[template(path = "index.html")]
+#[template(path = "pages/index.html")]
 struct IndexTemplate {
     base: Base,
     tracked_refs: Vec<Ref>,
