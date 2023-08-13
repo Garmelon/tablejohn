@@ -52,3 +52,16 @@ should use the dev database instead of `.sqlx/`, but only in your IDE.
 
 [sqlx]: https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md
 [ra-opt]: https://rust-analyzer.github.io/manual.html#rust-analyzer.check.extraEnv
+
+### uPlot
+
+For displaying graphs, the [uPlot library][uplot] is used. Because this is the
+only dependency on the JS side, I decided not to use a package manager and
+instead just add the library files directly.
+
+To update the uPlot files, run `./meta/update_uplot`. This will download the
+required files from uPlot's master. The `uPlot.d.ts` file's export statement is
+patched to resemble the one in `uPlot.js`. This way I don't have to enable
+`esModuleInterop` in my `tsconfig.json`.
+
+[uplot]: https://github.com/leeoniya/uPlot/

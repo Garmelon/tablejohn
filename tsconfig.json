@@ -6,6 +6,7 @@
     "module": "ES2015",
     "rootDir": "scripts",
     "outDir": "target/static",
+    "allowJs": true,
 
     // Misc
     // TODO Source maps?
