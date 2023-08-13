@@ -19,6 +19,10 @@ use self::{
         get_api_worker_bench_repo_by_hash_tree_tar_gz, get_api_worker_repo_by_hash_tree_tar_gz,
         post_api_worker_status,
     },
+    commit::get_commit_by_hash,
+    index::get_index,
+    queue::{get_queue, get_queue_inner},
+    worker::get_worker_by_name,
 };
 
 use super::Server;
@@ -55,13 +59,13 @@ pub async fn run(server: Server) -> somehow::Result<()> {
     // TODO Add text body to body-less status codes
 
     let app = Router::new()
-        .route("/", get(index::get))
-        .route("/commit/:hash", get(commit::get))
-        .route("/queue/", get(queue::get))
-        .route("/queue/inner", get(queue::get_inner))
-        .route("/worker/:name", get(worker::get))
         .typed_get(get_api_worker_bench_repo_by_hash_tree_tar_gz)
         .typed_get(get_api_worker_repo_by_hash_tree_tar_gz)
+        .typed_get(get_commit_by_hash)
+        .typed_get(get_index)
+        .typed_get(get_queue)
+        .typed_get(get_queue_inner)
+        .typed_get(get_worker_by_name)
         .typed_post(post_admin_queue_add)
         .typed_post(post_api_worker_status)
         .fallback(get(r#static::static_handler))

@@ -1,6 +1,6 @@
 use askama::Template;
 use axum::{
-    extract::{Path, State},
+    extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
@@ -9,7 +9,11 @@ use sqlx::SqlitePool;
 
 use crate::{config::Config, server::util, somehow};
 
-use super::{link::CommitLink, paths::PathAdminQueueAdd, Base, Tab};
+use super::{
+    link::CommitLink,
+    paths::{PathAdminQueueAdd, PathCommitByHash},
+    Base, Tab,
+};
 
 #[derive(Template)]
 #[template(path = "commit.html")]
@@ -28,8 +32,8 @@ struct CommitTemplate {
     link_admin_queue_add: PathAdminQueueAdd,
 }
 
-pub async fn get(
-    Path(hash): Path<String>,
+pub async fn get_commit_by_hash(
+    path: PathCommitByHash,
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
@@ -48,7 +52,7 @@ pub async fn get(
         FROM commits \
         WHERE hash = ? \
         ",
-        hash
+        path.hash,
     )
     .fetch_optional(&db)
     .await?
@@ -63,7 +67,7 @@ pub async fn get(
         WHERE child = ? \
         ORDER BY reachable DESC, unixepoch(committer_date) ASC \
         ",
-        hash
+        path.hash,
     )
     .fetch(&db)
     .map_ok(|r| CommitLink::new(&base, r.hash, &r.message, r.reachable))
@@ -77,7 +81,7 @@ pub async fn get(
         WHERE parent = ? \
         ORDER BY reachable DESC, unixepoch(committer_date) ASC \
         ",
-        hash
+        path.hash,
     )
     .fetch(&db)
     .map_ok(|r| CommitLink::new(&base, r.hash, &r.message, r.reachable))

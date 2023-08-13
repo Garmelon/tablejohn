@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use askama::Template;
 use axum::{
-    extract::{Path, State},
+    extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
@@ -13,7 +13,7 @@ use crate::{
     somehow,
 };
 
-use super::{Base, Tab};
+use super::{paths::PathWorkerByName, Base, Tab};
 
 #[derive(Template)]
 #[template(path = "worker.html")]
@@ -24,19 +24,19 @@ struct WorkerTemplate {
     // TODO Status
 }
 
-pub async fn get(
-    Path(name): Path<String>,
+pub async fn get_worker_by_name(
+    path: PathWorkerByName,
     State(config): State<&'static Config>,
     State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<Response> {
-    let info = workers.lock().unwrap().clean().get(&name);
+    let info = workers.lock().unwrap().clean().get(&path.name);
     let Some(info) = info else {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
 
     Ok(WorkerTemplate {
         base: Base::new(config, Tab::None),
-        name,
+        name: path.name,
         last_seen: util::format_time(info.last_seen),
     }
     .into_response())

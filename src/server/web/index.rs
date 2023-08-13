@@ -5,7 +5,7 @@ use sqlx::SqlitePool;
 
 use crate::{config::Config, somehow};
 
-use super::{link::CommitLink, Base, Tab};
+use super::{link::CommitLink, paths::PathIndex, Base, Tab};
 
 struct Ref {
     name: String,
@@ -21,7 +21,8 @@ struct IndexTemplate {
     untracked_refs: Vec<Ref>,
 }
 
-pub async fn get(
+pub async fn get_index(
+    _path: PathIndex,
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {

@@ -20,6 +20,7 @@ use crate::{
 
 use super::{
     link::{CommitLink, RunLink, WorkerLink},
+    paths::{PathQueue, PathQueueInner},
     Base, Tab,
 };
 
@@ -88,7 +89,7 @@ async fn get_workers(
     Ok(result)
 }
 
-async fn get_queue(
+async fn get_queue_data(
     db: &SqlitePool,
     workers: &[(String, WorkerInfo)],
     base: &Base,
@@ -148,7 +149,8 @@ struct QueueInnerTemplate {
     tasks: Vec<Task>,
 }
 
-pub async fn get_inner(
+pub async fn get_queue_inner(
+    _path: PathQueueInner,
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
     State(workers): State<Arc<Mutex<Workers>>>,
@@ -156,7 +158,7 @@ pub async fn get_inner(
     let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
     let workers = get_workers(&db, &sorted_workers, &base).await?;
-    let tasks = get_queue(&db, &sorted_workers, &base).await?;
+    let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
     Ok(QueueInnerTemplate { workers, tasks })
 }
 #[derive(Template)]
@@ -166,7 +168,8 @@ struct QueueTemplate {
     inner: QueueInnerTemplate,
 }
 
-pub async fn get(
+pub async fn get_queue(
+    _path: PathQueue,
     State(config): State<&'static Config>,
     State(db): State<SqlitePool>,
     State(workers): State<Arc<Mutex<Workers>>>,
@@ -174,7 +177,7 @@ pub async fn get(
     let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
     let workers = get_workers(&db, &sorted_workers, &base).await?;
-    let tasks = get_queue(&db, &sorted_workers, &base).await?;
+    let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
     Ok(QueueTemplate {
         base,
         inner: QueueInnerTemplate { workers, tasks },
