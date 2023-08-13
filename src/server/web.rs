@@ -21,7 +21,7 @@ use self::{
         post_api_worker_status,
     },
     index::get_index,
-    pages::commit::get_commit_by_hash,
+    pages::{commit::get_commit_by_hash, run::get_run_by_id},
     queue::{get_queue, get_queue_inner},
     worker::get_worker_by_name,
 };
@@ -38,6 +38,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .typed_get(get_index)
         .typed_get(get_queue)
         .typed_get(get_queue_inner)
+        .typed_get(get_run_by_id)
         .typed_get(get_worker_by_name)
         .typed_post(post_admin_queue_add)
         .typed_post(post_api_worker_status)

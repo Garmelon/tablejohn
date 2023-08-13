@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, hash, bench_method, start AS \"start: time::OffsetDateTime\", end AS \"end: time::OffsetDateTime\", exit_code, message, reachable FROM runs JOIN commits USING (hash) WHERE id = ? ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "hash",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "bench_method",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "start: time::OffsetDateTime",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "end: time::OffsetDateTime",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "exit_code",
+        "ordinal": 5,
+        "type_info": "Int64"
+      },
+      {
+        "name": "message",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "reachable",
+        "ordinal": 7,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "26bf8f43e0fa607ddfabb0611ee95c8ed1fef2d1aa76749b660228cd38a84283"
+}

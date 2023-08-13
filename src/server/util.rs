@@ -10,7 +10,15 @@ pub fn time_to_offset_datetime(time: Time) -> somehow::Result<OffsetDateTime> {
         .to_offset(UtcOffset::from_whole_seconds(time.offset)?))
 }
 
-pub fn format_delta(delta: time::Duration) -> String {
+pub fn format_duration(duration: time::Duration) -> String {
+    let seconds = duration.unsigned_abs().as_secs(); // To nearest second
+    let formatted = humantime::format_duration(Duration::from_secs(seconds));
+    format!("{formatted}")
+}
+
+pub fn format_delta_from_now(time: OffsetDateTime) -> String {
+    let now = OffsetDateTime::now_utc();
+    let delta = time - now;
     let seconds = delta.unsigned_abs().as_secs();
     let seconds = seconds + 30 - (seconds + 30) % 60; // To nearest minute
     if seconds == 0 {
@@ -22,11 +30,6 @@ pub fn format_delta(delta: time::Duration) -> String {
     } else {
         format!("{formatted} ago")
     }
-}
-
-pub fn format_delta_from_now(time: OffsetDateTime) -> String {
-    let now = OffsetDateTime::now_utc();
-    format_delta(time - now)
 }
 
 pub fn format_time(time: OffsetDateTime) -> String {
@@ -61,4 +64,14 @@ pub fn format_commit_short(hash: &str, message: &str) -> String {
     let short_hash = hash.chars().take(8).collect::<String>();
     let summary = format_commit_summary(message);
     format!("{short_hash} ({summary})")
+}
+
+pub fn format_value(value: f64) -> String {
+    if value.abs() >= 1e6 {
+        format!("{value:.3e}")
+    } else if value.fract() == 0.0 {
+        format!("{value:.0}")
+    } else {
+        format!("{value:.2}")
+    }
 }
