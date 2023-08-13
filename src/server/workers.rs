@@ -11,6 +11,7 @@ use crate::{
 #[derive(Clone)]
 pub struct WorkerInfo {
     pub secret: String,
+    pub first_seen: OffsetDateTime,
     pub last_seen: OffsetDateTime,
     pub status: WorkerStatus,
 }
@@ -19,6 +20,7 @@ impl WorkerInfo {
     pub fn new(secret: String, last_seen: OffsetDateTime, status: WorkerStatus) -> Self {
         Self {
             secret,
+            first_seen: OffsetDateTime::now_utc(),
             last_seen,
             status,
         }
