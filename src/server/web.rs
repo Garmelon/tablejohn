@@ -12,7 +12,13 @@ use axum_extra::routing::RouterExt;
 
 use crate::{config::Config, somehow};
 
-use self::admin::queue::post_admin_queue_add;
+use self::{
+    admin::queue::post_admin_queue_add,
+    api::worker::{
+        get_api_worker_bench_repo_by_hash_tree_tar_gz, get_api_worker_repo_by_hash_tree_tar_gz,
+        post_api_worker_status,
+    },
+};
 
 use super::Server;
 
@@ -53,8 +59,10 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .route("/queue/", get(queue::get))
         .route("/queue/inner", get(queue::get_inner))
         .route("/worker/:name", get(worker::get))
+        .typed_get(get_api_worker_bench_repo_by_hash_tree_tar_gz)
+        .typed_get(get_api_worker_repo_by_hash_tree_tar_gz)
         .typed_post(post_admin_queue_add)
-        .merge(api::router(&server))
+        .typed_post(post_api_worker_status)
         .fallback(get(r#static::static_handler))
         .with_state(server.clone());
 

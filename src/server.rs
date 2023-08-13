@@ -57,10 +57,10 @@ async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
 }
 
 #[derive(Clone)]
-pub(self) struct Repo(Arc<ThreadSafeRepository>);
+pub struct Repo(Arc<ThreadSafeRepository>);
 
 #[derive(Clone)]
-pub(self) struct BenchRepo(Arc<ThreadSafeRepository>);
+pub struct BenchRepo(Arc<ThreadSafeRepository>);
 
 #[derive(Clone, FromRef)]
 pub struct Server {
