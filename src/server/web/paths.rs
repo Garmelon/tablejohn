@@ -10,6 +10,10 @@ use serde::Deserialize;
 pub struct PathIndex {}
 
 #[derive(Deserialize, TypedPath)]
+#[typed_path("/graph/")]
+pub struct PathGraph {}
+
+#[derive(Deserialize, TypedPath)]
 #[typed_path("/queue/")]
 pub struct PathQueue {}
 

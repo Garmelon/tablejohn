@@ -15,6 +15,9 @@
         <a href="{{ base.link_index }}" {% if base.tab=="index" %} class="current" {% endif %}>
             <img src="{{ base.link_logo_svg }}" alt="">{{ base.repo_name }}
         </a>
+        <a href="{{ base.link_graph }}" {% if base.tab=="graph" %} class="current" {% endif %}>
+            graph
+        </a>
         <a href="{{ base.link_queue }}" {% if base.tab=="queue" %} class="current" {% endif %}>
             queue
         </a>

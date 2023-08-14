@@ -3,13 +3,14 @@ use std::fmt;
 use crate::config::Config;
 
 use super::{
-    paths::{PathIndex, PathQueue},
+    paths::{PathGraph, PathIndex, PathQueue},
     r#static::{BASE_CSS, LOGO_SVG},
 };
 
 pub enum Tab {
     None,
     Index,
+    Graph,
     Queue,
 }
 
@@ -18,6 +19,7 @@ pub struct Base {
     pub link_logo_svg: Link,
     pub link_base_css: Link,
     pub link_index: Link,
+    pub link_graph: Link,
     pub link_queue: Link,
     pub web_base: String,
     pub repo_name: String,
@@ -29,12 +31,14 @@ impl Base {
         let tab = match tab {
             Tab::None => "",
             Tab::Index => "index",
+            Tab::Graph => "graph",
             Tab::Queue => "queue",
         };
         Self {
             link_logo_svg: Self::link_with_config(config, LOGO_SVG),
             link_base_css: Self::link_with_config(config, BASE_CSS),
             link_index: Self::link_with_config(config, PathIndex {}),
+            link_graph: Self::link_with_config(config, PathGraph {}),
             link_queue: Self::link_with_config(config, PathQueue {}),
             web_base: config.web_base.clone(),
             repo_name: config.repo_name.clone(),
