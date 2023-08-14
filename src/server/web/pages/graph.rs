@@ -75,6 +75,8 @@ pub async fn get_graph_data(
         times.push(row.committer_date.unix_timestamp());
     }
 
+    // TODO Somehow sort topologically if committer_date is the same
+    // TODO Overhaul indices once I know how the query looks
     let mut metrics = HashMap::new();
     for metric in form.metric {
         let values = sqlx::query_scalar!(
@@ -90,6 +92,7 @@ pub async fn get_graph_data(
             SELECT value \
             FROM commits \
             LEFT JOIN measurements USING (hash) \
+            WHERE reachable = 2 \
             ORDER BY unixepoch(committer_date) ASC, hash ASC \
             ",
             metric,
