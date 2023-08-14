@@ -16,6 +16,7 @@ use crate::{
     somehow,
 };
 
+// TODO Metric tree selector in template
 #[derive(Template)]
 #[template(path = "pages/graph.html")]
 struct Page {
@@ -45,6 +46,7 @@ pub struct QueryGraphData {
 struct GraphData {
     hashes: Vec<String>,
     times: Vec<i64>,
+    // TODO f32 for smaller transmission size?
     metrics: HashMap<String, Vec<Option<f64>>>,
 }
 
@@ -75,8 +77,8 @@ pub async fn get_graph_data(
         times.push(row.committer_date.unix_timestamp());
     }
 
-    // TODO Somehow sort topologically if committer_date is the same
-    // TODO Overhaul indices once I know how the query looks
+    // TODO Topological sort (s. velcom)
+    // TODO Redo indices once queries are finalized
     let mut metrics = HashMap::new();
     for metric in form.metric {
         let values = sqlx::query_scalar!(

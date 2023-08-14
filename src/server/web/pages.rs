@@ -4,3 +4,5 @@ pub mod index;
 pub mod queue;
 pub mod run;
 pub mod worker;
+
+// TODO Admin page with vacuum+analyze, deleting output?

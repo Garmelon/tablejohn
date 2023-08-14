@@ -37,6 +37,7 @@ impl<'de> serde::Deserialize<'de> for Rfc3339Time {
 #[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
 #[repr(u8)]
 pub enum Source {
+    // TODO Internal = 0 ?
     // Stdin would be fd 0
     Stdout = 1,
     Stderr = 2,
