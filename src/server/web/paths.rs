@@ -14,6 +14,10 @@ pub struct PathIndex {}
 pub struct PathGraph {}
 
 #[derive(Deserialize, TypedPath)]
+#[typed_path("/graph/data")]
+pub struct PathGraphData {}
+
+#[derive(Deserialize, TypedPath)]
 #[typed_path("/queue/")]
 pub struct PathQueue {}
 

@@ -26,5 +26,8 @@ CREATE TABLE refs (
     FOREIGN KEY (hash) REFERENCES commits (hash) ON DELETE CASCADE
 ) STRICT;
 
+CREATE INDEX idx_commits_committer_date_hash
+ON commits (committer_date, hash);
+
 CREATE INDEX idx_commit_links_parent_child
-ON commit_links(parent, child);
+ON commit_links (parent, child);

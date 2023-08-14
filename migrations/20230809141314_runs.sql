@@ -32,3 +32,6 @@ CREATE TABLE run_output (
     PRIMARY KEY (id, idx),
     FOREIGN KEY (id) REFERENCES runs (id) ON DELETE CASCADE
 ) STRICT;
+
+CREATE INDEX idx_run_measurements_name_id_value
+ON run_measurements (name, id, value);

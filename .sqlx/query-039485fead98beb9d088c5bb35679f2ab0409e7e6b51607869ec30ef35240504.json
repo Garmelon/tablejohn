@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT hash, committer_date AS \"committer_date: time::OffsetDateTime\" FROM commits ORDER BY committer_date ASC, hash ASC ",
+  "describe": {
+    "columns": [
+      {
+        "name": "hash",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "committer_date: time::OffsetDateTime",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "039485fead98beb9d088c5bb35679f2ab0409e7e6b51607869ec30ef35240504"
+}
