@@ -19,7 +19,7 @@ pub async fn update(db: &SqlitePool) -> somehow::Result<()> {
     for row in new {
         let date = OffsetDateTime::now_utc();
         sqlx::query!(
-            "INSERT INTO queue (hash, date) VALUES (?, ?)",
+            "INSERT OR IGNORE INTO queue (hash, date) VALUES (?, ?)",
             row.hash,
             date,
         )
