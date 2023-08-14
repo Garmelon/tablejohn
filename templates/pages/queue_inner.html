@@ -1,6 +1,5 @@
-{% import "util.html" as util %}
-
 <h2>Workers</h2>
+
 {% if workers.is_empty() %}
 <p>No workers connected</p>
 {% else %}
@@ -30,6 +29,7 @@
 {% endif %}
 
 <h2>Queue ({{ tasks.len() }})</h2>
+
 <table id="queue" data-count="{{ tasks.len() }}">
     <thead>
         <tr>
@@ -43,8 +43,21 @@
         {% for task in tasks %}
         <tr {% if task.odd %} class="odd" {% endif %}>
             <td>{{ task.commit|safe }}</td>
-            <td>{{ task.since }}</td>
-            <td>{{ task.priority }}</td>
+            <td>
+                {{ task.since }}
+                [<a href="{{ task.link_delete }}" title="Delete from queue">del</a>]
+            </td>
+            <td>
+                {{ task.priority }}
+                [<form method="post" action="{{ task.link_increase }}">
+                    <input type="hidden" name="hash" value="{{ task.hash }}">
+                    <button title="Increase priority by 1">inc</button>
+                </form>,
+                <form method="post" action="{{ task.link_decrease }}">
+                    <input type="hidden" name="hash" value="{{ task.hash }}">
+                    <button title="Decrease priority by 1">dec</button>
+                </form>]
+            </td>
             {% if task.workers.is_empty() %}
             <td>-</td>
             {% else %}
@@ -53,4 +66,5 @@
         </tr>
         {% endfor %}
     </tbody>
+
 </table>

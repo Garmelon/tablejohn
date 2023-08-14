@@ -4,7 +4,6 @@ mod base;
 mod link;
 mod pages;
 pub mod paths;
-mod queue;
 mod r#static;
 
 use axum::{routing::get, Router};
@@ -19,10 +18,12 @@ use self::{
         post_api_worker_status,
     },
     pages::{
-        commit::get_commit_by_hash, index::get_index, run::get_run_by_id,
+        commit::get_commit_by_hash,
+        index::get_index,
+        queue::{get_queue, get_queue_inner},
+        run::get_run_by_id,
         worker::get_worker_by_name,
     },
-    queue::{get_queue, get_queue_inner},
 };
 
 use super::Server;

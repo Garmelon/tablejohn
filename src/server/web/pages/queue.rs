@@ -12,17 +12,19 @@ use crate::{
     config::Config,
     server::{
         util,
+        web::{
+            base::{Base, Link, Tab},
+            link::{LinkCommit, LinkRunShort, LinkWorker},
+            paths::{
+                PathAdminQueueDecrease, PathAdminQueueDelete, PathAdminQueueIncrease, PathQueue,
+                PathQueueInner,
+            },
+            r#static::QUEUE_JS,
+        },
         workers::{WorkerInfo, Workers},
     },
     shared::WorkerStatus,
     somehow,
-};
-
-use super::{
-    base::{Base, Link, Tab},
-    link::{LinkCommit, LinkRunShort, LinkWorker},
-    paths::{PathQueue, PathQueueInner},
-    r#static::QUEUE_JS,
 };
 
 enum Status {
@@ -37,6 +39,10 @@ struct Worker {
 }
 
 struct Task {
+    link_delete: Link,
+    link_increase: Link,
+    link_decrease: Link,
+    hash: String,
     commit: LinkCommit,
     since: String,
     priority: i64,
@@ -121,6 +127,10 @@ async fn get_queue_data(
     )
     .fetch(db)
     .map_ok(|r| Task {
+        link_delete: base.link(PathAdminQueueDelete {}),
+        link_increase: base.link(PathAdminQueueIncrease {}),
+        link_decrease: base.link(PathAdminQueueDecrease {}),
+        hash: r.hash.clone(),
         workers: workers_by_commit.remove(&r.hash).unwrap_or_default(),
         commit: LinkCommit::new(base, r.hash, &r.message, r.reachable),
         since: util::format_delta_from_now(r.date),
@@ -144,7 +154,7 @@ async fn get_queue_data(
 }
 
 #[derive(Template)]
-#[template(path = "queue_inner.html")]
+#[template(path = "pages/queue_inner.html")]
 struct QueueInnerTemplate {
     workers: Vec<Worker>,
     tasks: Vec<Task>,
@@ -163,7 +173,7 @@ pub async fn get_queue_inner(
     Ok(QueueInnerTemplate { workers, tasks })
 }
 #[derive(Template)]
-#[template(path = "queue.html")]
+#[template(path = "pages/queue.html")]
 struct QueueTemplate {
     link_queue_js: Link,
     base: Base,
