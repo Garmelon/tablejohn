@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+import argparse
+import base64
+import datetime
+import json
+import math
+import re
+import sqlite3
+import urllib.request
+
+DIRECTION = {
+    "LESS_IS_BETTER": -1,
+    "NEUTRAL": 0,
+    "MORE_IS_BETTER": 1,
+}
+
+
+def format_time(time):
+    # If the fractional part of the second is not exactly 3 or 6 digits long,
+    # fromisoformat fails, so we pad it with zeroes.
+    rfc3339_re = r"(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}\.)(\d{1,6})([+-].*)?"
+    match = re.fullmatch(rfc3339_re, time)
+    time = f"{match.group(1)}{match.group(2):<06}{match.group(3) or ''}"
+
+    time = datetime.datetime.fromisoformat(time)
+
+    # Velcom stores its time in UTC but omits the time zone offset in the
+    # database, so we add it back here.
+    time = time.replace(tzinfo=datetime.timezone.utc)
+
+    return time.isoformat()
+
+
+def stddev(values):
+    if len(values) < 2:
+        return None
+    N = len(values)
+    mean = sum(values) / N
+    variance = sum(pow(value - mean, 2) for value in values) / (N - 1)
+    return math.sqrt(variance)
+
+
+def get_run_data(con, run_id):
+    (
+        runner_name,
+        runner_info,
+        start_time,
+        stop_time,
+        commit_hash,
+        error_type,
+        error,
+    ) = con.execute(
+        """
+        SELECT
+            runner_name,
+            runner_info,
+            start_time,
+            stop_time,
+            commit_hash,
+            error_type,
+            error
+        FROM run
+        WHERE id = ?
+        """,
+        [run_id],
+    ).fetchone()
+
+    output = []
+    measurements = {}
+
+    for (
+        measurement_id,
+        benchmark,
+        metric,
+        unit,
+        interpretation,
+        error,
+    ) in con.execute(
+        """
+        SELECT
+            id,
+            benchmark,
+            metric,
+            unit,
+            interpretation,
+            error
+        FROM measurement
+        WHERE run_id = ?
+        """,
+        [run_id],
+    ):
+        if error:
+            for line in error.splitlines():
+                output.append((2, line))
+            continue
+
+        values = con.execute(
+            "SELECT value FROM measurement_value WHERE measurement_id = ?",
+            [measurement_id],
+        ).fetchall()
+        values = [value for (value,) in values]
+
+        measurements[f"{metric}/{benchmark}"] = {
+            "value": sum(values),
+            "stddev": stddev(values),
+            "unit": unit,
+            "direction": DIRECTION.get(interpretation),
+        }
+
+    if error_type:
+        output.append((2, f"The entire run failed with error of type {error_type}."))
+        output.append((2, ""))
+        for line in error.splitlines():
+            output.append((2, line))
+
+    data = {
+        "id": run_id,
+        "hash": commit_hash,
+        "bench_method": "imported from velcom",
+        "start": format_time(start_time),
+        "end": format_time(stop_time),
+        "exit_code": -1 if error_type else 0,
+        "output": output,
+        "measurements": measurements,
+    }
+
+    return runner_name, runner_info, data
+
+
+def send_run_data(url, token, worker_name, worker_info, data):
+    body = {
+        "info": worker_info,
+        "secret": "nothing to see here",
+        "status": {"type": "idle"},
+        "submit_run": data,
+    }
+
+    request = urllib.request.Request(f"{url.rstrip('/')}/api/worker/status")
+    request.method = "POST"
+
+    # Easier than using HTTPBasicAuthHandler
+    credentials = base64.b64encode(f"{worker_name}:{token}".encode("utf-8"))
+    request.add_header("Authorization", f"Basic {credentials.decode('utf-8')}")
+
+    request.add_header("Content-Type", "application/json; charset=utf-8")
+    request.data = json.dumps(body).encode("utf-8")
+
+    urllib.request.urlopen(request)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("velcom_db")
+    parser.add_argument("repo_id")
+    parser.add_argument("url")
+    parser.add_argument("token")
+    args = parser.parse_args()
+    print(args)
+
+    con = sqlite3.connect(args.velcom_db, isolation_level=None)
+    con.execute("BEGIN")
+
+    run_ids = con.execute(
+        """
+        SELECT id FROM run
+        WHERE repo_id = ? AND commit_hash IS NOT NULL
+        ORDER BY start_time ASC
+        """,
+        [args.repo_id],
+    )
+    run_ids = [run_id for (run_id,) in run_ids]
+
+    for i, run_id in enumerate(run_ids):
+        print(f"Sending run {run_id} ({i+1}/{len(run_ids)})")
+        worker_name, worker_info, data = get_run_data(con, run_id)
+        try:
+            send_run_data(args.url, args.token, worker_name, worker_info, data)
+        except urllib.request.HTTPError as e:
+            for line in e.read().decode("utf-8").splitlines():
+                print(f"# {line}")
+            print()
+
+
+if __name__ == "__main__":
+    main()
