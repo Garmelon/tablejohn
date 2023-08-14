@@ -11,7 +11,10 @@ use crate::{
     config::Config,
     server::web::{
         base::Base,
-        paths::{PathAdminQueueAdd, PathQueue},
+        paths::{
+            PathAdminQueueAdd, PathAdminQueueDecrease, PathAdminQueueDelete,
+            PathAdminQueueIncrease, PathQueue,
+        },
     },
     somehow,
 };
@@ -39,6 +42,69 @@ pub async fn post_admin_queue_add(
         form.hash,
         date,
         form.priority,
+    )
+    .execute(&db)
+    .await?;
+
+    let link = Base::link_with_config(config, PathQueue {});
+    Ok(Redirect::to(&format!("{link}")))
+}
+
+#[derive(Deserialize)]
+pub struct FormAdminQueueDelete {
+    hash: String,
+}
+
+pub async fn post_admin_queue_delete(
+    _path: PathAdminQueueDelete,
+    State(config): State<&'static Config>,
+    State(db): State<SqlitePool>,
+    Form(form): Form<FormAdminQueueDelete>,
+) -> somehow::Result<impl IntoResponse> {
+    sqlx::query!("DELETE FROM queue WHERE hash = ?", form.hash)
+        .execute(&db)
+        .await?;
+
+    let link = Base::link_with_config(config, PathQueue {});
+    Ok(Redirect::to(&format!("{link}")))
+}
+
+#[derive(Deserialize)]
+pub struct FormAdminQueueIncrease {
+    hash: String,
+}
+
+pub async fn post_admin_queue_increase(
+    _path: PathAdminQueueIncrease,
+    State(config): State<&'static Config>,
+    State(db): State<SqlitePool>,
+    Form(form): Form<FormAdminQueueIncrease>,
+) -> somehow::Result<impl IntoResponse> {
+    sqlx::query!(
+        "UPDATE queue SET priority = priority + 1 WHERE hash = ?",
+        form.hash
+    )
+    .execute(&db)
+    .await?;
+
+    let link = Base::link_with_config(config, PathQueue {});
+    Ok(Redirect::to(&format!("{link}")))
+}
+
+#[derive(Deserialize)]
+pub struct FormAdminQueueDecrease {
+    hash: String,
+}
+
+pub async fn post_admin_queue_decrease(
+    _path: PathAdminQueueDecrease,
+    State(config): State<&'static Config>,
+    State(db): State<SqlitePool>,
+    Form(form): Form<FormAdminQueueDecrease>,
+) -> somehow::Result<impl IntoResponse> {
+    sqlx::query!(
+        "UPDATE queue SET priority = priority - 1 WHERE hash = ?",
+        form.hash
     )
     .execute(&db)
     .await?;

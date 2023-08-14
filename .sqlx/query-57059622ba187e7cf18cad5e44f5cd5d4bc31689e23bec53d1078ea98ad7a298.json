@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE queue SET priority = priority - 1 WHERE hash = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "57059622ba187e7cf18cad5e44f5cd5d4bc31689e23bec53d1078ea98ad7a298"
+}
