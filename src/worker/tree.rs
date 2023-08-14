@@ -2,7 +2,7 @@
 
 use std::{io, path::PathBuf};
 
-use axum::body::Bytes;
+use bytes::{Buf, Bytes};
 use flate2::read::GzDecoder;
 use futures::{Stream, StreamExt};
 use reqwest::Response;
@@ -35,7 +35,7 @@ impl io::Read for ReceiverReader {
 
         let mut slice = &*self.rest;
         let result = slice.read(buf);
-        let _ = self.rest.split_to(self.rest.len() - slice.len());
+        self.rest.advance(self.rest.len() - slice.len());
 
         result
     }
