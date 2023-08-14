@@ -23,7 +23,7 @@ use self::{
     pages::{
         commit::get_commit_by_hash,
         index::get_index,
-        queue::{get_queue, get_queue_inner},
+        queue::{get_queue, get_queue_delete, get_queue_inner},
         run::get_run_by_id,
         worker::get_worker_by_name,
     },
@@ -40,6 +40,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .typed_get(get_commit_by_hash)
         .typed_get(get_index)
         .typed_get(get_queue)
+        .typed_get(get_queue_delete)
         .typed_get(get_queue_inner)
         .typed_get(get_run_by_id)
         .typed_get(get_worker_by_name)

@@ -4,7 +4,11 @@ use std::{
 };
 
 use askama::Template;
-use axum::{extract::State, response::IntoResponse};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
@@ -17,7 +21,7 @@ use crate::{
             link::{LinkCommit, LinkRunShort, LinkWorker},
             paths::{
                 PathAdminQueueDecrease, PathAdminQueueDelete, PathAdminQueueIncrease, PathQueue,
-                PathQueueInner,
+                PathQueueDelete, PathQueueInner,
             },
             r#static::QUEUE_JS,
         },
@@ -127,11 +131,13 @@ async fn get_queue_data(
     )
     .fetch(db)
     .map_ok(|r| Task {
-        link_delete: base.link(PathAdminQueueDelete {}),
+        workers: workers_by_commit.remove(&r.hash).unwrap_or_default(),
+        link_delete: base.link(PathQueueDelete {
+            hash: r.hash.clone(),
+        }),
         link_increase: base.link(PathAdminQueueIncrease {}),
         link_decrease: base.link(PathAdminQueueDecrease {}),
         hash: r.hash.clone(),
-        workers: workers_by_commit.remove(&r.hash).unwrap_or_default(),
         commit: LinkCommit::new(base, r.hash, &r.message, r.reachable),
         since: util::format_delta_from_now(r.date),
         priority: r.priority,
@@ -155,7 +161,7 @@ async fn get_queue_data(
 
 #[derive(Template)]
 #[template(path = "pages/queue_inner.html")]
-struct QueueInnerTemplate {
+struct PageInner {
     workers: Vec<Worker>,
     tasks: Vec<Task>,
 }
@@ -170,14 +176,15 @@ pub async fn get_queue_inner(
     let sorted_workers = sorted_workers(&workers);
     let workers = get_workers(&db, &sorted_workers, &base).await?;
     let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
-    Ok(QueueInnerTemplate { workers, tasks })
+    Ok(PageInner { workers, tasks })
 }
+
 #[derive(Template)]
 #[template(path = "pages/queue.html")]
-struct QueueTemplate {
+struct Page {
     link_queue_js: Link,
     base: Base,
-    inner: QueueInnerTemplate,
+    inner: PageInner,
 }
 
 pub async fn get_queue(
@@ -190,9 +197,52 @@ pub async fn get_queue(
     let sorted_workers = sorted_workers(&workers);
     let workers = get_workers(&db, &sorted_workers, &base).await?;
     let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
-    Ok(QueueTemplate {
+    Ok(Page {
         link_queue_js: base.link(QUEUE_JS),
         base,
-        inner: QueueInnerTemplate { workers, tasks },
+        inner: PageInner { workers, tasks },
     })
+}
+
+#[derive(Template)]
+#[template(path = "pages/queue_delete.html")]
+struct PageDelete {
+    base: Base,
+    link_delete: Link,
+
+    short: String,
+    commit: LinkCommit,
+    hash: String,
+}
+
+pub async fn get_queue_delete(
+    path: PathQueueDelete,
+    State(config): State<&'static Config>,
+    State(db): State<SqlitePool>,
+) -> somehow::Result<Response> {
+    let base = Base::new(config, Tab::Queue);
+
+    let Some(r) = sqlx::query!(
+        "\
+        SELECT hash, message, reachable FROM commits \
+        JOIN queue USING (hash) \
+        WHERE hash = ? \
+        ",
+        path.hash,
+    )
+    .fetch_optional(&db)
+    .await?
+    else {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    };
+
+    Ok(PageDelete {
+        short: util::format_commit_short(&r.hash, &r.message),
+        commit: LinkCommit::new(&base, r.hash.clone(), &r.message, r.reachable),
+        hash: r.hash,
+
+        link_delete: base.link(PathAdminQueueDelete {}),
+        base,
+    }
+    .into_response())
 }

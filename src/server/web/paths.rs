@@ -18,6 +18,12 @@ pub struct PathQueue {}
 pub struct PathQueueInner {}
 
 #[derive(Deserialize, TypedPath)]
+#[typed_path("/queue/delete/:hash")]
+pub struct PathQueueDelete {
+    pub hash: String,
+}
+
+#[derive(Deserialize, TypedPath)]
 #[typed_path("/commit/:hash")]
 pub struct PathCommitByHash {
     pub hash: String,
