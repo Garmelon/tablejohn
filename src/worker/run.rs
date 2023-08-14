@@ -97,6 +97,7 @@ impl RunInProgress {
 
         Some(FinishedRun {
             run: self.run.clone(),
+            end: None,
             exit_code: finished.exit_code,
             output,
             measurements: finished.measurements,

@@ -65,10 +65,20 @@ pub struct UnfinishedRun {
 pub struct FinishedRun {
     #[serde(flatten)]
     pub run: Run,
+
+    /// Override the server's end time.
+    ///
+    /// Should not be used in normal operation, but can be used when importing
+    /// completed runs from other sources.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<OffsetDateTime>,
+
     #[serde(default)]
     pub exit_code: i32,
+
     #[serde(default)]
     pub output: Vec<(Source, String)>,
+
     #[serde(default)]
     pub measurements: HashMap<String, Measurement>,
 }

@@ -35,7 +35,7 @@ async fn save_work(finished: FinishedRun, db: &SqlitePool) -> somehow::Result<()
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
-    let end = OffsetDateTime::now_utc();
+    let end = finished.end.unwrap_or_else(OffsetDateTime::now_utc);
     let bench_method = match finished.run.bench_method {
         BenchMethod::Internal => "internal".to_string(),
         BenchMethod::Repo { hash } => format!("bench repo, hash {hash}"),
