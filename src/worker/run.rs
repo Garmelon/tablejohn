@@ -48,7 +48,6 @@ impl RunInProgress {
     }
 
     pub fn as_unfinished_run(&self) -> UnfinishedRun {
-        let run = self.run.clone();
         let last_output = self
             .output
             .lock()
@@ -59,7 +58,13 @@ impl RunInProgress {
             .rev()
             .cloned()
             .collect();
-        UnfinishedRun { run, last_output }
+        UnfinishedRun {
+            id: self.run.id.clone(),
+            hash: self.run.hash.clone(),
+            bench_method: self.run.bench_method.to_string(),
+            start: self.run.start,
+            last_output,
+        }
     }
 
     pub fn log_stdout(&self, line: String) {
@@ -79,7 +84,7 @@ impl RunInProgress {
         }
         .await;
 
-        let finished = match result {
+        let run = match result {
             Ok(outcome) => outcome,
             Err(e) => {
                 error!("Error during run:\n{e:?}");
@@ -96,11 +101,14 @@ impl RunInProgress {
         std::mem::swap(&mut output, &mut *self.output.lock().unwrap());
 
         Some(FinishedRun {
-            run: self.run.clone(),
+            id: self.run.id.clone(),
+            hash: self.run.hash.clone(),
+            bench_method: self.run.bench_method.to_string(),
+            start: self.run.start,
             end: None,
-            exit_code: finished.exit_code,
+            exit_code: run.exit_code,
             output,
-            measurements: finished.measurements,
+            measurements: run.measurements,
         })
     }
 }

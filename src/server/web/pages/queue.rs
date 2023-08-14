@@ -76,19 +76,12 @@ async fn get_workers(
         let status = match &info.status {
             WorkerStatus::Idle => Status::Idle,
             WorkerStatus::Busy => Status::Busy,
-            WorkerStatus::Working(unfinished) => {
-                let message = sqlx::query_scalar!(
-                    "SELECT message FROM commits WHERE hash = ?",
-                    unfinished.run.hash
-                )
-                .fetch_one(db)
-                .await?;
-                Status::Working(LinkRunShort::new(
-                    base,
-                    unfinished.run.id.clone(),
-                    &unfinished.run.hash,
-                    &message,
-                ))
+            WorkerStatus::Working(run) => {
+                let message =
+                    sqlx::query_scalar!("SELECT message FROM commits WHERE hash = ?", run.hash)
+                        .fetch_one(db)
+                        .await?;
+                Status::Working(LinkRunShort::new(base, run.id.clone(), &run.hash, &message))
             }
         };
 
@@ -108,9 +101,9 @@ async fn get_queue_data(
     // Group workers by commit hash
     let mut workers_by_commit: HashMap<String, Vec<LinkWorker>> = HashMap::new();
     for (name, info) in workers {
-        if let WorkerStatus::Working(unfinished) = &info.status {
+        if let WorkerStatus::Working(run) = &info.status {
             workers_by_commit
-                .entry(unfinished.run.hash.clone())
+                .entry(run.hash.clone())
                 .or_default()
                 .push(LinkWorker::new(base, name.clone()));
         }

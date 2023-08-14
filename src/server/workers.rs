@@ -67,7 +67,7 @@ impl Workers {
             .values()
             .filter_map(|info| match &info.status {
                 WorkerStatus::Idle | WorkerStatus::Busy => None,
-                WorkerStatus::Working(unfinished) => Some(&unfinished.run.hash),
+                WorkerStatus::Working(run) => Some(&run.hash),
             })
             .collect::<HashSet<_>>();
 
@@ -84,7 +84,10 @@ impl Workers {
         // Reserve work so other workers don't choose it
         if let Some(info) = self.workers.get_mut(name) {
             info.status = WorkerStatus::Working(UnfinishedRun {
-                run: run.clone(),
+                id: run.id.clone(),
+                hash: run.hash.clone(),
+                bench_method: run.bench_method.to_string(),
+                start: run.start,
                 last_output: vec![],
             });
         }
@@ -95,10 +98,10 @@ impl Workers {
     pub fn should_abort_work(&self, name: &str, queue: &[String]) -> bool {
         // A worker should abort work if...
         let Some(info) = self.workers.get(name) else { return false; };
-        let WorkerStatus::Working (unfinished) = &info.status else { return false; };
+        let WorkerStatus::Working (run) = &info.status else { return false; };
 
         // The commit isn't in the queue
-        if !queue.contains(&unfinished.run.hash) {
+        if !queue.contains(&run.hash) {
             return true;
         }
 
@@ -107,9 +110,7 @@ impl Workers {
             .workers
             .iter()
             .filter_map(|(name, info)| match &info.status {
-                WorkerStatus::Working(u) if u.run.hash == unfinished.run.hash => {
-                    Some((name, u.run.start))
-                }
+                WorkerStatus::Working(u) if u.hash == run.hash => Some((name, u.start)),
                 _ => None,
             })
             .max_by_key(|(_, start)| start.0)

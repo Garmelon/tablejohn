@@ -1,6 +1,6 @@
 //! Data structures modelling the communication between server and worker.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 use serde::{de, Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -72,6 +72,15 @@ pub enum BenchMethod {
     Repo { hash: String },
 }
 
+impl fmt::Display for BenchMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BenchMethod::Internal => write!(f, "internal"),
+            BenchMethod::Repo { hash } => write!(f, "bench repo, hash {hash}"),
+        }
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Run {
     pub id: String,
@@ -82,8 +91,10 @@ pub struct Run {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UnfinishedRun {
-    #[serde(flatten)]
-    pub run: Run,
+    pub id: String,
+    pub hash: String,
+    pub bench_method: String,
+    pub start: Rfc3339Time,
 
     #[serde(default)]
     pub last_output: Vec<(Source, String)>,
@@ -91,8 +102,10 @@ pub struct UnfinishedRun {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct FinishedRun {
-    #[serde(flatten)]
-    pub run: Run,
+    pub id: String,
+    pub hash: String,
+    pub bench_method: String,
+    pub start: Rfc3339Time,
 
     /// Override the server's end time.
     ///

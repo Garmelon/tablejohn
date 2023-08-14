@@ -43,21 +43,14 @@ async fn status(status: &WorkerStatus, db: &SqlitePool, base: &Base) -> somehow:
     Ok(match status {
         WorkerStatus::Idle => Status::Idle,
         WorkerStatus::Busy => Status::Busy,
-        WorkerStatus::Working(unfinished) => {
-            let message = sqlx::query_scalar!(
-                "SELECT message FROM commits WHERE hash = ?",
-                unfinished.run.hash
-            )
-            .fetch_one(db)
-            .await?;
+        WorkerStatus::Working(run) => {
+            let message =
+                sqlx::query_scalar!("SELECT message FROM commits WHERE hash = ?", run.hash)
+                    .fetch_one(db)
+                    .await?;
             Status::Working {
-                link: LinkRunShort::new(
-                    base,
-                    unfinished.run.id.clone(),
-                    &unfinished.run.hash,
-                    &message,
-                ),
-                since: util::format_time(unfinished.run.start.0),
+                link: LinkRunShort::new(base, run.id.clone(), &run.hash, &message),
+                since: util::format_time(run.start.0),
             }
         }
     })

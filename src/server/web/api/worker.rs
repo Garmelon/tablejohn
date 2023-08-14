@@ -32,7 +32,7 @@ use crate::{
 };
 
 async fn save_work(
-    finished: FinishedRun,
+    run: FinishedRun,
     worker_name: &str,
     worker_info: &Option<String>,
     db: &SqlitePool,
@@ -40,15 +40,7 @@ async fn save_work(
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
-    let end = finished
-        .end
-        .map(|t| t.0)
-        .unwrap_or_else(OffsetDateTime::now_utc);
-
-    let bench_method = match finished.run.bench_method {
-        BenchMethod::Internal => "internal".to_string(),
-        BenchMethod::Repo { hash } => format!("bench repo, hash {hash}"),
-    };
+    let end = run.end.map(|t| t.0).unwrap_or_else(OffsetDateTime::now_utc);
 
     sqlx::query!(
         "\
@@ -64,19 +56,19 @@ async fn save_work(
         ) \
         VALUES (?, ?, ?, ?, ?, ?, ?, ?) \
         ",
-        finished.run.id,
-        finished.run.hash,
-        bench_method,
+        run.id,
+        run.hash,
+        run.bench_method,
         worker_name,
         worker_info,
-        finished.run.start.0,
+        run.start.0,
         end,
-        finished.exit_code,
+        run.exit_code,
     )
     .execute(&mut *conn)
     .await?;
 
-    for (name, measurement) in finished.measurements {
+    for (name, measurement) in run.measurements {
         sqlx::query!(
             "\
             INSERT INTO run_measurements ( \
@@ -89,7 +81,7 @@ async fn save_work(
             ) \
             VALUES (?, ?, ?, ?, ?, ?) \
             ",
-            finished.run.id,
+            run.id,
             name,
             measurement.value,
             measurement.stddev,
@@ -100,7 +92,7 @@ async fn save_work(
         .await?;
     }
 
-    for (idx, (source, text)) in finished.output.into_iter().enumerate() {
+    for (idx, (source, text)) in run.output.into_iter().enumerate() {
         // Hopefully we won't need more than 4294967296 output chunks per run :P
         let idx = idx as u32;
         sqlx::query!(
@@ -113,7 +105,7 @@ async fn save_work(
             ) \
             VALUES (?, ?, ?, ?) \
             ",
-            finished.run.id,
+            run.id,
             idx,
             source,
             text,
@@ -123,7 +115,7 @@ async fn save_work(
     }
 
     // The thing has been done :D
-    sqlx::query!("DELETE FROM queue WHERE hash = ?", finished.run.hash)
+    sqlx::query!("DELETE FROM queue WHERE hash = ?", run.hash)
         .execute(&mut *conn)
         .await?;
 
