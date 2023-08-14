@@ -2,6 +2,8 @@ CREATE TABLE runs (
     id           TEXT NOT NULL PRIMARY KEY,
     hash         TEXT NOT NULL,
     bench_method TEXT NOT NULL,
+    worker_name  TEXT NOT NULL,
+    worker_info  TEXT,
     start        TEXT NOT NULL,
     end          TEXT NOT NULL,
     exit_code    INT  NOT NULL,

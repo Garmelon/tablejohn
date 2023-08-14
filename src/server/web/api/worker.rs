@@ -31,7 +31,12 @@ use crate::{
     somehow,
 };
 
-async fn save_work(finished: FinishedRun, db: &SqlitePool) -> somehow::Result<()> {
+async fn save_work(
+    finished: FinishedRun,
+    worker_name: &str,
+    worker_info: &Option<String>,
+    db: &SqlitePool,
+) -> somehow::Result<()> {
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
@@ -47,15 +52,19 @@ async fn save_work(finished: FinishedRun, db: &SqlitePool) -> somehow::Result<()
             id, \
             hash, \
             bench_method, \
+            worker_name, \
+            worker_info, \
             start, \
             end, \
             exit_code \
         ) \
-        VALUES (?, ?, ?, ?, ?, ?) \
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?) \
         ",
         finished.run.id,
         finished.run.hash,
         bench_method,
+        worker_name,
+        worker_info,
         finished.run.start,
         end,
         finished.exit_code,
@@ -133,7 +142,7 @@ pub async fn post_api_worker_status(
     };
 
     if let Some(run) = request.submit_run {
-        save_work(run, &db).await?;
+        save_work(run, &name, &request.info, &db).await?;
     }
 
     // Fetch queue
