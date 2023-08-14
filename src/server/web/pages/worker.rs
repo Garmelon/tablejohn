@@ -57,7 +57,7 @@ async fn status(status: &WorkerStatus, db: &SqlitePool, base: &Base) -> somehow:
                     &unfinished.run.hash,
                     &message,
                 ),
-                since: util::format_time(unfinished.run.start),
+                since: util::format_time(unfinished.run.start.0),
             }
         }
     })

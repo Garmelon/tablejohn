@@ -40,7 +40,11 @@ async fn save_work(
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
-    let end = finished.end.unwrap_or_else(OffsetDateTime::now_utc);
+    let end = finished
+        .end
+        .map(|t| t.0)
+        .unwrap_or_else(OffsetDateTime::now_utc);
+
     let bench_method = match finished.run.bench_method {
         BenchMethod::Internal => "internal".to_string(),
         BenchMethod::Repo { hash } => format!("bench repo, hash {hash}"),
@@ -65,7 +69,7 @@ async fn save_work(
         bench_method,
         worker_name,
         worker_info,
-        finished.run.start,
+        finished.run.start.0,
         end,
         finished.exit_code,
     )

@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 use crate::{
     config::Config,
     id,
-    shared::{BenchMethod, Run, UnfinishedRun, WorkerStatus},
+    shared::{BenchMethod, Rfc3339Time, Run, UnfinishedRun, WorkerStatus},
 };
 
 #[derive(Clone)]
@@ -78,7 +78,7 @@ impl Workers {
             id,
             hash,
             bench_method,
-            start: OffsetDateTime::now_utc(),
+            start: Rfc3339Time(OffsetDateTime::now_utc()),
         };
 
         // Reserve work so other workers don't choose it
@@ -112,7 +112,7 @@ impl Workers {
                 }
                 _ => None,
             })
-            .max_by_key(|(_, start)| *start)
+            .max_by_key(|(_, start)| start.0)
             .map(|(name, _)| name as &str);
         if oldest_working_on_commit != Some(name) {
             return true;

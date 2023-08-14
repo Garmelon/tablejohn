@@ -2,12 +2,36 @@
 
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use time::OffsetDateTime;
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 fn is_false(b: &bool) -> bool {
     !b
+}
+
+#[derive(Clone, Copy)]
+pub struct Rfc3339Time(pub OffsetDateTime);
+
+impl serde::Serialize for Rfc3339Time {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.format(&Rfc3339).unwrap().serialize(serializer)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Rfc3339Time {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let input: &str = serde::Deserialize::deserialize(deserializer)?;
+        OffsetDateTime::parse(input, &Rfc3339)
+            .map_err(de::Error::custom)
+            .map(Self)
+    }
 }
 
 #[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
@@ -29,10 +53,13 @@ pub enum Direction {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Measurement {
     pub value: f64,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stddev: Option<f64>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub direction: Option<Direction>,
 }
@@ -50,13 +77,14 @@ pub struct Run {
     pub id: String,
     pub hash: String,
     pub bench_method: BenchMethod,
-    pub start: OffsetDateTime,
+    pub start: Rfc3339Time,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UnfinishedRun {
     #[serde(flatten)]
     pub run: Run,
+
     #[serde(default)]
     pub last_output: Vec<(Source, String)>,
 }
@@ -70,8 +98,7 @@ pub struct FinishedRun {
     ///
     /// Should not be used in normal operation, but can be used when importing
     /// completed runs from other sources.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub end: Option<OffsetDateTime>,
+    pub end: Option<Rfc3339Time>,
 
     #[serde(default)]
     pub exit_code: i32,
