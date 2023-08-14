@@ -34,6 +34,10 @@ mod default {
         Duration::from_secs(60)
     }
 
+    pub fn web_worker_max_upload() -> usize {
+        1024 * 1024 * 8 // 8 MiB
+    }
+
     pub fn repo_update_delay() -> Duration {
         Duration::from_secs(60)
     }
@@ -59,6 +63,9 @@ struct Web {
 
     #[serde(default = "default::web_worker_timeout")]
     worker_timeout: Duration,
+
+    #[serde(default = "default::web_worker_max_upload")]
+    worker_max_upload: usize,
 }
 
 impl Default for Web {
@@ -68,6 +75,7 @@ impl Default for Web {
             address: default::web_address(),
             worker_token: None,
             worker_timeout: default::web_worker_timeout(),
+            worker_max_upload: default::web_worker_max_upload(),
         }
     }
 }
@@ -226,6 +234,7 @@ pub struct Config {
     pub web_address: SocketAddr,
     pub web_worker_token: String,
     pub web_worker_timeout: Duration,
+    pub web_worker_max_upload: usize,
     pub repo_name: String,
     pub repo_update_delay: Duration,
     pub worker_name: String,
@@ -263,6 +272,7 @@ impl Config {
             web_address: config_file.web.address,
             web_worker_token,
             web_worker_timeout: config_file.web.worker_timeout,
+            web_worker_max_upload: config_file.web.worker_max_upload,
             repo_name,
             repo_update_delay: config_file.repo.update_delay,
             worker_name,

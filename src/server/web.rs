@@ -6,7 +6,7 @@ mod pages;
 pub mod paths;
 mod r#static;
 
-use axum::{routing::get, Router};
+use axum::{extract::DefaultBodyLimit, routing::get, Router};
 use axum_extra::routing::RouterExt;
 
 use crate::somehow;
@@ -34,6 +34,10 @@ use super::Server;
 pub async fn run(server: Server) -> somehow::Result<()> {
     // TODO Add text body to body-less status codes
 
+    let post_api_worker_status = Router::new()
+        .typed_post(post_api_worker_status)
+        .layer(DefaultBodyLimit::max(server.config.web_worker_max_upload));
+
     let app = Router::new()
         .typed_get(get_api_worker_bench_repo_by_hash_tree_tar_gz)
         .typed_get(get_api_worker_repo_by_hash_tree_tar_gz)
@@ -48,7 +52,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .typed_post(post_admin_queue_decrease)
         .typed_post(post_admin_queue_delete)
         .typed_post(post_admin_queue_increase)
-        .typed_post(post_api_worker_status)
+        .merge(post_api_worker_status)
         .fallback(get(r#static::static_handler))
         .with_state(server.clone());
 
