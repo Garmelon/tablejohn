@@ -27,7 +27,7 @@ CREATE TABLE refs (
 ) STRICT;
 
 CREATE INDEX idx_commits_committer_date_hash
-ON commits (committer_date, hash);
+ON commits (unixepoch(committer_date), hash);
 
 CREATE INDEX idx_commit_links_parent_child
 ON commit_links (parent, child);

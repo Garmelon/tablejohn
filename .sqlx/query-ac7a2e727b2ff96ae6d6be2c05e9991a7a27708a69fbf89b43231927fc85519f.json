@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT hash, committer_date AS \"committer_date: time::OffsetDateTime\" FROM commits ORDER BY committer_date ASC, hash ASC ",
+  "query": "SELECT hash, committer_date AS \"committer_date: time::OffsetDateTime\" FROM commits ORDER BY unixepoch(committer_date) ASC, hash ASC ",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "039485fead98beb9d088c5bb35679f2ab0409e7e6b51607869ec30ef35240504"
+  "hash": "ac7a2e727b2ff96ae6d6be2c05e9991a7a27708a69fbf89b43231927fc85519f"
 }

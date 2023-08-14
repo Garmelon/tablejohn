@@ -11,7 +11,7 @@ use crate::{
     server::web::{
         base::{Base, Link, Tab},
         paths::{PathGraph, PathGraphData},
-        r#static::GRAPH_JS,
+        r#static::{GRAPH_JS, UPLOT_CSS},
     },
     somehow,
 };
@@ -19,6 +19,7 @@ use crate::{
 #[derive(Template)]
 #[template(path = "pages/graph.html")]
 struct Page {
+    link_uplot_css: Link,
     link_graph_js: Link,
     base: Base,
 }
@@ -29,6 +30,7 @@ pub async fn get_graph(
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Graph);
     Ok(Page {
+        link_uplot_css: base.link(UPLOT_CSS),
         link_graph_js: base.link(GRAPH_JS),
         base,
     })
@@ -60,7 +62,7 @@ pub async fn get_graph_data(
             hash, \
             committer_date AS \"committer_date: time::OffsetDateTime\" \
         FROM commits \
-        ORDER BY committer_date ASC, hash ASC \
+        ORDER BY unixepoch(committer_date) ASC, hash ASC \
         "
     )
     .fetch_all(&mut *conn)
@@ -88,7 +90,7 @@ pub async fn get_graph_data(
             SELECT value \
             FROM commits \
             LEFT JOIN measurements USING (hash) \
-            ORDER BY committer_date ASC, hash ASC \
+            ORDER BY unixepoch(committer_date) ASC, hash ASC \
             ",
             metric,
         )
