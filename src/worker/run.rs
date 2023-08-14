@@ -76,9 +76,8 @@ impl RunInProgress {
     }
 
     pub async fn perform(&self, server: &Server) -> Option<FinishedRun> {
-        // TODO Remove type annotations
         // TODO Handle aborts
-        let result: somehow::Result<_> = match &self.run.bench_method {
+        let result = match &self.run.bench_method {
             BenchMethod::Internal => self.perform_internal(server),
             BenchMethod::Repo { hash } => todo!(),
         }
