@@ -95,13 +95,6 @@ fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
         *counts.files_by_dir.entry(dir.clone()).or_default() += 1;
         *counts.lines_by_dir.entry(dir.clone()).or_default() += lines;
         *counts.todos_by_dir.entry(dir.clone()).or_default() += todos;
-
-        run.log_stdout(format!(
-            "{} has {lines} line{}, {todos} todo{}",
-            relative_path.display(),
-            if lines == 1 { "" } else { "s" },
-            if todos == 1 { "" } else { "s" },
-        ));
     }
 
     Ok(counts)
