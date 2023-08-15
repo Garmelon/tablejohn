@@ -72,5 +72,8 @@ CREATE TABLE queue (
 CREATE INDEX idx_commit_links_parent_child
 ON commit_links (parent, child);
 
+CREATE INDEX idx_queue_priority_date_hash
+ON queue (priority DESC, unixepoch(date) DESC, hash ASC);
+
 CREATE INDEX idx_run_measurements_metric_id_value
 ON run_measurements (metric, id, value);
