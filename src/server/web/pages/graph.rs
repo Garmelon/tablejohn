@@ -67,6 +67,9 @@ pub async fn get_graph_data(
     // The SQL queries that return one result per commit *must* return the same
     // amount of rows in the same order!
 
+    // TODO Order queries by hash only
+    // TODO After topo sort, do a stable sort by committer date
+
     let unsorted_hashes = sqlx::query_scalar!(
         "\
         SELECT hash FROM commits \
@@ -140,7 +143,7 @@ pub async fn get_graph_data(
                 SELECT hash, value, MAX(start) \
                 FROM runs \
                 JOIN run_measurements USING (id) \
-                WHERE name = ? \
+                WHERE metric = ? \
                 GROUP BY hash \
             ) \
             SELECT value \

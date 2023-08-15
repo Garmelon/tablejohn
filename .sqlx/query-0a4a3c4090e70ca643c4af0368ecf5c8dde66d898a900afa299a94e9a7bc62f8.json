@@ -1,10 +1,10 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT name, value, stddev, unit, direction FROM run_measurements WHERE id = ? ORDER BY name ASC ",
+  "query": "SELECT metric, value, stddev, unit, direction FROM run_measurements WHERE id = ? ORDER BY metric ASC ",
   "describe": {
     "columns": [
       {
-        "name": "name",
+        "name": "metric",
         "ordinal": 0,
         "type_info": "Text"
       },
@@ -40,5 +40,5 @@
       true
     ]
   },
-  "hash": "b65eb154a77e79de390220d3675cc2b1ebe8cb706d2b0e1a0377c88fd6a175c2"
+  "hash": "0a4a3c4090e70ca643c4af0368ecf5c8dde66d898a900afa299a94e9a7bc62f8"
 }

@@ -68,12 +68,12 @@ async fn save_work(
     .execute(&mut *conn)
     .await?;
 
-    for (name, measurement) in run.measurements {
+    for (metric, measurement) in run.measurements {
         sqlx::query!(
             "\
             INSERT INTO run_measurements ( \
                 id, \
-                name, \
+                metric, \
                 value, \
                 stddev, \
                 unit, \
@@ -82,7 +82,7 @@ async fn save_work(
             VALUES (?, ?, ?, ?, ?, ?) \
             ",
             run.id,
-            name,
+            metric,
             measurement.value,
             measurement.stddev,
             measurement.unit,

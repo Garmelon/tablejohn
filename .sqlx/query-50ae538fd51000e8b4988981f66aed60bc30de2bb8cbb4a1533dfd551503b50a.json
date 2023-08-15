@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "WITH measurements AS ( SELECT hash, value, MAX(start) FROM runs JOIN run_measurements USING (id) WHERE metric = ? GROUP BY hash ) SELECT value FROM commits LEFT JOIN measurements USING (hash) WHERE reachable = 2 ORDER BY unixepoch(committer_date) ASC, hash ASC ",
+  "describe": {
+    "columns": [
+      {
+        "name": "value",
+        "ordinal": 0,
+        "type_info": "Float"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "50ae538fd51000e8b4988981f66aed60bc30de2bb8cbb4a1533dfd551503b50a"
+}

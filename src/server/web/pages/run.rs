@@ -21,7 +21,7 @@ use crate::{
 };
 
 struct Measurement {
-    name: String,
+    metric: String,
     value: String,
     stddev: String,
     unit: String,
@@ -81,20 +81,20 @@ async fn from_finished_run(
     let measurements = sqlx::query!(
         "\
         SELECT \
-            name, \
+            metric, \
             value, \
             stddev, \
             unit, \
             direction \
         FROM run_measurements \
         WHERE id = ? \
-        ORDER BY name ASC \
+        ORDER BY metric ASC \
         ",
         id,
     )
     .fetch(db)
     .map_ok(|r| Measurement {
-        name: r.name,
+        metric: r.metric,
         value: util::format_value(r.value),
         stddev: r.stddev.map(util::format_value).unwrap_or_default(),
         unit: r.unit.unwrap_or_default(),
