@@ -12,15 +12,15 @@ const COLORS = [
     "#42d4f4", // Cyan
     "#f032e6", // Magenta
     // "#bfef45", // Lime
-    "#fabed4", // Pink
+    // "#fabed4", // Pink
     "#469990", // Teal
-    "#dcbeff", // Lavender
+    // "#dcbeff", // Lavender
     "#9A6324", // Brown
-    "#fffac8", // Beige
+    // "#fffac8", // Beige
     "#800000", // Maroon
-    "#aaffc3", // Mint
+    // "#aaffc3", // Mint
     // "#808000", // Olive
-    "#ffd8b1", // Apricot
+    // "#ffd8b1", // Apricot
     "#000075", // Navy
     "#a9a9a9", // Grey
     // "#ffffff", // White
