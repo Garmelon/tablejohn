@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT hash FROM commits ORDER BY unixepoch(committer_date) ASC, hash ASC ",
+  "describe": {
+    "columns": [
+      {
+        "name": "hash",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a718c407e9620bf99ed97247b89dd0afb7ef657ee0a302433641f651e72b8cbe"
+}

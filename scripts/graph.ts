@@ -3,7 +3,7 @@ import uPlot from "./uPlot.js";
 interface GraphData {
     hashes: string[];
     times: number[];
-    metrics: { [key: string]: (number | null)[]; };
+    measurements: { [key: string]: (number | null)[]; };
 }
 
 let opts = {
@@ -29,7 +29,7 @@ fetch("data?metric=wall-clock/build")
         console.log(data);
         plot.setData([
             data.times,
-            data.metrics["wall-clock/build"]!,
+            data.measurements["wall-clock/build"]!,
         ]);
     });
 

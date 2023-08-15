@@ -1,10 +1,14 @@
+mod util;
+
 use std::collections::HashMap;
 
 use askama::Template;
 use axum::{extract::State, response::IntoResponse, Json};
 use axum_extra::extract::Query;
+use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Acquire, SqlitePool};
+use time::OffsetDateTime;
 
 use crate::{
     config::Config,
@@ -45,9 +49,11 @@ pub struct QueryGraphData {
 #[derive(Serialize)]
 struct GraphData {
     hashes: Vec<String>,
+    parents: HashMap<usize, Vec<usize>>,
     times: Vec<i64>,
+
     // TODO f32 for smaller transmission size?
-    metrics: HashMap<String, Vec<Option<f64>>>,
+    measurements: HashMap<String, Vec<Option<f64>>>,
 }
 
 pub async fn get_graph_data(
@@ -58,30 +64,76 @@ pub async fn get_graph_data(
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
-    let rows = sqlx::query!(
+    // The SQL queries that return one result per commit *must* return the same
+    // amount of rows in the same order!
+
+    let unsorted_hashes = sqlx::query_scalar!(
         "\
-        SELECT \
-            hash, \
-            committer_date AS \"committer_date: time::OffsetDateTime\" \
-        FROM commits \
+        SELECT hash FROM commits \
         ORDER BY unixepoch(committer_date) ASC, hash ASC \
         "
     )
     .fetch_all(&mut *conn)
     .await?;
 
-    let mut hashes = Vec::with_capacity(rows.len());
-    let mut times = Vec::with_capacity(rows.len());
-    for row in rows {
-        hashes.push(row.hash);
-        times.push(row.committer_date.unix_timestamp());
+    let parent_child_pairs = sqlx::query!(
+        "\
+        SELECT parent, child \
+        FROM commit_links \
+        JOIN commits AS p ON p.hash = parent \
+        JOIN commits AS c ON c.hash = child \
+        ORDER BY \
+            unixepoch(p.committer_date) ASC, p.hash ASC, \
+            unixepoch(c.committer_date) ASC, c.hash ASC \
+        "
+    )
+    .fetch(&mut *conn)
+    .map_ok(|r| (r.parent, r.child))
+    .try_collect::<Vec<_>>()
+    .await?;
+
+    let sorted_hashes = util::sort_topologically(&unsorted_hashes, &parent_child_pairs);
+
+    let sorted_hash_indices = sorted_hashes
+        .iter()
+        .cloned()
+        .enumerate()
+        .map(|(i, hash)| (hash, i))
+        .collect::<HashMap<_, _>>();
+
+    let mut parents = HashMap::<usize, Vec<usize>>::new();
+    for (parent, child) in &parent_child_pairs {
+        let parent_idx = sorted_hash_indices[parent];
+        let child_idx = sorted_hash_indices[child];
+        parents.entry(parent_idx).or_default().push(child_idx);
     }
 
-    // TODO Topological sort (s. velcom)
-    // TODO Redo indices once queries are finalized
-    let mut metrics = HashMap::new();
+    // permutation[unsorted_index] = sorted_index
+    let permutation = unsorted_hashes
+        .iter()
+        .map(|h| sorted_hash_indices[h])
+        .collect::<Vec<_>>();
+
+    // Collect and permutate commit times
+    let mut times = vec![0; sorted_hashes.len()];
+    let mut rows = sqlx::query_scalar!(
+        "\
+        SELECT committer_date AS \"time: OffsetDateTime\" FROM commits \
+        ORDER BY unixepoch(committer_date) ASC, hash ASC \
+        "
+    )
+    .fetch(&mut *conn)
+    .enumerate();
+    while let Some((i, time)) = rows.next().await {
+        times[permutation[i]] = time?.unix_timestamp();
+    }
+    drop(rows);
+
+    // Collect and permutate measurements
+    let mut measurements = HashMap::new();
     for metric in form.metric {
-        let values = sqlx::query_scalar!(
+        let mut values = vec![None; sorted_hashes.len()];
+        let mut rows = sqlx::query_scalar!(
             "\
             WITH \
             measurements AS ( \
@@ -99,15 +151,20 @@ pub async fn get_graph_data(
             ",
             metric,
         )
-        .fetch_all(&mut *conn)
-        .await?;
+        .fetch(&mut *conn)
+        .enumerate();
+        while let Some((i, value)) = rows.next().await {
+            values[permutation[i]] = value?;
+        }
+        drop(rows);
 
-        metrics.insert(metric, values);
+        measurements.insert(metric, values);
     }
 
     Ok(Json(GraphData {
-        hashes,
+        hashes: sorted_hashes,
+        parents,
         times,
-        metrics,
+        measurements,
     }))
 }
