@@ -159,27 +159,33 @@ pub async fn get_graph_data(
     // The SQL queries that return one result per commit *must* return the same
     // amount of rows in the same order!
 
-    // TODO Order queries by hash only
-    // TODO After topo sort, do a stable sort by committer date
+    // TODO Limit by date or amount
+    // TODO Limit to tracked commits
 
-    let unsorted_hashes = sqlx::query_scalar!(
+    let mut unsorted_hashes = Vec::<String>::new();
+    let mut times_by_hash = HashMap::<String, i64>::new();
+    let mut rows = sqlx::query!(
         "\
-        SELECT hash FROM commits \
-        ORDER BY unixepoch(committer_date) ASC, hash ASC \
+        SELECT \
+            hash, \
+            committer_date AS \"time: OffsetDateTime\" \
+        FROM commits \
+        ORDER BY hash ASC \
         "
     )
-    .fetch_all(&mut *conn)
-    .await?;
+    .fetch(&mut *conn);
+    while let Some(row) = rows.next().await {
+        let row = row?;
+        unsorted_hashes.push(row.hash.clone());
+        times_by_hash.insert(row.hash, row.time.unix_timestamp());
+    }
+    drop(rows);
 
     let parent_child_pairs = sqlx::query!(
         "\
         SELECT parent, child \
         FROM commit_links \
-        JOIN commits AS p ON p.hash = parent \
-        JOIN commits AS c ON c.hash = child \
-        ORDER BY \
-            unixepoch(p.committer_date) ASC, p.hash ASC, \
-            unixepoch(c.committer_date) ASC, c.hash ASC \
+        ORDER BY parent ASC, child ASC \
         "
     )
     .fetch(&mut *conn)
@@ -187,9 +193,10 @@ pub async fn get_graph_data(
     .try_collect::<Vec<_>>()
     .await?;
 
-    let sorted_hashes = util::sort_topologically(&unsorted_hashes, &parent_child_pairs);
+    let mut hashes = util::sort_topologically(&unsorted_hashes, &parent_child_pairs);
+    hashes.sort_by_key(|hash| times_by_hash[hash]);
 
-    let sorted_hash_indices = sorted_hashes
+    let sorted_hash_indices = hashes
         .iter()
         .cloned()
         .enumerate()
@@ -203,31 +210,22 @@ pub async fn get_graph_data(
         parents.entry(parent_idx).or_default().push(child_idx);
     }
 
+    // Collect times
+    let times = hashes
+        .iter()
+        .map(|hash| times_by_hash[hash])
+        .collect::<Vec<_>>();
+
     // permutation[unsorted_index] = sorted_index
     let permutation = unsorted_hashes
         .iter()
-        .map(|h| sorted_hash_indices[h])
+        .map(|hash| sorted_hash_indices[hash])
         .collect::<Vec<_>>();
-
-    // Collect and permutate commit times
-    let mut times = vec![0; sorted_hashes.len()];
-    let mut rows = sqlx::query_scalar!(
-        "\
-        SELECT committer_date AS \"time: OffsetDateTime\" FROM commits \
-        ORDER BY unixepoch(committer_date) ASC, hash ASC \
-        "
-    )
-    .fetch(&mut *conn)
-    .enumerate();
-    while let Some((i, time)) = rows.next().await {
-        times[permutation[i]] = time?.unix_timestamp();
-    }
-    drop(rows);
 
     // Collect and permutate measurements
     let mut measurements = HashMap::new();
     for metric in form.metric {
-        let mut values = vec![None; sorted_hashes.len()];
+        let mut values = vec![None; hashes.len()];
         let mut rows = sqlx::query_scalar!(
             "\
             WITH \
@@ -241,8 +239,7 @@ pub async fn get_graph_data(
             SELECT value \
             FROM commits \
             LEFT JOIN measurements USING (hash) \
-            WHERE reachable = 2 \
-            ORDER BY unixepoch(committer_date) ASC, hash ASC \
+            ORDER BY hash ASC \
             ",
             metric,
         )
@@ -257,7 +254,7 @@ pub async fn get_graph_data(
     }
 
     Ok(Json(GraphData {
-        hashes: sorted_hashes,
+        hashes,
         parents,
         times,
         measurements,

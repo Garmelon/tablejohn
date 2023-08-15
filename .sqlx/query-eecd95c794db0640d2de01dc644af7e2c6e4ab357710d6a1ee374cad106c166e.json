@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT parent, child FROM commit_links JOIN commits AS p ON p.hash = parent JOIN commits AS c ON c.hash = child ORDER BY unixepoch(p.committer_date) ASC, p.hash ASC, unixepoch(c.committer_date) ASC, c.hash ASC ",
+  "query": "SELECT parent, child FROM commit_links ORDER BY parent ASC, child ASC ",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "3620648a1003211c184423a3c13b6eae3500b888490430fbaf20517830db508e"
+  "hash": "eecd95c794db0640d2de01dc644af7e2c6e4ab357710d6a1ee374cad106c166e"
 }
