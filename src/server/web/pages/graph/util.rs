@@ -65,14 +65,16 @@ pub fn sort_topologically(
         .map(|hash| (hash.clone(), HashSet::<String>::new()))
         .collect::<HashMap<_, _>>();
     for (parent, child) in parent_child_pairs {
-        parent_child_map
-            .get_mut(parent)
-            .unwrap()
-            .push(child.clone());
-        child_parent_map
-            .get_mut(child)
-            .unwrap()
-            .insert(parent.clone());
+        if parent_child_map.contains_key(parent) && parent_child_map.contains_key(child) {
+            parent_child_map
+                .get_mut(parent)
+                .unwrap()
+                .push(child.clone());
+            child_parent_map
+                .get_mut(child)
+                .unwrap()
+                .insert(parent.clone());
+        }
     }
 
     // Initialize parentless stack using commit list, in reverse order so that

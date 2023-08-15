@@ -170,6 +170,7 @@ pub async fn get_graph_data(
             hash, \
             committer_date AS \"time: OffsetDateTime\" \
         FROM commits \
+        WHERE reachable = 2 \
         ORDER BY hash ASC \
         "
     )
@@ -185,6 +186,8 @@ pub async fn get_graph_data(
         "\
         SELECT parent, child \
         FROM commit_links \
+        JOIN commits ON hash = parent \
+        WHERE reachable = 2 \
         ORDER BY parent ASC, child ASC \
         "
     )
@@ -205,9 +208,11 @@ pub async fn get_graph_data(
 
     let mut parents = HashMap::<usize, Vec<usize>>::new();
     for (parent, child) in &parent_child_pairs {
-        let parent_idx = sorted_hash_indices[parent];
-        let child_idx = sorted_hash_indices[child];
-        parents.entry(parent_idx).or_default().push(child_idx);
+        if let Some(parent_idx) = sorted_hash_indices.get(parent) {
+            if let Some(child_idx) = sorted_hash_indices.get(child) {
+                parents.entry(*parent_idx).or_default().push(*child_idx);
+            }
+        }
     }
 
     // Collect times
@@ -239,6 +244,7 @@ pub async fn get_graph_data(
             SELECT value \
             FROM commits \
             LEFT JOIN measurements USING (hash) \
+            WHERE reachable = 2 \
             ORDER BY hash ASC \
             ",
             metric,
