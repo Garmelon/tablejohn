@@ -71,10 +71,18 @@ fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
         let mut lines = 0;
         let mut todos = 0;
         for line in BufReader::new(File::open(entry.path())?).lines() {
-            let line = line?;
-            lines += 1;
-            if todo_regex.is_match(&line) {
-                todos += 1;
+            match line {
+                Ok(line) => {
+                    lines += 1;
+                    if todo_regex.is_match(&line) {
+                        todos += 1;
+                    }
+                }
+                Err(_) => {
+                    // Probably a binary file
+                    lines = 0;
+                    todos = 0;
+                }
             }
         }
 
