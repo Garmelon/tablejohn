@@ -1,5 +1,29 @@
 use std::collections::{HashMap, HashSet};
 
+#[derive(Default)]
+pub struct MetricFolder {
+    pub metric: Option<String>,
+    pub children: HashMap<String, MetricFolder>,
+}
+
+impl MetricFolder {
+    fn insert(&mut self, metric: String) {
+        let mut current = self;
+        for segment in metric.split('/') {
+            current = current.children.entry(segment.to_string()).or_default();
+        }
+        current.metric = Some(metric);
+    }
+
+    pub fn new(metrics: Vec<String>) -> Self {
+        let mut tree = Self::default();
+        for metric in metrics {
+            tree.insert(metric);
+        }
+        tree
+    }
+}
+
 /// Sort commits topologically such that parents come before their children.
 ///
 /// Assumes that `parent_child_pairs` contains no duplicates and is in the

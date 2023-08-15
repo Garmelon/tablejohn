@@ -20,6 +20,84 @@ use crate::{
     somehow,
 };
 
+use self::util::MetricFolder;
+
+#[derive(Template)]
+#[template(
+    ext = "html",
+    source = "
+{% match self %}
+  {% when MetricTree::File with { name, metric } %}
+    <label>
+      <input type=\"checkbox\" name=\"{{ metric }}\">
+      {{ name }}
+    </label>
+  {% when MetricTree::Folder with { name, metric, children } %}
+    {% if let Some(metric) = metric %}
+      <input type=\"checkbox\" name=\"{{ metric }}\">
+    {% endif %}
+    <details>
+      <summary>{{ name }}/</summary>
+      {{ children|safe }}
+    </details>
+{% endmatch %}
+"
+)]
+enum MetricTree {
+    File {
+        name: String,
+        metric: String,
+    },
+    Folder {
+        name: String,
+        metric: Option<String>,
+        children: MetricForest,
+    },
+}
+
+#[derive(Template)]
+#[template(
+    ext = "html",
+    source = "
+<ul>
+  {% for tree in trees %}
+    <li>{{ tree|safe }}</li>
+  {% endfor %}
+</ul>
+"
+)]
+struct MetricForest {
+    trees: Vec<MetricTree>,
+}
+
+impl MetricForest {
+    fn from_forest(children: HashMap<String, MetricFolder>) -> Self {
+        let mut children = children.into_iter().collect::<Vec<_>>();
+        children.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+
+        let mut trees = vec![];
+        for (name, mut folder) in children {
+            if let Some(file_metric) = folder.metric {
+                trees.push(MetricTree::File {
+                    name: name.clone(),
+                    metric: file_metric,
+                });
+            }
+
+            let is_folder = !folder.children.is_empty();
+            let folder_metric = folder.children.remove("").and_then(|f| f.metric);
+            if is_folder {
+                trees.push(MetricTree::Folder {
+                    name,
+                    metric: folder_metric,
+                    children: Self::from_forest(folder.children),
+                })
+            }
+        }
+        Self { trees }
+    }
+}
+
 // TODO Metric tree selector in template
 #[derive(Template)]
 #[template(path = "pages/graph.html")]
@@ -27,17 +105,31 @@ struct Page {
     link_uplot_css: Link,
     link_graph_js: Link,
     base: Base,
+
+    metrics: MetricForest,
 }
 
 pub async fn get_graph(
     _path: PathGraph,
     State(config): State<&'static Config>,
+    State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
+    let metrics =
+        sqlx::query_scalar!("SELECT DISTINCT metric FROM run_measurements ORDER BY metric ASC")
+            .fetch_all(&db)
+            .await?;
+
+    let metrics = MetricFolder::new(metrics);
+    assert!(metrics.metric.is_none());
+    let metrics = MetricForest::from_forest(metrics.children);
+
     let base = Base::new(config, Tab::Graph);
     Ok(Page {
         link_uplot_css: base.link(UPLOT_CSS),
         link_graph_js: base.link(GRAPH_JS),
         base,
+
+        metrics,
     })
 }
 

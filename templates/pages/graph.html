@@ -7,6 +7,32 @@
 <script type="module" src="{{ link_graph_js }}"></script>
 {% endblock %}
 
+{# {% macro metric_tree(tree) %}
+{% match tree %}
+{% when File with { name, metric } %}
+<label><input type="checkbox" name="{{ metric }}"> {{ name }}</label>
+{% when Folder with { name, metric, children } %}
+<details>
+    <summary>{{ name }}/</summary>
+    {% call metric_forest(children) %}
+</details>
+{% endmatch %}
+{% endmacro %}
+
+{% macro metric_forest(trees) %}
+<ul>
+    {% for tree in forest %}
+    {% call metric_tree(tree) %}
+    {% endfor %}
+</ul>
+{% endmacro %} #}
+
 {% block body %}
+
 <h2>Graph</h2>
+
+<div id="plot"></div>
+
+{{ metrics|safe }}
+
 {% endblock %}
