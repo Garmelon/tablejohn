@@ -136,6 +136,7 @@ pub async fn get_graph(
 
 #[derive(Deserialize)]
 pub struct QueryGraphData {
+    #[serde(default)]
     metric: Vec<String>,
 }
 
