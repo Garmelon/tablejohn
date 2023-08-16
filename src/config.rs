@@ -18,73 +18,32 @@ use crate::{
     id, somehow,
 };
 
-mod default {
-    use std::{net::SocketAddr, time::Duration};
-
-    pub fn web_base() -> String {
-        "/".to_string()
-    }
-
-    pub fn web_address() -> SocketAddr {
-        // Port chosen by fair dice roll
-        "[::1]:8221".parse().unwrap()
-    }
-
-    pub fn web_worker_timeout() -> Duration {
-        Duration::from_secs(60)
-    }
-
-    pub fn web_worker_max_upload() -> usize {
-        1024 * 1024 * 8 // 8 MiB
-    }
-
-    pub fn repo_update_delay() -> Duration {
-        Duration::from_secs(60)
-    }
-
-    pub fn worker_ping_delay() -> Duration {
-        Duration::from_secs(10)
-    }
-
-    pub fn worker_batch_duration() -> Duration {
-        Duration::from_secs(60 * 10)
-    }
-}
-
 #[derive(Debug, Deserialize)]
+#[serde(default)]
 struct Web {
-    #[serde(default = "default::web_base")]
     base: String,
-
-    #[serde(default = "default::web_address")]
     address: SocketAddr,
-
     worker_token: Option<String>,
-
-    #[serde(default = "default::web_worker_timeout")]
     worker_timeout: Duration,
-
-    #[serde(default = "default::web_worker_max_upload")]
     worker_max_upload: usize,
 }
 
 impl Default for Web {
     fn default() -> Self {
         Self {
-            base: default::web_base(),
-            address: default::web_address(),
+            base: "/".to_string(),
+            address: "[::1]:8221".parse().unwrap(), // Port chosen by fair dice roll
             worker_token: None,
-            worker_timeout: default::web_worker_timeout(),
-            worker_max_upload: default::web_worker_max_upload(),
+            worker_timeout: Duration::from_secs(60),
+            worker_max_upload: 1024 * 1024 * 8, // 8 MiB
         }
     }
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(default)]
 struct Repo {
     name: Option<String>,
-
-    #[serde(default = "default::repo_update_delay", with = "humantime_serde")]
     update_delay: Duration,
 }
 
@@ -92,7 +51,7 @@ impl Default for Repo {
     fn default() -> Self {
         Self {
             name: None,
-            update_delay: default::repo_update_delay(),
+            update_delay: Duration::from_secs(60),
         }
     }
 }
@@ -104,13 +63,14 @@ struct WorkerServer {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(default)]
 struct Worker {
     name: Option<String>,
 
-    #[serde(default = "default::worker_ping_delay", with = "humantime_serde")]
+    #[serde(with = "humantime_serde")]
     ping_delay: Duration,
 
-    #[serde(default = "default::worker_batch_duration", with = "humantime_serde")]
+    #[serde(with = "humantime_serde")]
     batch_duration: Duration,
 
     servers: HashMap<String, WorkerServer>,
@@ -120,22 +80,18 @@ impl Default for Worker {
     fn default() -> Self {
         Self {
             name: None,
-            ping_delay: default::worker_ping_delay(),
-            batch_duration: default::worker_batch_duration(),
+            ping_delay: Duration::from_secs(10),
+            batch_duration: Duration::from_secs(60 * 10),
             servers: HashMap::new(),
         }
     }
 }
 
 #[derive(Debug, Default, Deserialize)]
+#[serde(default)]
 struct ConfigFile {
-    #[serde(default)]
     web: Web,
-
-    #[serde(default)]
     repo: Repo,
-
-    #[serde(default)]
     worker: Worker,
 }
 
