@@ -11,7 +11,6 @@ use tracing::error;
 use crate::{
     config::WorkerServerConfig,
     shared::{BenchMethod, FinishedRun, Measurement, Run, Source, UnfinishedRun},
-    somehow,
 };
 
 use super::server::Server;

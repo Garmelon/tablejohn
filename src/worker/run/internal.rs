@@ -29,7 +29,7 @@ struct Counts {
     todos_by_dir: HashMap<String, usize>,
 }
 
-fn count(run: &RunInProgress, path: &Path) -> somehow::Result<Counts> {
+fn count(path: &Path) -> somehow::Result<Counts> {
     let todo_regex = RegexBuilder::new(r"[^a-z]todo[^a-z]")
         .case_insensitive(true)
         .build()
@@ -174,10 +174,9 @@ impl RunInProgress {
         &self,
         server: &Server,
     ) -> somehow::Result<Option<Finished>> {
-        let run = self.clone();
         let dir = server.download_repo(&self.run.hash).await?;
         let path = dir.path().to_path_buf();
-        let counts = tokio::task::spawn_blocking(move || count(&run, &path)).await??;
+        let counts = tokio::task::spawn_blocking(move || count(&path)).await??;
         Ok(Some(Finished {
             exit_code: 0,
             measurements: measurements(counts),
