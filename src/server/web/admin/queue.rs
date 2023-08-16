@@ -8,7 +8,7 @@ use sqlx::SqlitePool;
 use time::OffsetDateTime;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     server::web::{
         base::Base,
         paths::{
@@ -28,7 +28,7 @@ pub struct FormAdminQueueAdd {
 
 pub async fn post_admin_queue_add(
     _path: PathAdminQueueAdd,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
     Form(form): Form<FormAdminQueueAdd>,
 ) -> somehow::Result<impl IntoResponse> {
@@ -57,7 +57,7 @@ pub struct FormAdminQueueDelete {
 
 pub async fn post_admin_queue_delete(
     _path: PathAdminQueueDelete,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
     Form(form): Form<FormAdminQueueDelete>,
 ) -> somehow::Result<impl IntoResponse> {
@@ -76,7 +76,7 @@ pub struct FormAdminQueueIncrease {
 
 pub async fn post_admin_queue_increase(
     _path: PathAdminQueueIncrease,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
     Form(form): Form<FormAdminQueueIncrease>,
 ) -> somehow::Result<impl IntoResponse> {
@@ -98,7 +98,7 @@ pub struct FormAdminQueueDecrease {
 
 pub async fn post_admin_queue_decrease(
     _path: PathAdminQueueDecrease,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
     Form(form): Form<FormAdminQueueDecrease>,
 ) -> somehow::Result<impl IntoResponse> {

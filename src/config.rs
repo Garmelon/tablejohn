@@ -1,87 +1,99 @@
 //! Configuration from a file.
 
-use std::{
-    collections::HashMap,
-    fs,
-    io::ErrorKind,
-    net::SocketAddr,
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::{collections::HashMap, fs, net::SocketAddr, path::PathBuf, time::Duration};
 
 use directories::ProjectDirs;
 use serde::Deserialize;
 use tracing::{debug, info};
 
 use crate::{
-    args::{Args, Command, ServerCommand},
+    args::{Args, Command},
     id, somehow,
 };
 
 #[derive(Debug, Deserialize)]
 #[serde(default)]
-struct Web {
-    base: String,
-    address: SocketAddr,
-    worker_token: Option<String>,
-    worker_timeout: Duration,
-    worker_max_upload: usize,
+struct RawServerRepo {
+    name: Option<String>,
+    update: Duration,
+    fetch_refs: Vec<String>,
+    fetch_url: Option<String>,
 }
 
-impl Default for Web {
+impl Default for RawServerRepo {
     fn default() -> Self {
         Self {
-            base: "/".to_string(),
-            address: "[::1]:8221".parse().unwrap(), // Port chosen by fair dice roll
-            worker_token: None,
-            worker_timeout: Duration::from_secs(60),
-            worker_max_upload: 1024 * 1024 * 8, // 8 MiB
+            name: None,
+            update: Duration::from_secs(60),
+            fetch_refs: vec!["+refs/*:refs/*".to_string()],
+            fetch_url: None,
         }
     }
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(default)]
-struct Repo {
-    name: Option<String>,
-    update_delay: Duration,
+struct RawServerWeb {
+    address: SocketAddr,
+    base: String,
 }
 
-impl Default for Repo {
+impl Default for RawServerWeb {
     fn default() -> Self {
         Self {
-            name: None,
-            update_delay: Duration::from_secs(60),
+            address: "[::1]:8221".parse().unwrap(), // Port chosen by fair dice roll
+            base: "/".to_string(),
         }
     }
 }
 
 #[derive(Debug, Deserialize)]
-struct WorkerServer {
+#[serde(default)]
+struct RawServerWorker {
+    token: Option<String>,
+    timeout: Duration,
+    upload: usize,
+}
+
+impl Default for RawServerWorker {
+    fn default() -> Self {
+        Self {
+            token: None,
+            timeout: Duration::from_secs(60),
+            upload: 1024 * 1024 * 8,
+        }
+    }
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct RawServer {
+    repo: RawServerRepo,
+    web: RawServerWeb,
+    worker: RawServerWorker,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawWorkerServer {
     url: String,
     token: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(default)]
-struct Worker {
+struct RawWorker {
     name: Option<String>,
-
-    #[serde(with = "humantime_serde")]
-    ping_delay: Duration,
-
-    #[serde(with = "humantime_serde")]
-    batch_duration: Duration,
-
-    servers: HashMap<String, WorkerServer>,
+    ping: Duration,
+    batch: Duration,
+    servers: HashMap<String, RawWorkerServer>,
 }
 
-impl Default for Worker {
+impl Default for RawWorker {
     fn default() -> Self {
         Self {
             name: None,
-            ping_delay: Duration::from_secs(10),
-            batch_duration: Duration::from_secs(60 * 10),
+            ping: Duration::from_secs(10),
+            batch: Duration::from_secs(60),
             servers: HashMap::new(),
         }
     }
@@ -89,86 +101,79 @@ impl Default for Worker {
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
-struct ConfigFile {
-    web: Web,
-    repo: Repo,
-    worker: Worker,
+struct RawConfig {
+    server: RawServer,
+    worker: RawWorker,
 }
 
-impl ConfigFile {
-    fn load(path: &Path) -> somehow::Result<Self> {
-        let config = match fs::read_to_string(path) {
-            Ok(str) => toml::from_str(&str)?,
-            Err(e) if e.kind() == ErrorKind::NotFound => {
-                info!("No config file found, using default config");
-                Self::default()
+#[derive(Debug)]
+pub struct ServerConfig {
+    pub repo_name: String,
+    pub repo_update: Duration,
+    pub repo_fetch_refs: Vec<String>,
+    pub repo_fetch_url: Option<String>,
+    pub web_address: SocketAddr,
+    /// Always ends without a `/`.
+    ///
+    /// This means that you can prefix the base onto an absolute path and get
+    /// another absolute path. You could also use an url here if you have a
+    /// weird reason to do so.
+    pub web_base: String,
+    pub worker_token: String,
+    pub worker_timeout: Duration,
+    pub worker_upload: usize,
+}
+
+impl ServerConfig {
+    fn repo_name(args: &Args) -> String {
+        if let Command::Server(cmd) = &args.command {
+            if let Some(path) = &cmd.repo {
+                if let Ok(path) = path.canonicalize() {
+                    if let Some(name) = path.file_name() {
+                        let name = name.to_string_lossy();
+                        let name = name.strip_suffix(".git").unwrap_or(&name).to_string();
+                        return name;
+                    }
+                }
             }
-            Err(e) => Err(e)?,
+        }
+
+        "unnamed repo".to_string()
+    }
+
+    fn from_raw_server(raw: RawServer, args: &Args) -> Self {
+        let repo_name = match raw.repo.name {
+            Some(name) => name,
+            None => Self::repo_name(args),
         };
 
-        Ok(config)
-    }
-
-    fn web_base(&self) -> String {
-        self.web
+        let web_base = raw
+            .web
             .base
             .strip_suffix('/')
-            .unwrap_or(&self.web.base)
-            .to_string()
-    }
+            .unwrap_or(&raw.web.base)
+            .to_string();
 
-    fn web_worker_token(&self) -> String {
-        self.web
-            .worker_token
-            .clone()
-            .unwrap_or_else(id::random_worker_token)
-    }
+        let worker_token = match raw.worker.token {
+            Some(token) => token,
+            None => id::random_worker_token(),
+        };
 
-    fn repo_name(&self, args: &Args) -> somehow::Result<String> {
-        if let Some(name) = &self.repo.name {
-            return Ok(name.clone());
+        Self {
+            repo_name,
+            repo_update: raw.repo.update,
+            repo_fetch_refs: raw.repo.fetch_refs,
+            repo_fetch_url: raw.repo.fetch_url,
+            web_address: raw.web.address,
+            web_base,
+            worker_token,
+            worker_timeout: raw.worker.timeout,
+            worker_upload: raw.worker.upload,
         }
-
-        if let Command::Server(ServerCommand {
-            repo: Some(path), ..
-        }) = &args.command
-        {
-            if let Some(name) = path.canonicalize()?.file_name() {
-                let name = name.to_string_lossy();
-                let name = name.strip_suffix(".git").unwrap_or(&name).to_string();
-                return Ok(name);
-            }
-        }
-
-        Ok("unnamed repo".to_string())
-    }
-
-    fn worker_name(&self) -> String {
-        if let Some(name) = &self.worker.name {
-            return name.clone();
-        }
-
-        gethostname::gethostname().to_string_lossy().to_string()
-    }
-
-    fn worker_servers(&self) -> HashMap<String, WorkerServerConfig> {
-        self.worker
-            .servers
-            .iter()
-            .map(|(name, server)| {
-                let url = server
-                    .url
-                    .strip_suffix('/')
-                    .unwrap_or(&server.url)
-                    .to_string();
-                let token = server.token.to_string();
-                (name.to_string(), WorkerServerConfig { url, token })
-            })
-            .collect()
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug)]
 pub struct WorkerServerConfig {
     /// Always ends without a `/`.
     ///
@@ -178,27 +183,59 @@ pub struct WorkerServerConfig {
     pub token: String,
 }
 
-#[derive(Clone)]
+impl WorkerServerConfig {
+    fn from_raw_worker_server(raw: RawWorkerServer) -> Self {
+        Self {
+            url: raw.url.strip_suffix('/').unwrap_or(&raw.url).to_string(),
+            token: raw.token,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct WorkerConfig {
+    pub name: String,
+    pub ping: Duration,
+    pub batch: Duration,
+    pub servers: HashMap<String, WorkerServerConfig>,
+}
+
+impl WorkerConfig {
+    fn from_raw_worker(raw: RawWorker) -> Self {
+        let name = match raw.name {
+            Some(name) => name,
+            None => gethostname::gethostname().to_string_lossy().to_string(),
+        };
+
+        let servers = raw
+            .servers
+            .into_iter()
+            .map(|(k, v)| (k, WorkerServerConfig::from_raw_worker_server(v)))
+            .collect();
+
+        Self {
+            name,
+            ping: raw.ping,
+            batch: raw.batch,
+            servers,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Config {
-    /// Always ends without a `/` (prioritizing the latter).
-    ///
-    /// This means that you can prefix the base onto an absolute path and get
-    /// another absolute path. You could also use an url here if you have a
-    /// weird reason to do so.
-    pub web_base: String,
-    pub web_address: SocketAddr,
-    pub web_worker_token: String,
-    pub web_worker_timeout: Duration,
-    pub web_worker_max_upload: usize,
-    pub repo_name: String,
-    pub repo_update_delay: Duration,
-    pub worker_name: String,
-    pub worker_ping_delay: Duration,
-    pub worker_batch_duration: Duration,
-    pub worker_servers: HashMap<String, WorkerServerConfig>,
+    pub server: ServerConfig,
+    pub worker: WorkerConfig,
 }
 
 impl Config {
+    fn from_raw_config(raw: RawConfig, args: &Args) -> Self {
+        Self {
+            server: ServerConfig::from_raw_server(raw.server, args),
+            worker: WorkerConfig::from_raw_worker(raw.worker),
+        }
+    }
+
     fn path(args: &Args) -> PathBuf {
         if let Some(path) = &args.config {
             return path.clone();
@@ -213,27 +250,12 @@ impl Config {
     pub fn load(args: &Args) -> somehow::Result<Self> {
         let path = Self::path(args);
         info!(path = %path.display(), "Loading config");
-        let config_file = ConfigFile::load(&path)?;
-        debug!("Loaded config file:\n{config_file:#?}");
 
-        let web_base = config_file.web_base();
-        let web_worker_token = config_file.web_worker_token();
-        let repo_name = config_file.repo_name(args)?;
-        let worker_name = config_file.worker_name();
-        let worker_servers = config_file.worker_servers();
-
-        Ok(Self {
-            web_base,
-            web_address: config_file.web.address,
-            web_worker_token,
-            web_worker_timeout: config_file.web.worker_timeout,
-            web_worker_max_upload: config_file.web.worker_max_upload,
-            repo_name,
-            repo_update_delay: config_file.repo.update_delay,
-            worker_name,
-            worker_ping_delay: config_file.worker.ping_delay,
-            worker_batch_duration: config_file.worker.batch_duration,
-            worker_servers,
-        })
+        let raw = fs::read_to_string(path)?;
+        let raw = toml::from_str::<RawConfig>(&raw)?;
+        debug!("Loaded raw config: {raw:#?}");
+        let config = Self::from_raw_config(raw, args);
+        debug!("Loaded config: {config:#?}");
+        Ok(config)
     }
 }

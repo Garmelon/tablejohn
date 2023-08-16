@@ -8,7 +8,7 @@ use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     server::{
         util,
         web::{
@@ -52,7 +52,7 @@ struct PageFinished {
 
 async fn from_finished_run(
     id: &str,
-    config: &'static Config,
+    config: &'static ServerConfig,
     db: &SqlitePool,
 ) -> somehow::Result<Option<Response>> {
     let Some(run) = sqlx::query!(
@@ -146,7 +146,7 @@ async fn from_finished_run(
 
 pub async fn get_run_by_id(
     path: PathRunById,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
     if let Some(response) = from_finished_run(&path.id, config, &db).await? {

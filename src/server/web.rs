@@ -37,7 +37,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
 
     let post_api_worker_status = Router::new()
         .typed_post(post_api_worker_status)
-        .layer(DefaultBodyLimit::max(server.config.web_worker_max_upload));
+        .layer(DefaultBodyLimit::max(server.config.worker_upload));
 
     let app = Router::new()
         .typed_get(get_api_worker_bench_repo_by_hash_tree_tar_gz)

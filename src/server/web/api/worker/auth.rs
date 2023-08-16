@@ -7,7 +7,7 @@ use axum::{
     TypedHeader,
 };
 
-use crate::config::Config;
+use crate::config::ServerConfig;
 
 fn is_username_valid(username: &str) -> bool {
     if username.is_empty() {
@@ -19,12 +19,12 @@ fn is_username_valid(username: &str) -> bool {
         .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
 }
 
-fn is_password_valid(password: &str, config: &'static Config) -> bool {
-    password == config.web_worker_token
+fn is_password_valid(password: &str, config: &'static ServerConfig) -> bool {
+    password == config.worker_token
 }
 
 pub fn authenticate(
-    config: &'static Config,
+    config: &'static ServerConfig,
     auth: Option<TypedHeader<Authorization<Basic>>>,
 ) -> Result<String, Response> {
     if let Some(auth) = auth {

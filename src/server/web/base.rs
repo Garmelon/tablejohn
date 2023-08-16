@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::config::Config;
+use crate::config::ServerConfig;
 
 use super::{
     paths::{PathGraph, PathIndex, PathQueue},
@@ -27,7 +27,7 @@ pub struct Base {
 }
 
 impl Base {
-    pub fn new(config: &Config, tab: Tab) -> Self {
+    pub fn new(config: &ServerConfig, tab: Tab) -> Self {
         let tab = match tab {
             Tab::None => "",
             Tab::Index => "index",
@@ -53,7 +53,7 @@ impl Base {
         Link(format!("{base}{to}"))
     }
 
-    pub fn link_with_config<P: fmt::Display>(config: &Config, to: P) -> Link {
+    pub fn link_with_config<P: fmt::Display>(config: &ServerConfig, to: P) -> Link {
         Self::link_with_base(&config.web_base, to)
     }
 

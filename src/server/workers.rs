@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use time::OffsetDateTime;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     id,
     shared::{BenchMethod, Rfc3339Time, Run, UnfinishedRun, WorkerStatus},
 };
@@ -28,12 +28,12 @@ impl WorkerInfo {
 }
 
 pub struct Workers {
-    config: &'static Config,
+    config: &'static ServerConfig,
     workers: HashMap<String, WorkerInfo>,
 }
 
 impl Workers {
-    pub fn new(config: &'static Config) -> Self {
+    pub fn new(config: &'static ServerConfig) -> Self {
         Self {
             config,
             workers: HashMap::new(),
@@ -43,7 +43,7 @@ impl Workers {
     pub fn clean(&mut self) -> &mut Self {
         let now = OffsetDateTime::now_utc();
         self.workers
-            .retain(|_, v| now <= v.last_seen + self.config.web_worker_timeout);
+            .retain(|_, v| now <= v.last_seen + self.config.worker_timeout);
         self
     }
 

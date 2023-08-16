@@ -12,7 +12,7 @@ use time::OffsetDateTime;
 use tracing::debug;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     server::web::{
         base::{Base, Link, Tab},
         paths::{PathGraph, PathGraphData},
@@ -112,7 +112,7 @@ struct Page {
 
 pub async fn get_graph(
     _path: PathGraph,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
     let metrics =

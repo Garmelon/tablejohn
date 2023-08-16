@@ -6,7 +6,7 @@ use tokio::sync::Mutex as AsyncMutex;
 use tracing::{debug, warn};
 
 use crate::{
-    config::{Config, WorkerServerConfig},
+    config::{WorkerConfig, WorkerServerConfig},
     server::web::paths::{
         PathApiWorkerBenchRepoByHashTreeTarGz, PathApiWorkerRepoByHashTreeTarGz,
         PathApiWorkerStatus,
@@ -21,7 +21,7 @@ use super::run::RunInProgress;
 #[derive(Clone)]
 pub struct Server {
     pub name: String,
-    pub config: &'static Config,
+    pub config: &'static WorkerConfig,
     pub server_config: &'static WorkerServerConfig,
     pub secret: String,
 
@@ -72,7 +72,7 @@ impl Server {
         let response = self
             .client
             .post(url)
-            .basic_auth(&self.config.worker_name, Some(&self.server_config.token))
+            .basic_auth(&self.config.name, Some(&self.server_config.token))
             .json(&request)
             .send()
             .await?
@@ -94,7 +94,7 @@ impl Server {
         let response = self
             .client
             .get(url)
-            .basic_auth(&self.config.worker_name, Some(&self.server_config.token))
+            .basic_auth(&self.config.name, Some(&self.server_config.token))
             .send()
             .await?;
 
@@ -113,7 +113,7 @@ impl Server {
         let response = self
             .client
             .get(url)
-            .basic_auth(&self.config.worker_name, Some(&self.server_config.token))
+            .basic_auth(&self.config.name, Some(&self.server_config.token))
             .send()
             .await?;
 
@@ -139,7 +139,7 @@ impl Server {
                 Err(e) => warn!("Error talking to server:\n{e:?}"),
             }
 
-            tokio::time::sleep(self.config.worker_ping_delay).await;
+            tokio::time::sleep(self.config.ping).await;
         }
     }
 }

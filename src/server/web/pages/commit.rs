@@ -8,7 +8,7 @@ use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     server::{
         util,
         web::{
@@ -41,7 +41,7 @@ struct Page {
 
 pub async fn get_commit_by_hash(
     path: PathCommitByHash,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
     let base = Base::new(config, Tab::None);

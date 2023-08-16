@@ -10,10 +10,10 @@ mod shared;
 mod somehow;
 mod worker;
 
-use std::{io, process, time::Duration};
+use std::{collections::HashMap, io, net::IpAddr, process, time::Duration};
 
 use clap::Parser;
-use config::WorkerServerConfig;
+use config::ServerConfig;
 use tokio::{select, signal::unix::SignalKind};
 use tracing::{debug, error, info, Level};
 use tracing_subscriber::{
@@ -22,7 +22,7 @@ use tracing_subscriber::{
 
 use crate::{
     args::{Args, Command, NAME, VERSION},
-    config::Config,
+    config::{Config, WorkerConfig, WorkerServerConfig},
     server::Server,
     worker::Worker,
 };
@@ -87,11 +87,25 @@ async fn die_on_signal() -> io::Result<()> {
     process::exit(1);
 }
 
-async fn open_in_browser(config: &Config) {
+fn local_url(config: &ServerConfig) -> String {
+    let host = match config.web_address.ip() {
+        IpAddr::V4(_) => "127.0.0.1",
+        IpAddr::V6(_) => "[::1]",
+    };
+    let port = config.web_address.port();
+    let base = &config.web_base;
+    if base.starts_with('/') {
+        format!("http://{host}:{port}{base}")
+    } else {
+        format!("http://{host}:{port}/{base}")
+    }
+}
+
+async fn open_in_browser(config: &ServerConfig) {
     // Wait a bit to ensure the server is ready to serve requests.
     tokio::time::sleep(Duration::from_millis(100)).await;
 
-    let url = format!("http://{}{}", config.web_address, config.web_base);
+    let url = local_url(config);
     if let Err(e) = open::that_detached(&url) {
         error!("Error opening {url} in browser: {e:?}");
     }
@@ -102,20 +116,23 @@ async fn launch_local_workers(config: &'static Config, amount: u8) {
     tokio::time::sleep(Duration::from_millis(100)).await;
 
     for i in 0..amount {
-        let mut config = config.clone();
-        config.worker_name = format!("{}-{i}", config.worker_name);
-        config.worker_servers.clear();
-        config.worker_servers.insert(
+        let mut worker_config = WorkerConfig {
+            name: format!("{}-{i}", config.worker.name),
+            ping: config.worker.ping,
+            batch: config.worker.batch,
+            servers: HashMap::new(),
+        };
+        worker_config.servers.insert(
             "localhost".to_string(),
             WorkerServerConfig {
-                url: format!("http://{}{}", config.web_address, config.web_base),
-                token: config.web_worker_token.clone(),
+                url: local_url(&config.server),
+                token: config.server.worker_token.clone(),
             },
         );
-        let config = Box::leak(Box::new(config));
+        let worker_config = Box::leak(Box::new(worker_config));
 
-        info!("Launching local worker {}", config.worker_name);
-        let worker = Worker::new(config);
+        info!("Launching local worker {}", worker_config.name);
+        let worker = Worker::new(worker_config);
         tokio::spawn(async move { worker.run().await });
     }
 }
@@ -131,14 +148,14 @@ async fn run() -> somehow::Result<()> {
     match args.command {
         Command::Server(command) => {
             if command.open {
-                tokio::task::spawn(open_in_browser(config));
+                tokio::task::spawn(open_in_browser(&config.server));
             }
 
             if command.local_worker > 0 {
                 tokio::task::spawn(launch_local_workers(config, command.local_worker));
             }
 
-            let server = Server::new(config, command).await?;
+            let server = Server::new(&config.server, command).await?;
             select! {
                 _ = wait_for_signal() => {}
                 _ = server.run() => {}
@@ -159,7 +176,7 @@ async fn run() -> somehow::Result<()> {
             }
         }
         Command::Worker => {
-            let worker = Worker::new(config);
+            let worker = Worker::new(&config.worker);
 
             select! {
                 _ = wait_for_signal() => {}

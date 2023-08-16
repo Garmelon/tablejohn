@@ -4,7 +4,7 @@ use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     server::web::{
         base::{Base, Tab},
         link::LinkCommit,
@@ -29,7 +29,7 @@ struct IndexTemplate {
 
 pub async fn get_index(
     _path: PathIndex,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Index);

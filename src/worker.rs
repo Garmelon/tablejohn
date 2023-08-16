@@ -10,7 +10,7 @@ use tokio::sync::Mutex as AsyncMutex;
 use tracing::{error, info, warn};
 
 use crate::{
-    config::Config,
+    config::WorkerConfig,
     id,
     shared::{FinishedRun, Run},
     worker::server::Server,
@@ -19,11 +19,11 @@ use crate::{
 use self::run::RunInProgress;
 
 pub struct Worker {
-    config: &'static Config,
+    config: &'static WorkerConfig,
 }
 
 impl Worker {
-    pub fn new(config: &'static Config) -> Self {
+    pub fn new(config: &'static WorkerConfig) -> Self {
         Self { config }
     }
 
@@ -33,7 +33,7 @@ impl Worker {
 
         let mut servers = self
             .config
-            .worker_servers
+            .servers
             .iter()
             .map(|(name, server_config)| Server {
                 name: name.clone(),
@@ -61,7 +61,7 @@ impl Worker {
     async fn single_server_mode(&self, server: Server) {
         loop {
             while self.perform_run(&server).await {}
-            tokio::time::sleep(self.config.worker_ping_delay).await;
+            tokio::time::sleep(self.config.ping).await;
         }
     }
 
@@ -69,14 +69,14 @@ impl Worker {
         loop {
             for server in &servers {
                 let batch_start = OffsetDateTime::now_utc();
-                let batch_end = batch_start + self.config.worker_batch_duration;
+                let batch_end = batch_start + self.config.batch;
                 while OffsetDateTime::now_utc() <= batch_end {
                     if !self.perform_run(server).await {
                         break;
                     }
                 }
             }
-            tokio::time::sleep(self.config.worker_ping_delay).await;
+            tokio::time::sleep(self.config.ping).await;
         }
     }
 
@@ -98,7 +98,7 @@ impl Worker {
         let guard = server.status_lock.lock().await;
         *server.current_run.lock().unwrap() = None;
         while !self.submit_run(server, run.clone()).await {
-            tokio::time::sleep(self.config.worker_ping_delay).await;
+            tokio::time::sleep(self.config.ping).await;
         }
         drop(guard);
 

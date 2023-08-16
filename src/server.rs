@@ -18,7 +18,7 @@ use sqlx::{
 use tokio::select;
 use tracing::{debug, info};
 
-use crate::{args::ServerCommand, config::Config, somehow};
+use crate::{args::ServerCommand, config::ServerConfig, somehow};
 
 use self::workers::Workers;
 
@@ -64,7 +64,7 @@ pub struct BenchRepo(Arc<ThreadSafeRepository>);
 
 #[derive(Clone, FromRef)]
 pub struct Server {
-    config: &'static Config,
+    config: &'static ServerConfig,
     db: SqlitePool,
     repo: Option<Repo>,
     bench_repo: Option<BenchRepo>,
@@ -72,7 +72,10 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn new(config: &'static Config, command: ServerCommand) -> somehow::Result<Self> {
+    pub async fn new(
+        config: &'static ServerConfig,
+        command: ServerCommand,
+    ) -> somehow::Result<Self> {
         let repo = if let Some(path) = command.repo.as_ref() {
             info!(path = %path.display(), "Opening repo");
             let repo = ThreadSafeRepository::open(path)?;

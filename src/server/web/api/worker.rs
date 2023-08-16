@@ -18,7 +18,7 @@ use time::OffsetDateTime;
 use tracing::debug;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     server::{
         web::paths::{
             PathApiWorkerBenchRepoByHashTreeTarGz, PathApiWorkerRepoByHashTreeTarGz,
@@ -125,7 +125,7 @@ async fn save_work(
 
 pub async fn post_api_worker_status(
     _path: PathApiWorkerStatus,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
     State(bench_repo): State<Option<BenchRepo>>,
     State(workers): State<Arc<Mutex<Workers>>>,
@@ -204,7 +204,7 @@ fn stream_response(repo: Arc<ThreadSafeRepository>, id: ObjectId) -> impl IntoRe
 
 pub async fn get_api_worker_repo_by_hash_tree_tar_gz(
     path: PathApiWorkerRepoByHashTreeTarGz,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(repo): State<Option<Repo>>,
     auth: Option<TypedHeader<Authorization<Basic>>>,
 ) -> somehow::Result<Response> {
@@ -223,7 +223,7 @@ pub async fn get_api_worker_repo_by_hash_tree_tar_gz(
 
 pub async fn get_api_worker_bench_repo_by_hash_tree_tar_gz(
     path: PathApiWorkerBenchRepoByHashTreeTarGz,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(bench_repo): State<Option<BenchRepo>>,
     auth: Option<TypedHeader<Authorization<Basic>>>,
 ) -> somehow::Result<Response> {

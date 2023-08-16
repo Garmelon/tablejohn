@@ -9,7 +9,7 @@ use axum::{
 use sqlx::SqlitePool;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     server::{
         util,
         web::{
@@ -58,7 +58,7 @@ async fn status(status: &WorkerStatus, db: &SqlitePool, base: &Base) -> somehow:
 
 pub async fn get_worker_by_name(
     path: PathWorkerByName,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
     State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<Response> {

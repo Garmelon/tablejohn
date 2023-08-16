@@ -31,6 +31,6 @@ async fn recurring_task(state: &Server, repo: Repo) {
 pub(super) async fn run(server: Server, repo: Repo) {
     loop {
         recurring_task(&server, repo.clone()).await;
-        tokio::time::sleep(server.config.repo_update_delay).await;
+        tokio::time::sleep(server.config.repo_update).await;
     }
 }

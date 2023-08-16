@@ -13,7 +13,7 @@ use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
 use crate::{
-    config::Config,
+    config::ServerConfig,
     server::{
         util,
         web::{
@@ -161,7 +161,7 @@ struct PageInner {
 
 pub async fn get_queue_inner(
     _path: PathQueueInner,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
     State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<impl IntoResponse> {
@@ -182,7 +182,7 @@ struct Page {
 
 pub async fn get_queue(
     _path: PathQueue,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
     State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<impl IntoResponse> {
@@ -210,7 +210,7 @@ struct PageDelete {
 
 pub async fn get_queue_delete(
     path: PathQueueDelete,
-    State(config): State<&'static Config>,
+    State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
     let base = Base::new(config, Tab::Queue);
