@@ -1,14 +1,9 @@
 use std::time::Duration;
 
-use gix::{actor::IdentityRef, date::Time};
-use time::{macros::format_description, OffsetDateTime, UtcOffset};
+use gix::actor::IdentityRef;
+use time::{macros::format_description, OffsetDateTime};
 
 use crate::somehow;
-
-pub fn time_to_offset_datetime(time: Time) -> somehow::Result<OffsetDateTime> {
-    Ok(OffsetDateTime::from_unix_timestamp(time.seconds)?
-        .to_offset(UtcOffset::from_whole_seconds(time.offset)?))
-}
 
 pub fn format_duration(duration: time::Duration) -> String {
     let seconds = duration.unsigned_abs().as_secs(); // To nearest second

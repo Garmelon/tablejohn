@@ -3,8 +3,9 @@
 use std::collections::HashSet;
 
 use futures::TryStreamExt;
-use gix::{objs::Kind, prelude::ObjectIdExt, refs::Reference, ObjectId, Repository};
+use gix::{date::Time, objs::Kind, prelude::ObjectIdExt, refs::Reference, ObjectId, Repository};
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
+use time::{OffsetDateTime, UtcOffset};
 use tracing::{debug, info};
 
 use crate::{
@@ -67,6 +68,11 @@ fn get_all_refs_and_new_commits_from_repo(
     Ok((refs, new))
 }
 
+fn time_to_offset_datetime(time: Time) -> somehow::Result<OffsetDateTime> {
+    Ok(OffsetDateTime::from_unix_timestamp(time.seconds)?
+        .to_offset(UtcOffset::from_whole_seconds(time.offset)?))
+}
+
 async fn insert_new_commits(
     conn: &mut SqliteConnection,
     repo: &Repository,
@@ -77,10 +83,10 @@ async fn insert_new_commits(
         let hash = commit.id.to_string();
         let author_info = commit.author()?;
         let author = util::format_actor(author_info.actor())?;
-        let author_date = util::time_to_offset_datetime(author_info.time)?;
+        let author_date = time_to_offset_datetime(author_info.time)?;
         let committer_info = commit.committer()?;
         let committer = util::format_actor(committer_info.actor())?;
-        let committer_date = util::time_to_offset_datetime(committer_info.time)?;
+        let committer_date = time_to_offset_datetime(committer_info.time)?;
         let message = commit.message_raw()?.to_string();
 
         sqlx::query!(
