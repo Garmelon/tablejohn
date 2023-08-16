@@ -1,16 +1,18 @@
 //! Recurring actions and updates.
 
-// TODO `fetch` submodule for fetching new commits
-// TODO `queue` submodule for updating the queue
-
+mod fetch;
 mod queue;
 mod repo;
 
-use tracing::{debug_span, error, Instrument};
+use tracing::{debug_span, error, warn_span, Instrument};
 
 use super::{Repo, Server};
 
 async fn recurring_task(state: &Server, repo: Repo) {
+    fetch::update(state.config, repo.clone())
+        .instrument(debug_span!("fetch refs"))
+        .await;
+
     async {
         if let Err(e) = repo::update(&state.db, repo).await {
             error!("Error updating repo:\n{e:?}");
@@ -30,7 +32,10 @@ async fn recurring_task(state: &Server, repo: Repo) {
 
 pub(super) async fn run(server: Server, repo: Repo) {
     loop {
-        recurring_task(&server, repo.clone()).await;
+        recurring_task(&server, repo.clone())
+            .instrument(warn_span!("update"))
+            .await;
+
         tokio::time::sleep(server.config.repo_update).await;
     }
 }
