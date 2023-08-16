@@ -15,9 +15,10 @@ use crate::{
 #[serde(default)]
 struct RawServerRepo {
     name: Option<String>,
+    #[serde(with = "serde_humanize_rs")]
     update: Duration,
-    fetch_refs: Vec<String>,
     fetch_url: Option<String>,
+    fetch_refspecs: Vec<String>,
 }
 
 impl Default for RawServerRepo {
@@ -25,8 +26,8 @@ impl Default for RawServerRepo {
         Self {
             name: None,
             update: Duration::from_secs(60),
-            fetch_refs: vec!["+refs/*:refs/*".to_string()],
             fetch_url: None,
+            fetch_refspecs: vec!["+refs/*:refs/*".to_string()],
         }
     }
 }
@@ -51,7 +52,9 @@ impl Default for RawServerWeb {
 #[serde(default)]
 struct RawServerWorker {
     token: Option<String>,
+    #[serde(with = "serde_humanize_rs")]
     timeout: Duration,
+    #[serde(with = "serde_humanize_rs")]
     upload: usize,
 }
 
@@ -83,7 +86,9 @@ struct RawWorkerServer {
 #[serde(default)]
 struct RawWorker {
     name: Option<String>,
+    #[serde(with = "serde_humanize_rs")]
     ping: Duration,
+    #[serde(with = "serde_humanize_rs")]
     batch: Duration,
     servers: HashMap<String, RawWorkerServer>,
 }
@@ -110,7 +115,7 @@ struct RawConfig {
 pub struct ServerConfig {
     pub repo_name: String,
     pub repo_update: Duration,
-    pub repo_fetch_refs: Vec<String>,
+    pub repo_fetch_refspecs: Vec<String>,
     pub repo_fetch_url: Option<String>,
     pub web_address: SocketAddr,
     /// Always ends without a `/`.
@@ -162,8 +167,8 @@ impl ServerConfig {
         Self {
             repo_name,
             repo_update: raw.repo.update,
-            repo_fetch_refs: raw.repo.fetch_refs,
             repo_fetch_url: raw.repo.fetch_url,
+            repo_fetch_refspecs: raw.repo.fetch_refspecs,
             web_address: raw.web.address,
             web_base,
             worker_token,

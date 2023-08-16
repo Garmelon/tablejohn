@@ -16,13 +16,13 @@ flate2 = "1.0.26"
 futures = "0.3.28"
 gethostname = "0.4.3"
 humantime = "2.1.0"
-humantime-serde = "1.1.1"
 mime_guess = "2.0.4"
 open = "5.0.0"
 rand = "0.8.5"
 regex = "1.9.3"
 rust-embed = { version = "6.8.1", features = ["interpolate-folder-path"] }
 serde = { version = "1.0.181", features = ["derive"] }
+serde-humanize-rs = "0.1.1"
 serde_repr = "0.1.16"
 sqlx = { version = "0.7.1", features = ["runtime-tokio", "sqlite", "time"] }
 tar = { version = "0.4.40", default-features = false }
