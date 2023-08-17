@@ -59,15 +59,6 @@ fn count(path: &Path) -> somehow::Result<Counts> {
             .to_string_lossy()
             .to_string();
 
-        let dir = relative_path
-            .components()
-            .next()
-            .filter(|_| relative_path.components().count() > 1)
-            .map(|c| c.as_os_str())
-            .unwrap_or("none".as_ref())
-            .to_string_lossy()
-            .to_string();
-
         let mut lines = 0;
         let mut todos = 0;
         for line in BufReader::new(File::open(entry.path())?).lines() {
@@ -89,12 +80,20 @@ fn count(path: &Path) -> somehow::Result<Counts> {
         counts.files += 1;
         counts.lines += lines;
         counts.todos += todos;
+
         *counts.files_by_ext.entry(ext.clone()).or_default() += 1;
         *counts.lines_by_ext.entry(ext.clone()).or_default() += lines;
         *counts.todos_by_ext.entry(ext.clone()).or_default() += todos;
-        *counts.files_by_dir.entry(dir.clone()).or_default() += 1;
-        *counts.lines_by_dir.entry(dir.clone()).or_default() += lines;
-        *counts.todos_by_dir.entry(dir.clone()).or_default() += todos;
+
+        for ancestor in relative_path.ancestors() {
+            let ancestor = ancestor.to_string_lossy();
+            if ancestor.is_empty() {
+                continue;
+            }
+            *counts.files_by_dir.entry(ancestor.to_string()).or_default() += 1;
+            *counts.lines_by_dir.entry(ancestor.to_string()).or_default() += lines;
+            *counts.todos_by_dir.entry(ancestor.to_string()).or_default() += todos;
+        }
     }
 
     Ok(counts)
@@ -119,13 +118,13 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     );
     for (ext, count) in counts.files_by_ext {
         measurements.insert(
-            format!("files/by ext/{ext}"),
+            format!("files/by extension/{ext}"),
             measurement(count as f64, Direction::Neutral),
         );
     }
     for (dir, count) in counts.files_by_dir {
         measurements.insert(
-            format!("files/by dir/{dir}"),
+            format!("files/by dir/{dir}/"),
             measurement(count as f64, Direction::Neutral),
         );
     }
@@ -137,13 +136,13 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     );
     for (ext, count) in counts.lines_by_ext {
         measurements.insert(
-            format!("lines/by ext/{ext}"),
+            format!("lines/by extension/{ext}"),
             measurement(count as f64, Direction::Neutral),
         );
     }
     for (dir, count) in counts.lines_by_dir {
         measurements.insert(
-            format!("lines/by dir/{dir}"),
+            format!("lines/by dir/{dir}/"),
             measurement(count as f64, Direction::Neutral),
         );
     }
@@ -155,13 +154,13 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     );
     for (ext, count) in counts.todos_by_ext {
         measurements.insert(
-            format!("todos/by ext/{ext}"),
+            format!("todos/by extension/{ext}"),
             measurement(count as f64, Direction::LessIsBetter),
         );
     }
     for (dir, count) in counts.todos_by_dir {
         measurements.insert(
-            format!("todos/by dir/{dir}"),
+            format!("todos/by dir/{dir}/"),
             measurement(count as f64, Direction::LessIsBetter),
         );
     }
