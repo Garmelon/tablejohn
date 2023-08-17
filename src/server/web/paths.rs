@@ -54,6 +54,10 @@ pub struct PathWorkerByName {
 ///////////////////
 
 #[derive(Deserialize, TypedPath)]
+#[typed_path("/admin/repo/update")]
+pub struct PathAdminRepoUpdate {}
+
+#[derive(Deserialize, TypedPath)]
 #[typed_path("/admin/queue/add")]
 pub struct PathAdminQueueAdd {}
 

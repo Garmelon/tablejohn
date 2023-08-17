@@ -6,9 +6,9 @@ use sqlx::SqlitePool;
 use crate::{
     config::ServerConfig,
     server::web::{
-        base::{Base, Tab},
+        base::{Base, Link, Tab},
         link::LinkCommit,
-        paths::PathIndex,
+        paths::{PathAdminRepoUpdate, PathIndex},
     },
     somehow,
 };
@@ -22,7 +22,9 @@ struct Ref {
 #[derive(Template)]
 #[template(path = "pages/index.html")]
 struct IndexTemplate {
+    link_admin_repo_update: Link,
     base: Base,
+
     tracked_refs: Vec<Ref>,
     untracked_refs: Vec<Ref>,
 }
@@ -62,7 +64,9 @@ pub async fn get_index(
     }
 
     Ok(IndexTemplate {
+        link_admin_repo_update: base.link(PathAdminRepoUpdate {}),
         base: Base::new(config, Tab::Index),
+
         tracked_refs,
         untracked_refs,
     })

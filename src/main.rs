@@ -176,10 +176,10 @@ async fn run() -> somehow::Result<()> {
                 tokio::task::spawn(launch_local_workers(config, command.local_worker));
             }
 
-            let server = Server::new(&config.server, command).await?;
+            let (server, recurring_rx) = Server::new(&config.server, command).await?;
             select! {
                 _ = wait_for_signal() => {}
-                _ = server.run() => {}
+                _ = server.run(recurring_rx) => {}
             }
 
             select! {

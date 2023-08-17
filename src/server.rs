@@ -18,7 +18,7 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
     SqlitePool,
 };
-use tokio::select;
+use tokio::{select, sync::mpsc};
 
 use crate::{args::ServerCommand, config::ServerConfig, somehow};
 
@@ -117,13 +117,14 @@ pub struct Server {
     repo: Option<Repo>,
     bench_repo: Option<BenchRepo>,
     workers: Arc<Mutex<Workers>>,
+    recurring_tx: Arc<mpsc::UnboundedSender<()>>,
 }
 
 impl Server {
     pub async fn new(
         config: &'static ServerConfig,
         command: ServerCommand,
-    ) -> somehow::Result<Self> {
+    ) -> somehow::Result<(Self, mpsc::UnboundedReceiver<()>)> {
         let repo = if let Some(path) = command.repo.as_ref() {
             let repo = open_repo(path, &config.repo_fetch_url, &config.repo_fetch_refspecs)?;
             Some(Repo(Arc::new(repo)))
@@ -138,20 +139,24 @@ impl Server {
             None
         };
 
-        Ok(Self {
+        let (recurring_tx, recurring_rx) = mpsc::unbounded_channel();
+        let server = Self {
             config,
             db: open_db(&command.db).await?,
             repo,
             bench_repo,
             workers: Arc::new(Mutex::new(Workers::new(config))),
-        })
+            recurring_tx: Arc::new(recurring_tx),
+        };
+
+        Ok((server, recurring_rx))
     }
 
-    pub async fn run(&self) -> somehow::Result<()> {
+    pub async fn run(&self, recurring_rx: mpsc::UnboundedReceiver<()>) -> somehow::Result<()> {
         if let Some(repo) = self.repo.clone() {
             select! {
                 e = web::run(self.clone()) => e,
-                () = recurring::run(self.clone(), repo) => Ok(()),
+                () = recurring::run(self.clone(), repo, recurring_rx) => Ok(()),
             }
         } else {
             web::run(self.clone()).await

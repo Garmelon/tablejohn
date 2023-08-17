@@ -12,9 +12,12 @@ use axum_extra::routing::RouterExt;
 use crate::somehow;
 
 use self::{
-    admin::queue::{
-        post_admin_queue_add, post_admin_queue_decrease, post_admin_queue_delete,
-        post_admin_queue_increase,
+    admin::{
+        queue::{
+            post_admin_queue_add, post_admin_queue_decrease, post_admin_queue_delete,
+            post_admin_queue_increase,
+        },
+        repo::post_admin_repo_update,
     },
     api::worker::{
         get_api_worker_bench_repo_by_hash_tree_tar_gz, get_api_worker_repo_by_hash_tree_tar_gz,
@@ -55,6 +58,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .typed_post(post_admin_queue_decrease)
         .typed_post(post_admin_queue_delete)
         .typed_post(post_admin_queue_increase)
+        .typed_post(post_admin_repo_update)
         .merge(post_api_worker_status)
         .fallback(get(r#static::static_handler))
         .with_state(server.clone());
