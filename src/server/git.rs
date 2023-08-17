@@ -112,6 +112,7 @@ pub fn fetch(path: &Path, url: &str, refspecs: &[String]) -> Result<Output, Erro
         .arg(path)
         .arg("fetch")
         .arg("--prune")
+        .arg("--no-tags")
         .arg("--")
         .arg(url);
     for refspec in refspecs {
