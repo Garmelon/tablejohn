@@ -235,7 +235,6 @@ async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::R
 }
 
 pub async fn inner(db: &SqlitePool, repo: Repo) -> somehow::Result<()> {
-    debug!("Updating repo data");
     let thread_local_repo = repo.0.to_thread_local();
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
@@ -290,6 +289,7 @@ pub async fn inner(db: &SqlitePool, repo: Repo) -> somehow::Result<()> {
 }
 
 pub(super) async fn update(db: &SqlitePool, repo: Repo) {
+    debug!("Updating repo data");
     if let Err(e) = inner(db, repo).await {
         warn!("Error updating repo data:\n{e:?}");
     }

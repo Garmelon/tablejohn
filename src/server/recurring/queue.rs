@@ -5,7 +5,6 @@ use time::OffsetDateTime;
 use crate::somehow;
 
 async fn inner(db: &SqlitePool) -> somehow::Result<()> {
-    debug!("Updating queue");
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
@@ -40,6 +39,7 @@ async fn inner(db: &SqlitePool) -> somehow::Result<()> {
 }
 
 pub(super) async fn update(db: &SqlitePool) {
+    debug!("Updating queue");
     if let Err(e) = inner(db).await {
         warn!("Error updating queue:\n{e:?}");
     }
