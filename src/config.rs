@@ -118,11 +118,10 @@ pub struct ServerConfig {
     pub repo_fetch_refspecs: Vec<String>,
     pub repo_fetch_url: Option<String>,
     pub web_address: SocketAddr,
-    /// Always ends without a `/`.
+    /// Always starts with a `/` and ends without a `/`, preferring the latter.
     ///
     /// This means that you can prefix the base onto an absolute path and get
-    /// another absolute path. You could also use an url here if you have a
-    /// weird reason to do so.
+    /// another absolute path.
     pub web_base: String,
     pub worker_token: String,
     pub worker_timeout: Duration,
@@ -145,18 +144,23 @@ impl ServerConfig {
         "unnamed repo".to_string()
     }
 
+    fn web_base(mut base: String) -> String {
+        if !base.starts_with('/') {
+            base.insert(0, '/');
+        }
+        if base.ends_with('/') {
+            base.pop();
+        }
+        base
+    }
+
     fn from_raw_server(raw: RawServer, args: &Args) -> Self {
         let repo_name = match raw.repo.name {
             Some(name) => name,
             None => Self::repo_name(args),
         };
 
-        let web_base = raw
-            .web
-            .base
-            .strip_suffix('/')
-            .unwrap_or(&raw.web.base)
-            .to_string();
+        let web_base = Self::web_base(raw.web.base);
 
         let worker_token = match raw.worker.token {
             Some(token) => token,

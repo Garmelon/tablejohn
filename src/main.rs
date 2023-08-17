@@ -99,11 +99,7 @@ fn local_url(config: &ServerConfig) -> String {
     };
     let port = config.web_address.port();
     let base = &config.web_base;
-    if base.starts_with('/') {
-        format!("http://{host}:{port}{base}")
-    } else {
-        format!("http://{host}:{port}/{base}")
-    }
+    format!("http://{host}:{port}{base}")
 }
 
 async fn open_in_browser(config: &ServerConfig) {
@@ -137,6 +133,7 @@ async fn launch_local_workers(config: &'static Config, amount: u8) {
         let worker_config = Box::leak(Box::new(worker_config));
 
         info!("Starting local worker {}", worker_config.name);
+        trace!("Worker config: {worker_config:#?}");
         let worker = Worker::new(worker_config);
         tokio::spawn(async move { worker.run().await });
     }
