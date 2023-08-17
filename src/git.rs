@@ -105,9 +105,9 @@ pub fn fetch_head(path: &Path, url: &str) -> Result<(), Error> {
 pub fn fetch(path: &Path, url: &str, refspecs: &[String]) -> Result<(), Error> {
     let mut command = Command::new("git");
     command
-        .arg("fetch")
         .arg("-C")
         .arg(path)
+        .arg("fetch")
         .arg("--prune")
         .arg("--")
         .arg(url);
