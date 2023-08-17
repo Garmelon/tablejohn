@@ -39,14 +39,11 @@ details {
 
 details>summary {
     font-weight: bold;
-    margin-left: 0;
-    list-style-type: "> ";
     cursor: pointer;
+    list-style-type: "> ";
 }
 
 details[open]>summary {
-    margin-left: 0;
-    margin-bottom: 1em;
     list-style-type: "v ";
 }
 
