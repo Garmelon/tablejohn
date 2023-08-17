@@ -139,7 +139,7 @@ async fn launch_local_workers(config: &'static Config, amount: u8) {
 
     for i in 0..amount {
         let mut worker_config = WorkerConfig {
-            name: format!("{}-{i}", config.worker.name),
+            name: format!("{}-{i:02}", config.worker.name),
             ping: config.worker.ping,
             batch: config.worker.batch,
             servers: HashMap::new(),
