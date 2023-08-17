@@ -30,36 +30,37 @@
 
 <h2>Queue ({{ tasks.len() }})</h2>
 
-<table id="queue" class="queue-commits" data-count="{{ tasks.len() }}">
-    <thead>
-        <tr>
-            <th>commit</th>
-            <th>since</th>
-            <th>priority</th>
-            <th>worker</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for task in tasks %}
-        <tr {% if task.odd %} class="odd" {% endif %}>
-            <td>{{ task.commit|safe }}</td>
-            <td>
-                {{ task.since }}
-                [<a href="{{ task.link_delete }}" title="Delete from queue">del</a>]
-            </td>
-            <td>
-                {{ task.priority }}
-                [<form method="post" action="{{ task.link_increase }}"><input type="hidden" name="hash"
-                        value="{{ task.hash }}"><button title="Increase priority by 1">inc</button></form>/<form
-                    method="post" action="{{ task.link_decrease }}"><input type="hidden" name="hash"
-                        value="{{ task.hash }}"><button title="Decrease priority by 1">dec</button></form>]
-            </td>
-            {% if task.workers.is_empty() %}
-            <td>-</td>
-            {% else %}
-            <td>{{ task.workers|join(", ")|safe }}</td>
-            {% endif %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<form class="queue-commits" method="post">
+    <table id="queue" data-count="{{ tasks.len() }}">
+        <thead>
+            <tr>
+                <th>commit</th>
+                <th>since</th>
+                <th>priority</th>
+                <th>worker</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr {% if task.odd %} class="odd" {% endif %}>
+                <td>{{ task.commit|safe }}</td>
+                <td>
+                    {{ task.since }}
+                    [<a href="{{ task.link_delete }}" title="Delete from queue">del</a>]
+                </td>
+                <td>
+                    {{ task.priority }}
+                    [<button title="Increase priority by 1" formaction="{{ task.link_increase }}" name="hash"
+                        value="{{ task.hash }}">inc</button>/<button title="Decrease priority by 1"
+                        formaction="{{ task.link_decrease }}" name="hash" value="{{ task.hash }}">dec</button>]
+                </td>
+                {% if task.workers.is_empty() %}
+                <td>-</td>
+                {% else %}
+                <td>{{ task.workers|join(", ")|safe }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
