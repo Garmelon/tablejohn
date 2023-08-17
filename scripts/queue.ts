@@ -7,7 +7,7 @@ function update() {
         .then(text => {
             INNER.innerHTML = text;
             let count = document.getElementById("queue")?.dataset["count"]!;
-            document.title = document.title.replace(/^queue \(\d+\)/, `queue (${count})`);
+            document.title = document.title.replace(/^queue \(\S+\)/, `queue (${count})`);
         });
 }
 
