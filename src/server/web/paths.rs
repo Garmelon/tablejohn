@@ -62,6 +62,10 @@ pub struct PathAdminRepoUpdate {}
 pub struct PathAdminQueueAdd {}
 
 #[derive(Deserialize, TypedPath)]
+#[typed_path("/admin/queue/add_batch")]
+pub struct PathAdminQueueAddBatch {}
+
+#[derive(Deserialize, TypedPath)]
 #[typed_path("/admin/queue/delete")]
 pub struct PathAdminQueueDelete {}
 

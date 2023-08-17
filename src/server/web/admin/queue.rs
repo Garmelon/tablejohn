@@ -13,8 +13,8 @@ use crate::{
     server::web::{
         base::Base,
         paths::{
-            PathAdminQueueAdd, PathAdminQueueDecrease, PathAdminQueueDelete,
-            PathAdminQueueIncrease, PathQueue,
+            PathAdminQueueAdd, PathAdminQueueAddBatch, PathAdminQueueDecrease,
+            PathAdminQueueDelete, PathAdminQueueIncrease, PathQueue,
         },
     },
     somehow,
@@ -51,6 +51,49 @@ pub async fn post_admin_queue_add(
         "Admin added {} to queue with priority {}",
         form.hash, form.priority,
     );
+
+    let link = Base::link_with_config(config, PathQueue {});
+    Ok(Redirect::to(&format!("{link}")))
+}
+
+#[derive(Deserialize)]
+pub struct FormAdminQueueAddBatch {
+    amount: u32,
+    #[serde(default)]
+    priority: i32,
+}
+
+pub async fn post_admin_queue_add_batch(
+    _path: PathAdminQueueAddBatch,
+    State(config): State<&'static ServerConfig>,
+    State(db): State<SqlitePool>,
+    Form(form): Form<FormAdminQueueAddBatch>,
+) -> somehow::Result<impl IntoResponse> {
+    let date = OffsetDateTime::now_utc();
+    let added = sqlx::query!(
+        "\
+        INSERT OR IGNORE INTO queue (hash, date, priority) \
+        SELECT hash, ?, ? \
+        FROM commits \
+        LEFT JOIN runs USING (hash) \
+        WHERE reachable = 2 AND id IS NULL \
+        ORDER BY unixepoch(committer_date) DESC \
+        LIMIT ? \
+        ",
+        date,
+        form.priority,
+        form.amount,
+    )
+    .execute(&db)
+    .await?
+    .rows_affected();
+
+    if added > 0 {
+        info!(
+            "Admin batch-added {added} commits to queue with priority {}",
+            form.priority,
+        );
+    }
 
     let link = Base::link_with_config(config, PathQueue {});
     Ok(Redirect::to(&format!("{link}")))

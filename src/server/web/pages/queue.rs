@@ -20,8 +20,8 @@ use crate::{
             base::{Base, Link, Tab},
             link::{LinkCommit, LinkRunShort, LinkWorker},
             paths::{
-                PathAdminQueueDecrease, PathAdminQueueDelete, PathAdminQueueIncrease, PathQueue,
-                PathQueueDelete, PathQueueInner,
+                PathAdminQueueAddBatch, PathAdminQueueDecrease, PathAdminQueueDelete,
+                PathAdminQueueIncrease, PathQueue, PathQueueDelete, PathQueueInner,
             },
             r#static::QUEUE_JS,
         },
@@ -155,6 +155,7 @@ async fn get_queue_data(
 #[derive(Template)]
 #[template(path = "pages/queue_inner.html")]
 struct PageInner {
+    link_admin_queue_add_batch: Link,
     workers: Vec<Worker>,
     tasks: Vec<Task>,
 }
@@ -167,9 +168,11 @@ pub async fn get_queue_inner(
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
-    let workers = get_workers(&db, &sorted_workers, &base).await?;
-    let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
-    Ok(PageInner { workers, tasks })
+    Ok(PageInner {
+        link_admin_queue_add_batch: base.link(PathAdminQueueAddBatch {}),
+        workers: get_workers(&db, &sorted_workers, &base).await?,
+        tasks: get_queue_data(&db, &sorted_workers, &base).await?,
+    })
 }
 
 #[derive(Template)]
@@ -188,12 +191,14 @@ pub async fn get_queue(
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
-    let workers = get_workers(&db, &sorted_workers, &base).await?;
-    let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
     Ok(Page {
         link_queue_js: base.link(QUEUE_JS),
+        inner: PageInner {
+            link_admin_queue_add_batch: base.link(PathAdminQueueAddBatch {}),
+            workers: get_workers(&db, &sorted_workers, &base).await?,
+            tasks: get_queue_data(&db, &sorted_workers, &base).await?,
+        },
         base,
-        inner: PageInner { workers, tasks },
     })
 }
 

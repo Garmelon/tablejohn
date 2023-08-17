@@ -14,8 +14,8 @@ use crate::somehow;
 use self::{
     admin::{
         queue::{
-            post_admin_queue_add, post_admin_queue_decrease, post_admin_queue_delete,
-            post_admin_queue_increase,
+            post_admin_queue_add, post_admin_queue_add_batch, post_admin_queue_decrease,
+            post_admin_queue_delete, post_admin_queue_increase,
         },
         repo::post_admin_repo_update,
     },
@@ -55,6 +55,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .typed_get(get_run_by_id)
         .typed_get(get_worker_by_name)
         .typed_post(post_admin_queue_add)
+        .typed_post(post_admin_queue_add_batch)
         .typed_post(post_admin_queue_decrease)
         .typed_post(post_admin_queue_delete)
         .typed_post(post_admin_queue_increase)
