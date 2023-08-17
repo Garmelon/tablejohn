@@ -85,7 +85,7 @@ impl RunInProgress {
         let run = match result {
             Ok(outcome) => outcome,
             Err(e) => {
-                error!("Error during run:\n{e:?}");
+                error!("Error during run for {}:\n{e:?}", server.name);
                 self.log_stderr("Internal error:".to_string());
                 self.log_stderr(format!("{e:?}"));
                 Some(Finished {

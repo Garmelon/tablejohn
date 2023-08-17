@@ -109,7 +109,7 @@ impl Worker {
         match server.post_status(true, None).await {
             Ok(response) => response.run,
             Err(e) => {
-                warn!("Error requesting run:\n{e:?}");
+                warn!("Error requesting run from {}:\n{e:?}", server.name);
                 None
             }
         }
@@ -119,7 +119,7 @@ impl Worker {
         match server.post_status(false, Some(run)).await {
             Ok(_) => true,
             Err(e) => {
-                warn!("Error submitting run:\n{e:?}");
+                warn!("Error submitting run to {}:\n{e:?}", server.name);
                 false
             }
         }

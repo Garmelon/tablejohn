@@ -122,7 +122,7 @@ impl Server {
     }
 
     async fn ping(&self) -> somehow::Result<()> {
-        debug!("Pinging server");
+        debug!("Pinging {}", self.name);
         let guard = self.status_lock.lock().await;
 
         let response = self.post_status(false, None).await?;
@@ -137,7 +137,7 @@ impl Server {
         loop {
             match self.ping().await {
                 Ok(()) => {}
-                Err(e) => warn!("Error talking to server:\n{e:?}"),
+                Err(e) => warn!("Error talking to {}:\n{e:?}", self.name),
             }
 
             tokio::time::sleep(self.config.ping).await;
