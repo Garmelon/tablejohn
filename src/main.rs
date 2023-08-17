@@ -21,7 +21,7 @@ use std::{
 
 use clap::Parser;
 use config::ServerConfig;
-use log::{debug, error, info, LevelFilter};
+use log::{debug, error, info, trace, LevelFilter};
 use tokio::{select, signal::unix::SignalKind};
 
 use crate::{
@@ -41,6 +41,7 @@ fn set_up_logging(verbose: u8) {
     env_logger::builder()
         .filter_level(level)
         .filter_module("hyper", LevelFilter::Warn)
+        .filter_module("reqwest", LevelFilter::Warn)
         .filter_module("sqlx", LevelFilter::Warn)
         .filter_module("tracing", LevelFilter::Warn)
         .format(|f, record| {
