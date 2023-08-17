@@ -44,7 +44,9 @@ fn open_repo(
         git::fetch_head(path, url)?;
 
         info!("Fetching refs for the first time (this may take a while)");
-        git::fetch(path, url, refspecs)?;
+        let output = git::fetch(path, url, refspecs)?;
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        info!("Fetched refs:\n{}", stderr.trim_end());
 
         Ok(ThreadSafeRepository::open(path)?)
     } else {

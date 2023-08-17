@@ -102,7 +102,7 @@ pub fn fetch_head(path: &Path, url: &str) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn fetch(path: &Path, url: &str, refspecs: &[String]) -> Result<(), Error> {
+pub fn fetch(path: &Path, url: &str, refspecs: &[String]) -> Result<Output, Error> {
     let mut command = Command::new("git");
     command
         .arg("-C")
@@ -114,6 +114,5 @@ pub fn fetch(path: &Path, url: &str, refspecs: &[String]) -> Result<(), Error> {
     for refspec in refspecs {
         command.arg(refspec);
     }
-    run(command)?;
-    Ok(())
+    run(command)
 }
