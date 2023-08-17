@@ -1,5 +1,3 @@
-// TODO Re-think what should be logged, and at what level
-// TODO Combine migrations
 // TODO Re-enable and adapt CSS
 
 mod args;

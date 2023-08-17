@@ -98,7 +98,6 @@ impl MetricForest {
     }
 }
 
-// TODO Metric tree selector in template
 #[derive(Template)]
 #[template(path = "pages/graph.html")]
 struct Page {
@@ -161,7 +160,6 @@ pub async fn get_graph_data(
     // amount of rows in the same order!
 
     // TODO Limit by date or amount
-    // TODO Limit to tracked commits
 
     let mut unsorted_hashes = Vec::<String>::new();
     let mut times_by_hash = HashMap::<String, i64>::new();
