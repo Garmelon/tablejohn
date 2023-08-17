@@ -96,6 +96,17 @@ fn count(path: &Path) -> somehow::Result<Counts> {
         }
     }
 
+    // Avoid excessive amounts of data in very large repos
+    if counts.files_by_dir.len() > 1000 {
+        counts.files_by_dir.retain(|name, _| !name.contains('/'));
+    }
+    if counts.lines_by_dir.len() > 1000 {
+        counts.lines_by_dir.retain(|name, _| !name.contains('/'));
+    }
+    if counts.todos_by_dir.len() > 1000 {
+        counts.todos_by_dir.retain(|name, _| !name.contains('/'));
+    }
+
     Ok(counts)
 }
 
