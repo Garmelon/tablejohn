@@ -3,7 +3,7 @@
 {% if workers.is_empty() %}
 <p>No workers connected</p>
 {% else %}
-<table>
+<table class="queue-workers">
     <thead>
         <tr>
             <th>worker</th>
@@ -30,12 +30,12 @@
 
 <h2>Queue ({{ tasks.len() }})</h2>
 
-<table id="queue" data-count="{{ tasks.len() }}">
+<table id="queue" class="queue-commits" data-count="{{ tasks.len() }}">
     <thead>
         <tr>
             <th>commit</th>
             <th>since</th>
-            <th>prio</th>
+            <th>priority</th>
             <th>worker</th>
         </tr>
     </thead>
@@ -49,14 +49,10 @@
             </td>
             <td>
                 {{ task.priority }}
-                [<form method="post" action="{{ task.link_increase }}">
-                    <input type="hidden" name="hash" value="{{ task.hash }}">
-                    <button title="Increase priority by 1">inc</button>
-                </form>,
-                <form method="post" action="{{ task.link_decrease }}">
-                    <input type="hidden" name="hash" value="{{ task.hash }}">
-                    <button title="Decrease priority by 1">dec</button>
-                </form>]
+                [<form method="post" action="{{ task.link_increase }}"><input type="hidden" name="hash"
+                        value="{{ task.hash }}"><button title="Increase priority by 1">inc</button></form>/<form
+                    method="post" action="{{ task.link_decrease }}"><input type="hidden" name="hash"
+                        value="{{ task.hash }}"><button title="Decrease priority by 1">dec</button></form>]
             </td>
             {% if task.workers.is_empty() %}
             <td>-</td>
