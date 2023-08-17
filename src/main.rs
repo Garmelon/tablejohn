@@ -58,7 +58,24 @@ fn set_up_logging(verbose: u8) {
             };
             let level = f.default_styled_level(record.level());
             let args = record.args();
-            writeln!(f, "<{syslog_level}>[{level:>5}] {args}")
+            let module = match record.module_path() {
+                Some("tablejohn::server") => Some("server"),
+                Some(m) if m.starts_with("tablejohn::server::") => Some("server"),
+                Some("tablejohn::worker") => Some("worker"),
+                Some(m) if m.starts_with("tablejohn::worker::") => Some("worker"),
+                Some("tablejohn") => None,
+                Some(m) if m.starts_with("tablejohn") => None,
+                Some(m) => Some(m),
+                None => None,
+            };
+            if let Some(module) = module {
+                let style = &mut f.style();
+                style.set_bold(true);
+                let module = style.value(module);
+                writeln!(f, "<{syslog_level}>[{level:>5}] {module}: {args}")
+            } else {
+                writeln!(f, "<{syslog_level}>[{level:>5}] {args}")
+            }
         })
         .init();
 }
