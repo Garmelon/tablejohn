@@ -8,22 +8,32 @@
 
 <details open>
     <summary>Tracked ({{ tracked_refs.len() }})</summary>
-    <dl>
-        {% for ref in tracked_refs %}
-        <dt>{{ ref.name }}</dt>
-        <dd>{{ ref.commit|safe }}</dd>
-        {% endfor %}
-    </dl>
+    <form method="post" action="{{ link_admin_refs_untrack }}">
+        <dl>
+            {% for ref in tracked_refs %}
+            <dt>
+                {{ ref.name }}
+                [<button class="linkish" name="ref" value="{{ ref.name }}">untrack</button>]
+            </dt>
+            <dd>{{ ref.commit|safe }}</dd>
+            {% endfor %}
+        </dl>
+    </form>
 </details>
 
 <details>
     <summary>Untracked ({{ untracked_refs.len() }})</summary>
-    <dl>
-        {% for ref in untracked_refs %}
-        <dt>{{ ref.name }}</dt>
-        <dd>{{ ref.commit|safe }}</dd>
-        {% endfor %}
-    </dl>
+    <form method="post" action="{{ link_admin_refs_track }}">
+        <dl>
+            {% for ref in untracked_refs %}
+            <dt>
+                {{ ref.name }}
+                [<button class="linkish" name="ref" value="{{ ref.name }}">track</button>]
+            </dt>
+            <dd>{{ ref.commit|safe }}</dd>
+            {% endfor %}
+        </dl>
+    </form>
 </details>
 
 <form method="post" action="{{ link_admin_repo_update }}">

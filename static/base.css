@@ -29,7 +29,16 @@ a:hover {
 }
 
 button {
+    font-size: inherit;
     padding: 0 .5ch;
+}
+
+button.linkish {
+    background-color: unset;
+    border: unset;
+    text-decoration: underline;
+    padding: 0;
+    cursor: pointer;
 }
 
 details {
@@ -143,15 +152,6 @@ nav a:hover {
 
 .queue-commits form {
     display: inline;
-}
-
-.queue-commits button {
-    font-size: inherit;
-    background-color: unset;
-    border: unset;
-    text-decoration: underline;
-    padding: 0;
-    cursor: pointer;
 }
 
 .queue-commits button:hover {

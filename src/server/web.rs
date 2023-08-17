@@ -17,6 +17,7 @@ use self::{
             post_admin_queue_add, post_admin_queue_add_batch, post_admin_queue_decrease,
             post_admin_queue_delete, post_admin_queue_increase,
         },
+        refs::{post_admin_refs_track, post_admin_refs_untrack},
         repo::post_admin_repo_update,
     },
     api::worker::{
@@ -59,6 +60,8 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .typed_post(post_admin_queue_decrease)
         .typed_post(post_admin_queue_delete)
         .typed_post(post_admin_queue_increase)
+        .typed_post(post_admin_refs_track)
+        .typed_post(post_admin_refs_untrack)
         .typed_post(post_admin_repo_update)
         .merge(post_api_worker_status)
         .fallback(get(r#static::static_handler))

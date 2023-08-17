@@ -50,9 +50,10 @@
                 </td>
                 <td>
                     {{ task.priority }}
-                    [<button title="Increase priority by 1" formaction="{{ task.link_increase }}" name="hash"
-                        value="{{ task.hash }}">inc</button>/<button title="Decrease priority by 1"
-                        formaction="{{ task.link_decrease }}" name="hash" value="{{ task.hash }}">dec</button>]
+                    [<button class="linkish" title="Increase priority by 1" formaction="{{ task.link_increase }}"
+                        name="hash" value="{{ task.hash }}">inc</button>/<button class="linkish"
+                        title="Decrease priority by 1" formaction="{{ task.link_decrease }}" name="hash"
+                        value="{{ task.hash }}">dec</button>]
                 </td>
                 {% if task.workers.is_empty() %}
                 <td>-</td>

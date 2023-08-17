@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE refs SET tracked = 0 WHERE name = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "c0f80f2907ea00edd35207fb72b591eaa895db06c585e7f4355a3c5b5461acd6"
+}

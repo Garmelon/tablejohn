@@ -8,7 +8,7 @@ use crate::{
     server::web::{
         base::{Base, Link, Tab},
         link::LinkCommit,
-        paths::{PathAdminRepoUpdate, PathIndex},
+        paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRepoUpdate, PathIndex},
     },
     somehow,
 };
@@ -22,6 +22,8 @@ struct Ref {
 #[derive(Template)]
 #[template(path = "pages/index.html")]
 struct IndexTemplate {
+    link_admin_refs_track: Link,
+    link_admin_refs_untrack: Link,
     link_admin_repo_update: Link,
     base: Base,
 
@@ -64,6 +66,8 @@ pub async fn get_index(
     }
 
     Ok(IndexTemplate {
+        link_admin_refs_track: base.link(PathAdminRefsTrack {}),
+        link_admin_refs_untrack: base.link(PathAdminRefsUntrack {}),
         link_admin_repo_update: base.link(PathAdminRepoUpdate {}),
         base: Base::new(config, Tab::Index),
 
