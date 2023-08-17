@@ -1,10 +1,10 @@
 {% macro commit_class(reachable) %}
 {%- if reachable == 0 -%}
-orphaned
+commit-orphaned
 {%- else if reachable == 1 -%}
-reachable
+commit-reachable
 {%- else -%}
-tracked
+commit-tracked
 {%- endif -%}
 {% endmacro %}
 

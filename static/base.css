@@ -1,15 +1,16 @@
-:root {
-    --lh: 1.3em;
+* {
     font-family: monospace;
-    line-height: var(--lh);
-    color-scheme: light dark;
+    margin: 0;
+    padding: 0;
 }
 
-/* General */
+body {
+    margin: .7em;
+}
 
-details,
-dl {
-    margin: var(--lh) 0;
+h2 {
+    font-size: 1.7em;
+    margin: 1em 0 .5em;
 }
 
 a {
@@ -21,21 +22,45 @@ a:hover {
     font-weight: bold;
 }
 
+button {
+    padding: 0 .5ch;
+}
+
+details {
+    margin: 1em 0;
+    padding: .3em 1ch;
+    background-color: #ddd;
+}
+
+details>summary {
+    font-weight: bold;
+    margin-left: 0;
+    list-style-type: "> ";
+}
+
+details[open]>summary {
+    margin-left: 0;
+    margin-bottom: 1em;
+    list-style-type: "v ";
+}
+
+details[open]>:last-child {
+    margin-bottom: 0;
+}
+
+dl {
+    margin: 1em 0;
+}
+
+dt {
+    margin-top: 1em;
+}
+
 dd {
     margin-left: 4ch;
 }
 
-details {
-    background-color: #ddd;
-}
-
-details>* {
-    margin-left: 4ch;
-}
-
-details>summary {
-    margin-left: 0;
-}
+/*
 
 table {
     border-collapse: collapse;
@@ -51,13 +76,7 @@ td+td {
     padding-left: 2ch;
 }
 
-.reachable {
-    color: #777;
-}
-
-.orphaned {
-    color: #a33;
-}
+*/
 
 /* Nav bar */
 
@@ -77,6 +96,13 @@ nav>* {
     border-right: 0.1em solid black;
 }
 
+nav>:first-child img {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: bottom;
+    padding-right: 0.3em;
+}
+
 nav>:first-child {
     padding-left: 0;
 }
@@ -90,13 +116,6 @@ nav>.current {
     font-weight: bold;
 }
 
-nav>:first-child img {
-    width: 1.2em;
-    height: 1.2em;
-    vertical-align: -20%;
-    padding-right: 0.3em;
-}
-
 nav a {
     text-decoration: none;
 }
@@ -105,7 +124,19 @@ nav a:hover {
     text-decoration: underline;
 }
 
+/* Commit status */
+
+.commit-reachable {
+    color: #777;
+}
+
+.commit-orphaned {
+    color: #a33;
+}
+
 /* Commit */
+
+/*
 
 .commit * {
     margin: 0;
@@ -127,7 +158,11 @@ nav a:hover {
     white-space: pre-wrap;
 }
 
+*/
+
 /* Worker */
+
+/*
 
 .worker * {
     margin: 0;
@@ -144,7 +179,11 @@ nav a:hover {
     font-weight: bold;
 }
 
+*/
+
 /* Queue */
+
+/*
 
 #queue td:nth-child(2),
 #queue td:nth-child(3) {
@@ -158,3 +197,5 @@ nav a:hover {
 #queue .odd:hover {
     background-color: #ddd;
 }
+
+*/
