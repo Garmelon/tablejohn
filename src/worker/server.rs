@@ -76,6 +76,7 @@ impl Server {
             .json(&request)
             .send()
             .await?
+            .error_for_status()?
             .json::<ServerResponse>()
             .await?;
 
