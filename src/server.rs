@@ -1,3 +1,4 @@
+mod git;
 mod recurring;
 mod util;
 pub mod web;
@@ -19,7 +20,7 @@ use sqlx::{
 };
 use tokio::select;
 
-use crate::{args::ServerCommand, config::ServerConfig, git, somehow};
+use crate::{args::ServerCommand, config::ServerConfig, somehow};
 
 use self::workers::Workers;
 

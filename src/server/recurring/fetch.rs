@@ -2,7 +2,11 @@
 
 use log::{debug, info, warn};
 
-use crate::{config::ServerConfig, git, server::Repo, somehow};
+use crate::{
+    config::ServerConfig,
+    server::{git, Repo},
+    somehow,
+};
 
 async fn inner(repo: Repo, url: &'static str, refspecs: &'static [String]) -> somehow::Result<()> {
     let output =

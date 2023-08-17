@@ -4,7 +4,6 @@
 
 mod args;
 mod config;
-mod git;
 mod id;
 mod server;
 mod shared;
