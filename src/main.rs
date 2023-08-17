@@ -37,12 +37,16 @@ fn set_up_logging(verbose: u8) {
         2.. => LevelFilter::Trace,
     };
 
-    env_logger::builder()
-        .filter_level(level)
-        .filter_module("hyper", LevelFilter::Warn)
-        .filter_module("reqwest", LevelFilter::Warn)
-        .filter_module("sqlx", LevelFilter::Warn)
-        .filter_module("tracing", LevelFilter::Warn)
+    let mut builder = env_logger::builder();
+    builder.filter_level(level);
+    if verbose <= 2 {
+        builder
+            .filter_module("hyper", LevelFilter::Warn)
+            .filter_module("reqwest", LevelFilter::Warn)
+            .filter_module("sqlx", LevelFilter::Warn)
+            .filter_module("tracing", LevelFilter::Warn);
+    }
+    builder
         .format(|f, record| {
             // By prefixing <syslog_level> to the logged messages, they will
             // show up in journalctl with their appropriate level.
