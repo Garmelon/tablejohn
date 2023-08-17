@@ -155,7 +155,6 @@ async fn get_queue_data(
 #[derive(Template)]
 #[template(path = "pages/queue_inner.html")]
 struct PageInner {
-    link_admin_queue_add_batch: Link,
     workers: Vec<Worker>,
     tasks: Vec<Task>,
 }
@@ -168,17 +167,16 @@ pub async fn get_queue_inner(
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
-    Ok(PageInner {
-        link_admin_queue_add_batch: base.link(PathAdminQueueAddBatch {}),
-        workers: get_workers(&db, &sorted_workers, &base).await?,
-        tasks: get_queue_data(&db, &sorted_workers, &base).await?,
-    })
+    let workers = get_workers(&db, &sorted_workers, &base).await?;
+    let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
+    Ok(PageInner { workers, tasks })
 }
 
 #[derive(Template)]
 #[template(path = "pages/queue.html")]
 struct Page {
     link_queue_js: Link,
+    link_admin_queue_add_batch: Link,
     base: Base,
     inner: PageInner,
 }
@@ -191,14 +189,13 @@ pub async fn get_queue(
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
+    let workers = get_workers(&db, &sorted_workers, &base).await?;
+    let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
     Ok(Page {
         link_queue_js: base.link(QUEUE_JS),
-        inner: PageInner {
-            link_admin_queue_add_batch: base.link(PathAdminQueueAddBatch {}),
-            workers: get_workers(&db, &sorted_workers, &base).await?,
-            tasks: get_queue_data(&db, &sorted_workers, &base).await?,
-        },
+        link_admin_queue_add_batch: base.link(PathAdminQueueAddBatch {}),
         base,
+        inner: PageInner { workers, tasks },
     })
 }
 
