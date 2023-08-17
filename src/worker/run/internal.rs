@@ -85,7 +85,7 @@ fn count(path: &Path) -> somehow::Result<Counts> {
         *counts.lines_by_ext.entry(ext.clone()).or_default() += lines;
         *counts.todos_by_ext.entry(ext.clone()).or_default() += todos;
 
-        for ancestor in relative_path.ancestors() {
+        for ancestor in relative_path.ancestors().skip(1) {
             let ancestor = ancestor.to_string_lossy();
             if ancestor.is_empty() {
                 continue;
