@@ -198,8 +198,11 @@ async fn run() -> somehow::Result<()> {
 }
 
 #[tokio::main]
-async fn main() -> somehow::Result<()> {
+async fn main() {
     // Rust-analyzer struggles analyzing code in this function, so the actual
     // code lives in a different function.
-    run().await
+    if let Err(e) = run().await {
+        error!("{e:?}");
+        process::exit(1)
+    }
 }
