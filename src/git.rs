@@ -7,7 +7,7 @@ use std::{
 };
 
 use log::{trace, warn};
-use regex::bytes::Regex;
+use regex::bytes::RegexBuilder;
 
 #[derive(Debug)]
 pub enum Error {
@@ -82,7 +82,10 @@ pub fn fetch_head(path: &Path, url: &str) -> Result<(), Error> {
         .arg("HEAD"); // Includes other refs like refs/foo/HEAD
     let output = run(command)?;
 
-    let regex = Regex::new(r"(?m)^ref: (refs/\S+)\s+HEAD$").unwrap();
+    let regex = RegexBuilder::new(r"^ref: (refs/\S+)\s+HEAD$")
+        .multi_line(true)
+        .build()
+        .unwrap();
     let Some(captures) = regex.captures(&output.stdout) else {
         warn!("Did not find HEAD of {url}");
         return Ok(());
