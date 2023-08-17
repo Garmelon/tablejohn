@@ -12,9 +12,9 @@ use gix::{
     bstr::ByteSlice, objs::tree::EntryMode, prelude::ObjectIdExt, worktree::stream::Entry,
     ObjectId, ThreadSafeRepository,
 };
+use log::warn;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
-use tracing::{debug, warn};
 
 const BLOCK_SIZE: usize = 1024 * 1024;
 const COMPRESSION_LEVEL: Compression = Compression::fast();
@@ -114,8 +114,6 @@ pub fn tar_and_gzip(
         if let Err(e) = write_worktree(repo, id, tx.clone()) {
             warn!("Error while streaming tar:\n{e:?}");
             let _ = tx.blocking_send(Err(e));
-        } else {
-            debug!("Tar streamed successfully");
         }
     });
     ReceiverStream::new(rx)

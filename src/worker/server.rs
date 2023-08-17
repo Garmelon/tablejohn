@@ -1,9 +1,9 @@
 use std::sync::{Arc, Mutex};
 
+use log::{debug, warn};
 use reqwest::Client;
 use tempfile::TempDir;
 use tokio::sync::Mutex as AsyncMutex;
-use tracing::{debug, warn};
 
 use crate::{
     config::{WorkerConfig, WorkerServerConfig},

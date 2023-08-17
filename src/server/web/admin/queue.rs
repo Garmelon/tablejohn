@@ -3,6 +3,7 @@ use axum::{
     response::{IntoResponse, Redirect},
     Form,
 };
+use log::info;
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use time::OffsetDateTime;
@@ -46,6 +47,11 @@ pub async fn post_admin_queue_add(
     .execute(&db)
     .await?;
 
+    info!(
+        "Admin added {} to queue with priority {}",
+        form.hash, form.priority,
+    );
+
     let link = Base::link_with_config(config, PathQueue {});
     Ok(Redirect::to(&format!("{link}")))
 }
@@ -64,6 +70,8 @@ pub async fn post_admin_queue_delete(
     sqlx::query!("DELETE FROM queue WHERE hash = ?", form.hash)
         .execute(&db)
         .await?;
+
+    info!("Admin deleted {} from queue", form.hash);
 
     let link = Base::link_with_config(config, PathQueue {});
     Ok(Redirect::to(&format!("{link}")))
@@ -87,6 +95,8 @@ pub async fn post_admin_queue_increase(
     .execute(&db)
     .await?;
 
+    info!("Admin increased queue priority of {} by one", form.hash);
+
     let link = Base::link_with_config(config, PathQueue {});
     Ok(Redirect::to(&format!("{link}")))
 }
@@ -108,6 +118,8 @@ pub async fn post_admin_queue_decrease(
     )
     .execute(&db)
     .await?;
+
+    info!("Admin decreased queue priority of {} by one", form.hash);
 
     let link = Base::link_with_config(config, PathQueue {});
     Ok(Redirect::to(&format!("{link}")))

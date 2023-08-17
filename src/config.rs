@@ -3,8 +3,8 @@
 use std::{collections::HashMap, fs, net::SocketAddr, path::PathBuf, time::Duration};
 
 use directories::ProjectDirs;
+use log::{info, trace};
 use serde::Deserialize;
-use tracing::{debug, info};
 
 use crate::{
     args::{Args, Command},
@@ -254,13 +254,13 @@ impl Config {
 
     pub fn load(args: &Args) -> somehow::Result<Self> {
         let path = Self::path(args);
-        info!(path = %path.display(), "Loading config");
+        info!("Loading config from {}", path.display());
 
         let raw = fs::read_to_string(path)?;
         let raw = toml::from_str::<RawConfig>(&raw)?;
-        debug!("Loaded raw config: {raw:#?}");
+        trace!("Raw config: {raw:#?}");
         let config = Self::from_raw_config(raw, args);
-        debug!("Loaded config: {config:#?}");
+        trace!("Config: {config:#?}");
         Ok(config)
     }
 }

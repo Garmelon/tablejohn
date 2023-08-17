@@ -10,15 +10,18 @@ mod shared;
 mod somehow;
 mod worker;
 
-use std::{collections::HashMap, io, net::IpAddr, process, time::Duration};
+use std::{
+    collections::HashMap,
+    io::{self, Write},
+    net::IpAddr,
+    process,
+    time::Duration,
+};
 
 use clap::Parser;
 use config::ServerConfig;
+use log::{debug, error, info, LevelFilter};
 use tokio::{select, signal::unix::SignalKind};
-use tracing::{debug, error, info, Level};
-use tracing_subscriber::{
-    filter::Targets, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
-};
 
 use crate::{
     args::{Args, Command, NAME, VERSION},
@@ -28,33 +31,34 @@ use crate::{
 };
 
 fn set_up_logging(verbose: u8) {
-    let filter = Targets::new()
-        .with_default(Level::TRACE)
-        .with_target("hyper", Level::INFO)
-        .with_target("sqlx", Level::INFO);
-    match verbose {
-        0 => tracing_subscriber::fmt()
-            .with_max_level(Level::INFO)
-            .without_time()
-            .with_target(false)
-            .init(),
-        1 => tracing_subscriber::fmt()
-            .with_max_level(Level::TRACE)
-            .with_target(false)
-            .finish()
-            .with(filter)
-            .init(),
-        2 => tracing_subscriber::fmt()
-            .with_max_level(Level::TRACE)
-            .pretty()
-            .finish()
-            .with(filter)
-            .init(),
-        _ => tracing_subscriber::fmt()
-            .with_max_level(Level::TRACE)
-            .pretty()
-            .init(),
-    }
+    let level = match verbose {
+        0 => LevelFilter::Info,
+        1 => LevelFilter::Debug,
+        2.. => LevelFilter::Trace,
+    };
+
+    env_logger::builder()
+        .filter_level(level)
+        .filter_module("hyper", LevelFilter::Warn)
+        .filter_module("sqlx", LevelFilter::Warn)
+        .filter_module("tracing", LevelFilter::Warn)
+        .format(|f, record| {
+            // By prefixing <syslog_level> to the logged messages, they will
+            // show up in journalctl with their appropriate level.
+            // https://unix.stackexchange.com/a/349148
+            // https://0pointer.de/blog/projects/journal-submit.html
+            // https://en.wikipedia.org/wiki/Syslog#Severity_level
+            let syslog_level = match record.level() {
+                log::Level::Error => 3,
+                log::Level::Warn => 4,
+                log::Level::Info => 6,
+                log::Level::Debug | log::Level::Trace => 7,
+            };
+            let level = f.default_styled_level(record.level());
+            let args = record.args();
+            writeln!(f, "<{syslog_level}>[{level:>5}] {args}")
+        })
+        .init();
 }
 
 async fn wait_for_signal() -> io::Result<()> {
@@ -131,7 +135,7 @@ async fn launch_local_workers(config: &'static Config, amount: u8) {
         );
         let worker_config = Box::leak(Box::new(worker_config));
 
-        info!("Launching local worker {}", worker_config.name);
+        info!("Starting local worker {}", worker_config.name);
         let worker = Worker::new(worker_config);
         tokio::spawn(async move { worker.run().await });
     }
@@ -147,6 +151,8 @@ async fn run() -> somehow::Result<()> {
 
     match args.command {
         Command::Server(command) => {
+            info!("Starting server");
+
             if command.open {
                 tokio::task::spawn(open_in_browser(&config.server));
             }
@@ -176,6 +182,8 @@ async fn run() -> somehow::Result<()> {
             }
         }
         Command::Worker => {
+            info!("Starting worker");
+
             let worker = Worker::new(&config.worker);
 
             select! {

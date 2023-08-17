@@ -4,9 +4,9 @@ use std::collections::HashSet;
 
 use futures::TryStreamExt;
 use gix::{date::Time, objs::Kind, prelude::ObjectIdExt, refs::Reference, ObjectId, Repository};
+use log::{debug, info, warn};
 use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use time::{OffsetDateTime, UtcOffset};
-use tracing::{debug, info};
 
 use crate::{
     server::{util, Repo},
@@ -111,11 +111,11 @@ async fn insert_new_commits(
         .execute(&mut *conn)
         .await?;
 
+        // So the user has something to look at while importing big repos
         if (i + 1) % 100000 == 0 {
-            debug!("Inserted {} commits so far", i + 1);
+            info!("(1/2) Inserting commits: {}/{}", i + 1, new.len());
         }
     }
-    debug!("Inserted {} commits in total", new.len());
     Ok(())
 }
 
@@ -140,11 +140,11 @@ async fn insert_new_commit_links(
             .await?;
         }
 
+        // So the user has something to look at while importing big repos
         if (i + 1) % 100000 == 0 {
-            debug!("Inserted {} commits' links so far", i + 1);
+            info!("(2/2) Inserting links: {}/{}", i + 1, new.len());
         }
     }
-    debug!("Inserted {} commits' links in total", new.len());
     Ok(())
 }
 
@@ -234,8 +234,8 @@ async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::R
     Ok(())
 }
 
-pub(super) async fn update(db: &SqlitePool, repo: Repo) -> somehow::Result<()> {
-    debug!("Updating repo");
+pub async fn inner(db: &SqlitePool, repo: Repo) -> somehow::Result<()> {
+    debug!("Updating repo data");
     let thread_local_repo = repo.0.to_thread_local();
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
@@ -254,7 +254,11 @@ pub(super) async fn update(db: &SqlitePool, repo: Repo) -> somehow::Result<()> {
         get_all_refs_and_new_commits_from_repo(&repo.0.to_thread_local(), &old)
     })
     .await??;
-    debug!("Found {} new commits in repo", new.len());
+    if new.is_empty() {
+        debug!("Found no new commits in repo");
+    } else {
+        info!("Found {} new commits in repo", new.len());
+    }
 
     // Defer foreign key checks until the end of the transaction to improve
     // insert performance.
@@ -282,6 +286,11 @@ pub(super) async fn update(db: &SqlitePool, repo: Repo) -> somehow::Result<()> {
     if repo_is_new {
         info!("Initialized new repo");
     }
-    debug!("Updated repo");
     Ok(())
+}
+
+pub(super) async fn update(db: &SqlitePool, repo: Repo) {
+    if let Err(e) = inner(db, repo).await {
+        warn!("Error updating repo data:\n{e:?}");
+    }
 }

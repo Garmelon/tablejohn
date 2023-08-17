@@ -13,9 +13,9 @@ use axum::{
     Json, TypedHeader,
 };
 use gix::{ObjectId, ThreadSafeRepository};
+use log::{debug, info};
 use sqlx::{Acquire, SqlitePool};
 use time::OffsetDateTime;
-use tracing::debug;
 
 use crate::{
     config::ServerConfig,
@@ -136,8 +136,10 @@ pub async fn post_api_worker_status(
         Ok(name) => name,
         Err(response) => return Ok(response),
     };
+    debug!("Received status update from {name}");
 
     if let Some(run) = request.submit_run {
+        info!("Received run {} for {} from {name}", run.id, run.hash);
         save_work(run, &name, &request.info, &db).await?;
     }
 
@@ -178,7 +180,6 @@ pub async fn post_api_worker_status(
         (work, abort_work)
     };
 
-    debug!("Received status update from {name}");
     Ok(Json(ServerResponse {
         run: work,
         abort_run: abort_work,
@@ -208,10 +209,11 @@ pub async fn get_api_worker_repo_by_hash_tree_tar_gz(
     State(repo): State<Option<Repo>>,
     auth: Option<TypedHeader<Authorization<Basic>>>,
 ) -> somehow::Result<Response> {
-    let _name = match auth::authenticate(config, auth) {
+    let name = match auth::authenticate(config, auth) {
         Ok(name) => name,
         Err(response) => return Ok(response),
     };
+    debug!("Worker {name} is downloading repo hash {}", path.hash);
 
     let Some(repo) = repo else {
         return Ok(StatusCode::NOT_FOUND.into_response());
@@ -227,10 +229,11 @@ pub async fn get_api_worker_bench_repo_by_hash_tree_tar_gz(
     State(bench_repo): State<Option<BenchRepo>>,
     auth: Option<TypedHeader<Authorization<Basic>>>,
 ) -> somehow::Result<Response> {
-    let _name = match auth::authenticate(config, auth) {
+    let name = match auth::authenticate(config, auth) {
         Ok(name) => name,
         Err(response) => return Ok(response),
     };
+    debug!("Worker {name} is downloading bench repo hash {}", path.hash);
 
     let Some(bench_repo) = bench_repo else {
         return Ok(StatusCode::NOT_FOUND.into_response());

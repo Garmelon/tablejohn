@@ -2,8 +2,8 @@
 
 use std::process::Command;
 
-use gix::bstr::ByteVec;
-use tracing::{info, warn};
+use gix::bstr::ByteSlice;
+use log::{info, warn};
 
 use crate::{config::ServerConfig, server::Repo, somehow};
 
@@ -25,9 +25,15 @@ fn fetch(repo: Repo, url: &str, refspecs: &[String]) -> somehow::Result<()> {
     let output = command.output()?;
     if output.status.success() {
     } else {
-        warn!(exitcode = %output.status, "'git fetch' failed");
-        warn!(output = "stdout", "{}", output.stdout.into_string_lossy());
-        warn!(output = "stderr", "{}", output.stderr.into_string_lossy());
+        warn!(
+            "Error fetching refs:\n\
+            {command:?} exited with code {}\n\
+            STDOUT:\n{}\n\
+            STDERR:\n{}",
+            output.status,
+            output.stdout.to_str_lossy(),
+            output.stderr.to_str_lossy()
+        );
     }
 
     Ok(())
@@ -38,7 +44,7 @@ async fn inner(repo: Repo, url: &'static str, refspecs: &'static [String]) -> so
     Ok(())
 }
 
-pub async fn update(config: &'static ServerConfig, repo: Repo) {
+pub(super) async fn update(config: &'static ServerConfig, repo: Repo) {
     if let Some(url) = &config.repo_fetch_url {
         if let Err(e) = inner(repo, url, &config.repo_fetch_refspecs).await {
             warn!("Error fetching refs:\n{e:?}");

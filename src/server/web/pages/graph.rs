@@ -1,6 +1,6 @@
 mod util;
 
-use std::{collections::HashMap, time::Instant};
+use std::collections::HashMap;
 
 use askama::Template;
 use axum::{extract::State, response::IntoResponse, Json};
@@ -9,7 +9,6 @@ use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Acquire, SqlitePool};
 use time::OffsetDateTime;
-use tracing::debug;
 
 use crate::{
     config::ServerConfig,
@@ -150,12 +149,6 @@ struct GraphData {
     measurements: HashMap<String, Vec<Option<f64>>>,
 }
 
-fn f(t0: &mut Instant, name: &str) {
-    let now = Instant::now();
-    debug!("{name:>20} {}", (now - *t0).as_millis());
-    *t0 = Instant::now();
-}
-
 pub async fn get_graph_data(
     _path: PathGraphData,
     State(db): State<SqlitePool>,
@@ -169,9 +162,6 @@ pub async fn get_graph_data(
 
     // TODO Limit by date or amount
     // TODO Limit to tracked commits
-
-    let mut t0 = Instant::now();
-    debug!("");
 
     let mut unsorted_hashes = Vec::<String>::new();
     let mut times_by_hash = HashMap::<String, i64>::new();
@@ -193,8 +183,6 @@ pub async fn get_graph_data(
     }
     drop(rows);
 
-    f(&mut t0, "hashes, times");
-
     let parent_child_pairs = sqlx::query!(
         "\
         SELECT parent, child \
@@ -209,12 +197,8 @@ pub async fn get_graph_data(
     .try_collect::<Vec<_>>()
     .await?;
 
-    f(&mut t0, "parent-child");
-
     let mut hashes = util::sort_topologically(&unsorted_hashes, &parent_child_pairs);
     hashes.sort_by_key(|hash| times_by_hash[hash]);
-
-    f(&mut t0, "sort");
 
     let sorted_hash_indices = hashes
         .iter()
@@ -222,8 +206,6 @@ pub async fn get_graph_data(
         .enumerate()
         .map(|(i, hash)| (hash, i))
         .collect::<HashMap<_, _>>();
-
-    f(&mut t0, "hash indices");
 
     let mut parents = HashMap::<usize, Vec<usize>>::new();
     for (parent, child) in &parent_child_pairs {
@@ -234,23 +216,17 @@ pub async fn get_graph_data(
         }
     }
 
-    f(&mut t0, "parents");
-
     // Collect times
     let times = hashes
         .iter()
         .map(|hash| times_by_hash[hash])
         .collect::<Vec<_>>();
 
-    f(&mut t0, "times");
-
     // permutation[unsorted_index] = sorted_index
     let permutation = unsorted_hashes
         .iter()
         .map(|hash| sorted_hash_indices[hash])
         .collect::<Vec<_>>();
-
-    f(&mut t0, "permutation");
 
     // Collect and permutate measurements
     let mut measurements = HashMap::new();
@@ -283,9 +259,6 @@ pub async fn get_graph_data(
 
         measurements.insert(metric, values);
     }
-
-    f(&mut t0, "measurements");
-    debug!("");
 
     Ok(Json(GraphData {
         hashes,

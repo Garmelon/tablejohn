@@ -4,10 +4,10 @@ mod tree;
 
 use std::sync::{Arc, Mutex};
 
+use log::{error, info, warn};
 use reqwest::Client;
 use time::OffsetDateTime;
 use tokio::sync::Mutex as AsyncMutex;
-use tracing::{error, info, warn};
 
 use crate::{
     config::WorkerConfig,

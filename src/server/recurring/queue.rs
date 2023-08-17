@@ -1,10 +1,10 @@
+use log::{debug, info, warn};
 use sqlx::{Acquire, SqlitePool};
 use time::OffsetDateTime;
-use tracing::debug;
 
 use crate::somehow;
 
-pub async fn update(db: &SqlitePool) -> somehow::Result<()> {
+async fn inner(db: &SqlitePool) -> somehow::Result<()> {
     debug!("Updating queue");
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
@@ -13,20 +13,22 @@ pub async fn update(db: &SqlitePool) -> somehow::Result<()> {
     let new = sqlx::query!("SELECT hash FROM commits WHERE new AND reachable = 2")
         .fetch_all(&mut *conn)
         .await?;
-    let new_len = new.len();
 
     // Insert them into the queue
     for row in new {
         let date = OffsetDateTime::now_utc();
-        sqlx::query!(
+        let result = sqlx::query!(
             "INSERT OR IGNORE INTO queue (hash, date) VALUES (?, ?)",
             row.hash,
             date,
         )
         .execute(&mut *conn)
         .await?;
+
+        if result.rows_affected() > 0 {
+            info!("Added new commit {} to the queue", row.hash);
+        }
     }
-    debug!("Added {new_len} commits to the queue");
 
     // Mark all commits as old
     sqlx::query!("UPDATE commits SET new = false")
@@ -34,6 +36,11 @@ pub async fn update(db: &SqlitePool) -> somehow::Result<()> {
         .await?;
 
     tx.commit().await?;
-    debug!("Updated queue");
     Ok(())
+}
+
+pub(super) async fn update(db: &SqlitePool) {
+    if let Err(e) = inner(db).await {
+        warn!("Error updating queue:\n{e:?}");
+    }
 }

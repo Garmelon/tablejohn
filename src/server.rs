@@ -11,18 +11,18 @@ use std::{
 
 use axum::extract::FromRef;
 use gix::ThreadSafeRepository;
+use log::{debug, info};
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
     SqlitePool,
 };
 use tokio::select;
-use tracing::{debug, info};
 
 use crate::{args::ServerCommand, config::ServerConfig, somehow};
 
 use self::workers::Workers;
 
-async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
+async fn open_db(path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
         // https://www.sqlite.org/pragma.html#pragma_journal_mode
         .journal_mode(SqliteJournalMode::Wal)
@@ -34,14 +34,14 @@ async fn open_db(db_path: &Path) -> sqlx::Result<SqlitePool> {
         // https://www.sqlite.org/pragma.html#pragma_trusted_schema
         // The docs recommend always turning this off
         .pragma("trusted_schema", "false")
-        .filename(db_path)
+        .filename(path)
         .create_if_missing(true)
         // https://www.sqlite.org/lang_analyze.html#recommended_usage_pattern
         // https://www.sqlite.org/pragma.html#pragma_analysis_limit
         // https://www.sqlite.org/pragma.html#pragma_optimize
         .optimize_on_close(true, Some(1000));
 
-    info!(path = %db_path.display(), "Opening db");
+    info!("Opening db at {}", path.display());
     let pool = SqlitePoolOptions::new()
         // Regularly optimize the db as recommended by the sqlite docs
         // https://www.sqlite.org/lang_analyze.html#recommended_usage_pattern
@@ -77,7 +77,7 @@ impl Server {
         command: ServerCommand,
     ) -> somehow::Result<Self> {
         let repo = if let Some(path) = command.repo.as_ref() {
-            info!(path = %path.display(), "Opening repo");
+            info!("Opening repo at {}", path.display());
             let repo = ThreadSafeRepository::open(path)?;
             Some(Repo(Arc::new(repo)))
         } else {
@@ -85,7 +85,7 @@ impl Server {
         };
 
         let bench_repo = if let Some(path) = command.bench_repo.as_ref() {
-            info!(path = %path.display(), "Opening repo");
+            info!("Opening bench repo at {}", path.display());
             let repo = ThreadSafeRepository::open(path)?;
             Some(BenchRepo(Arc::new(repo)))
         } else {

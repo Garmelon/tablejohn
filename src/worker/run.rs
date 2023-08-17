@@ -5,8 +5,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use log::error;
 use tokio::sync::Notify;
-use tracing::error;
 
 use crate::{
     config::WorkerServerConfig,
