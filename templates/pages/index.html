@@ -6,7 +6,7 @@
 
 <h2>Refs</h2>
 
-<details open>
+<details class="refs-list" open>
     <summary>Tracked ({{ tracked_refs.len() }})</summary>
     <form method="post" action="{{ link_admin_refs_untrack }}">
         <dl>
@@ -21,7 +21,7 @@
     </form>
 </details>
 
-<details>
+<details class="refs-list">
     <summary>Untracked ({{ untracked_refs.len() }})</summary>
     <form method="post" action="{{ link_admin_refs_track }}">
         <dl>

@@ -9,8 +9,10 @@ body {
 }
 
 details,
+ol,
+p,
 table,
-p {
+ul {
     margin: 1em 0;
 }
 
@@ -56,8 +58,9 @@ details[open]>summary {
     list-style-type: "v ";
 }
 
-details[open]>:last-child {
-    margin-bottom: 0;
+ul,
+ol {
+    list-style-type: "- ";
 }
 
 dl {
@@ -146,6 +149,12 @@ nav a:hover {
 
 .commit-orphaned {
     color: #a33;
+}
+
+/* Refs */
+
+.refs-list dl {
+    margin-bottom: 0;
 }
 
 /* Queue */
