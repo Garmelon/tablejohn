@@ -27,7 +27,7 @@ impl Default for RawServerRepo {
             name: None,
             update: Duration::from_secs(60),
             fetch_url: None,
-            fetch_refspecs: vec!["+refs/*:refs/*".to_string()],
+            fetch_refspecs: vec!["+refs/heads/*:refs/heads/*".to_string()],
         }
     }
 }
