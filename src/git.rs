@@ -6,7 +6,8 @@ use std::{
     process::{Command, Output},
 };
 
-use log::trace;
+use log::{trace, warn};
+use regex::bytes::Regex;
 
 #[derive(Debug)]
 pub enum Error {
@@ -60,6 +61,45 @@ fn run(mut command: Command) -> Result<Output, Error> {
     } else {
         Err(Error::Command(command, output))
     }
+}
+
+pub fn init_bare(path: &Path) -> Result<(), Error> {
+    let mut command = Command::new("git");
+    command.arg("init").arg("--bare").arg("--").arg(path);
+    run(command)?;
+    Ok(())
+}
+
+pub fn fetch_head(path: &Path, url: &str) -> Result<(), Error> {
+    let mut command = Command::new("git");
+    command
+        .arg("-C")
+        .arg(path)
+        .arg("ls-remote")
+        .arg("--symref")
+        .arg("--")
+        .arg(url)
+        .arg("HEAD"); // Includes other refs like refs/foo/HEAD
+    let output = run(command)?;
+
+    let regex = Regex::new(r"(?m)^ref: (refs/\S+)\s+HEAD$").unwrap();
+    let Some(captures) = regex.captures(&output.stdout) else {
+        warn!("Did not find HEAD of {url}");
+        return Ok(());
+    };
+    let head = String::from_utf8_lossy(captures.get(1).unwrap().as_bytes());
+
+    let mut command = Command::new("git");
+    command
+        .arg("-C")
+        .arg(path)
+        .arg("symbolic-ref")
+        .arg("--")
+        .arg("HEAD")
+        .arg(&head as &str);
+    run(command)?;
+
+    Ok(())
 }
 
 pub fn fetch(path: &Path, url: &str, refspecs: &[String]) -> Result<(), Error> {

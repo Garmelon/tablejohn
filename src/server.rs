@@ -9,6 +9,7 @@ use std::{
     time::Duration,
 };
 
+use anyhow::anyhow;
 use axum::extract::FromRef;
 use gix::ThreadSafeRepository;
 use log::{debug, info};
@@ -18,9 +19,53 @@ use sqlx::{
 };
 use tokio::select;
 
-use crate::{args::ServerCommand, config::ServerConfig, somehow};
+use crate::{args::ServerCommand, config::ServerConfig, git, somehow};
 
 use self::workers::Workers;
+
+fn open_repo(
+    path: &Path,
+    url: &Option<String>,
+    refspecs: &[String],
+) -> somehow::Result<ThreadSafeRepository> {
+    if path.exists() {
+        info!("Opening repo at {}", path.display());
+        Ok(ThreadSafeRepository::open(path)?)
+    } else if let Some(url) = url {
+        info!(
+            "No repo found at {} but a fetch url is configured",
+            path.display()
+        );
+
+        info!("Creating bare repo");
+        git::init_bare(path)?;
+
+        info!("Fetching HEAD from {url}");
+        git::fetch_head(path, url)?;
+
+        info!("Fetching refs for the first time (this may take a while)");
+        git::fetch(path, url, refspecs)?;
+
+        Ok(ThreadSafeRepository::open(path)?)
+    } else {
+        Err(somehow::Error(anyhow!(
+            "Failed to open repo: No repo found at {} and no fetch url is configured",
+            path.display()
+        )))
+    }
+}
+
+fn open_bench_repo(path: &Path) -> somehow::Result<ThreadSafeRepository> {
+    if path.exists() {
+        info!("Opening bench repo at {}", path.display());
+        Ok(ThreadSafeRepository::open(path)?)
+    } else {
+        Err(somehow::Error(anyhow!(
+            "Failed to open bench repo: No repo found at {}",
+            path.display()
+        )))
+    }
+}
 
 async fn open_db(path: &Path) -> sqlx::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
@@ -77,16 +122,14 @@ impl Server {
         command: ServerCommand,
     ) -> somehow::Result<Self> {
         let repo = if let Some(path) = command.repo.as_ref() {
-            info!("Opening repo at {}", path.display());
-            let repo = ThreadSafeRepository::open(path)?;
+            let repo = open_repo(path, &config.repo_fetch_url, &config.repo_fetch_refspecs)?;
             Some(Repo(Arc::new(repo)))
         } else {
             None
         };
 
         let bench_repo = if let Some(path) = command.bench_repo.as_ref() {
-            info!("Opening bench repo at {}", path.display());
-            let repo = ThreadSafeRepository::open(path)?;
+            let repo = open_bench_repo(path)?;
             Some(BenchRepo(Arc::new(repo)))
         } else {
             None
