@@ -167,16 +167,19 @@ async fn run() -> somehow::Result<()> {
     match args.command {
         Command::Server(command) => {
             info!("Starting server");
+            let open = command.open;
+            let local_worker = command.local_worker;
 
-            if command.open {
+            let (server, recurring_rx) = Server::new(&config.server, command).await?;
+
+            if open {
                 tokio::task::spawn(open_in_browser(&config.server));
             }
 
-            if command.local_worker > 0 {
-                tokio::task::spawn(launch_local_workers(config, command.local_worker));
+            if local_worker > 0 {
+                tokio::task::spawn(launch_local_workers(config, local_worker));
             }
 
-            let (server, recurring_rx) = Server::new(&config.server, command).await?;
             select! {
                 _ = wait_for_signal() => {}
                 _ = server.run(recurring_rx) => {}
