@@ -16,7 +16,7 @@ use super::{
 <a href=\"{{ link }}\" \
    class=\"{% call util::commit_class(reachable) %}\" \
    title=\"{% call util::commit_title(reachable) %}\">
-   {{ short }}
+   {{ short|truncate(80) }}
 </a>
 "
 )]
@@ -37,7 +37,10 @@ impl LinkCommit {
 }
 
 #[derive(Template)]
-#[template(ext = "html", source = "<a href=\"{{ link }}\">Run of {{ short }}</a>")]
+#[template(
+    ext = "html",
+    source = "<a href=\"{{ link }}\">Run of {{ short|truncate(80) }}</a>"
+)]
 pub struct LinkRunShort {
     link: Link,
     short: String,
