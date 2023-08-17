@@ -68,6 +68,12 @@ async fn save_work(
     .execute(&mut *conn)
     .await?;
 
+    // Now that we know the commit exists, we can defer all other foreign key
+    // checks until the end of the transaction to improve insert performance.
+    sqlx::query!("PRAGMA defer_foreign_keys=1")
+        .execute(&mut *conn)
+        .await?;
+
     for (metric, measurement) in run.measurements {
         sqlx::query!(
             "\
