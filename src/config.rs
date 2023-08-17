@@ -133,12 +133,11 @@ impl ServerConfig {
     fn repo_name(args: &Args) -> String {
         if let Command::Server(cmd) = &args.command {
             if let Some(path) = &cmd.repo {
-                if let Ok(path) = path.canonicalize() {
-                    if let Some(name) = path.file_name() {
-                        let name = name.to_string_lossy();
-                        let name = name.strip_suffix(".git").unwrap_or(&name).to_string();
-                        return name;
-                    }
+                let path = path.canonicalize().unwrap_or(path.clone());
+                if let Some(name) = path.file_name() {
+                    let name = name.to_string_lossy();
+                    let name = name.strip_suffix(".git").unwrap_or(&name).to_string();
+                    return name;
                 }
             }
         }
