@@ -28,18 +28,23 @@ use self::util::MetricFolder;
     source = "
 {% match self %}
   {% when MetricTree::File with { name, metric } %}
-    <label>
-      <input type=\"checkbox\" name=\"{{ metric }}\">
-      {{ name }}
-    </label>
+    <label><input type=\"checkbox\" name=\"{{ metric }}\"> {{ name }}</label>
   {% when MetricTree::Folder with { name, metric, children } %}
-    {% if let Some(metric) = metric %}
-      <input type=\"checkbox\" name=\"{{ metric }}\">
+    {% if children.trees.is_empty() %}
+      {% if let Some(metric) = metric %}
+        <label><input type=\"checkbox\" name=\"{{ metric }}\"> {{ name }}/</label>
+      {% endif %}
+    {% else if let Some(metric) = metric %}
+      <details>
+        <summary><input type=\"checkbox\" name=\"{{ metric }}\"> {{ name }}/</summary>
+        {{ children|safe }}
+      </details>
+    {% else %}
+      <details class=\"no-metric\">
+        <summary>{{ name }}/</summary>
+        {{ children|safe }}
+      </details>
     {% endif %}
-    <details>
-      <summary>{{ name }}/</summary>
-      {{ children|safe }}
-    </details>
 {% endmatch %}
 "
 )]

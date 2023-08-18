@@ -1,7 +1,9 @@
 * {
     font-family: monospace;
+    font-size: inherit;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 body {
@@ -31,7 +33,6 @@ a:hover {
 }
 
 button {
-    font-size: inherit;
     padding: 0 .5ch;
 }
 
@@ -51,16 +52,17 @@ details {
 details>summary {
     font-weight: bold;
     cursor: pointer;
-    list-style-type: "> ";
+    list-style: "> " inside;
 }
 
 details[open]>summary {
-    list-style-type: "v ";
+    list-style: "v " inside;
 }
 
 ul,
 ol {
-    list-style-type: "- ";
+    list-style: "- " outside;
+    margin-left: 2ch;
 }
 
 dl {
@@ -151,10 +153,60 @@ nav a:hover {
     color: #a33;
 }
 
-/* Refs */
+/* Index */
 
 .refs-list dl {
     margin-bottom: 0;
+}
+
+/* Graph */
+
+.graph-container {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+}
+
+.graph-container #plot {
+    margin-right: 1em;
+    margin-bottom: 1em;
+    box-shadow: 0 0 .5em black;
+}
+
+.graph-container #metrics {
+    flex: 0 50ch;
+    box-shadow: 0 0 .5em black;
+}
+
+.metrics-list {
+    background-color: #ddd;
+    padding: .3em 1ch;
+}
+
+.metrics-list * {
+    margin: 0;
+    padding: 0;
+    background-color: unset;
+    list-style: none;
+}
+
+.metrics-list details[open]>summary {
+    list-style: none;
+}
+
+.metrics-list input[type="checkbox"] {
+    width: 2ch;
+}
+
+.metrics-list details.no-metric>summary {
+    list-style: "-> " outside;
+    margin-left: 3ch;
+}
+
+.metrics-list summary~* {
+    border-left: .1ch solid black;
+    margin-left: .9ch;
+    padding-left: 1ch;
 }
 
 /* Queue */
