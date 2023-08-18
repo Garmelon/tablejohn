@@ -232,49 +232,34 @@ nav a:hover {
     background-color: #ddd;
 }
 
-/* Commit */
+/* Commit-like entities */
 
-/*
-
-.commit * {
-    margin: 0;
-}
-
-.commit dl {
+.commit-like dl {
     display: grid;
     grid: auto-flow / max-content 1fr;
     column-gap: 1ch;
 }
 
-.commit .hash {
-    color: #b70;
-    font-weight: bold;
+.commit-like dl, .commit-like dt, .commit-like dd {
+    margin: 0;
 }
 
-.commit pre {
+.commit-like pre {
     margin: 1em 0ch 1em 4ch;
     white-space: pre-wrap;
 }
 
-*/
-
-/* Worker */
-
-/*
-
-.worker * {
-    margin: 0;
-}
-
-.worker dl {
-    display: grid;
-    grid: auto-flow / max-content 1fr;
-    column-gap: 1ch;
-}
-
-.worker .name {
-    color: #380;
+.commit-like.commit .title {
+    color: #b70;
     font-weight: bold;
 }
 
-*/
+.commit-like.run .title {
+    color: #07e;
+    font-weight: bold;
+}
+
+.commit-like.worker .title {
+    color: #380;
+    font-weight: bold;
+}
