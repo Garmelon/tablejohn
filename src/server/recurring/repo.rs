@@ -227,7 +227,7 @@ async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::R
             WHEN hash IN reachable THEN 1 \
             ELSE 0 \
         END \
-"
+        "
     )
     .execute(conn)
     .await?;
