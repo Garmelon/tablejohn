@@ -18,7 +18,7 @@
           tablejohn = naersk'.buildPackage
             {
               root = ./.;
-              nativeBuildInputs = [ pkgs.nodePackages.typescript ];
+              nativeBuildInputs = [ pkgs.typescript ];
             };
           default = tablejohn;
         }
