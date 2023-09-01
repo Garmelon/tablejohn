@@ -1,10 +1,10 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT DISTINCT metric FROM run_measurements ORDER BY metric ASC",
+  "query": "SELECT name FROM metrics ORDER BY name ASC",
   "describe": {
     "columns": [
       {
-        "name": "metric",
+        "name": "name",
         "ordinal": 0,
         "type_info": "Text"
       }
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "35324f9148e3e7ce2d2aa62d69378ce28a2398b408bbc99ea1299315904d6673"
+  "hash": "249aa7a29ae6f1746b9c56ff4fbe9038a48ee5f32116a163af60617e0394de9c"
 }

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO commit_edges (parent, child) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "ef93e50e17e9f73b07ce548fc92e8480a715819d25c3f880465f9b5c89a8780b"
+}

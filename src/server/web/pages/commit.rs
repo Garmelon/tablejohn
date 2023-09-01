@@ -50,7 +50,7 @@ pub async fn get_commit_by_hash(
     let parents = sqlx::query!(
         "\
         SELECT hash, message, reachable FROM commits \
-        JOIN commit_links ON hash = parent \
+        JOIN commit_edges ON hash = parent \
         WHERE child = ? \
         ORDER BY reachable DESC, unixepoch(committer_date) ASC \
         ",
@@ -64,7 +64,7 @@ pub async fn get_commit_by_hash(
     let children = sqlx::query!(
         "\
         SELECT hash, message, reachable FROM commits \
-        JOIN commit_links ON hash = child \
+        JOIN commit_edges ON hash = child \
         WHERE parent = ? \
         ORDER BY reachable DESC, unixepoch(committer_date) ASC \
         ",

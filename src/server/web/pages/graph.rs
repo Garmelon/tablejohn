@@ -6,6 +6,7 @@ use futures::TryStreamExt;
 use maud::html;
 use serde::{Deserialize, Serialize};
 use sqlx::{Acquire, SqlitePool};
+use time::OffsetDateTime;
 
 use crate::{
     config::ServerConfig,
@@ -55,10 +56,9 @@ pub async fn get_graph_metrics(
     _path: PathGraphMetrics,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
-    let metrics =
-        sqlx::query_scalar!("SELECT DISTINCT metric FROM run_measurements ORDER BY metric ASC")
-            .fetch_all(&db)
-            .await?;
+    let metrics = sqlx::query_scalar!("SELECT name FROM metrics ORDER BY name ASC")
+        .fetch_all(&db)
+        .await?;
 
     Ok(Json(MetricsResponse {
         data_id: 0, // TODO Implement
@@ -96,8 +96,8 @@ pub async fn get_graph_commits(
         SELECT \
             hash, \
             author, \
-            committer_date AS \"committer_date: time::OffsetDateTime\", \
-            message \
+            message, \
+            committer_date AS \"committer_date: OffsetDateTime\" \
         FROM commits \
         WHERE reachable = 2 \
         ORDER BY hash ASC \
@@ -124,7 +124,7 @@ pub async fn get_graph_commits(
     let mut rows = sqlx::query!(
         "\
         SELECT child, parent \
-        FROM commit_links \
+        FROM commit_edges \
         JOIN commits ON hash = child \
         WHERE reachable = 2 \
         ORDER BY hash ASC \

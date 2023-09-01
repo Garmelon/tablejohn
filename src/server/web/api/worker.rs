@@ -96,21 +96,21 @@ async fn save_work(
         .await?;
     }
 
-    for (idx, (source, text)) in run.output.into_iter().enumerate() {
-        // Hopefully we won't need more than 4294967296 output chunks per run :P
-        let idx = idx as u32;
+    for (line, (source, text)) in run.output.into_iter().enumerate() {
+        // Hopefully we won't need more than 4294967296 lines per run :P
+        let line = line as u32;
         sqlx::query!(
             "\
             INSERT INTO run_output ( \
                 id, \
-                idx, \
+                line, \
                 source, \
                 text \
             ) \
             VALUES (?, ?, ?, ?) \
             ",
             run.id,
-            idx,
+            line,
             source,
             text,
         )

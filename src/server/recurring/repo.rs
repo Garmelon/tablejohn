@@ -119,7 +119,7 @@ async fn insert_new_commits(
     Ok(())
 }
 
-async fn insert_new_commit_links(
+async fn insert_new_commit_edges(
     conn: &mut SqliteConnection,
     repo: &Repository,
     new: &[ObjectId],
@@ -132,7 +132,7 @@ async fn insert_new_commit_links(
             // Commits *cough*linuxkernel*cough* may list the same parent
             // multiple times, so we just ignore duplicates during insert.
             sqlx::query!(
-                "INSERT OR IGNORE INTO commit_links (parent, child) VALUES (?, ?)",
+                "INSERT OR IGNORE INTO commit_edges (parent, child) VALUES (?, ?)",
                 parent,
                 child,
             )
@@ -142,7 +142,7 @@ async fn insert_new_commit_links(
 
         // So the user has something to look at while importing big repos
         if (i + 1) % 100000 == 0 {
-            info!("(2/2) Inserting links: {}/{}", i + 1, new.len());
+            info!("(2/2) Inserting edges: {}/{}", i + 1, new.len());
         }
     }
     Ok(())
@@ -214,7 +214,7 @@ async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::R
             tracked (hash) AS ( \
                 SELECT hash FROM refs WHERE tracked \
                 UNION \
-                SELECT parent FROM commit_links \
+                SELECT parent FROM commit_edges \
                 JOIN tracked ON hash = child \
             ), \
             reachable (hash) AS ( \
@@ -222,7 +222,7 @@ async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::R
                 UNION \
                 SELECT hash FROM tracked \
                 UNION \
-                SELECT parent FROM commit_links \
+                SELECT parent FROM commit_edges \
                 JOIN reachable ON hash = child \
             ) \
         UPDATE commits \
@@ -273,7 +273,7 @@ pub async fn inner(db: &SqlitePool, repo: Repo) -> somehow::Result<()> {
     // than if they were grouped by commit (insert commit and parents, then next
     // commit and so on).
     insert_new_commits(conn, &thread_local_repo, &new).await?;
-    insert_new_commit_links(conn, &thread_local_repo, &new).await?;
+    insert_new_commit_edges(conn, &thread_local_repo, &new).await?;
     if repo_is_new {
         mark_all_commits_as_old(conn).await?;
     }

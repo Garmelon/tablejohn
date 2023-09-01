@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT source, text FROM run_output WHERE id = ? ORDER BY idx ASC ",
+  "query": "SELECT source, text FROM run_output WHERE id = ? ORDER BY line ASC ",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "6ee70f3a692ecb2a4fadfdd28778d74f63be6af7977f73ddd647a2b86e78b49f"
+  "hash": "bf7e8565a6ddea9d894fbeef3c9e7ed5e71893b920f5f36e80a5e2ed65cc9bb9"
 }

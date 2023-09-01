@@ -80,7 +80,7 @@ async fn from_finished_run(
         "\
         SELECT source, text FROM run_output \
         WHERE id = ? \
-        ORDER BY idx ASC \
+        ORDER BY line ASC \
         ",
         id,
     )
