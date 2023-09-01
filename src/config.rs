@@ -1,6 +1,8 @@
 //! Configuration from a file.
 
-use std::{collections::HashMap, fs, net::SocketAddr, path::PathBuf, time::Duration};
+use std::{
+    collections::HashMap, fs, io::ErrorKind, net::SocketAddr, path::PathBuf, time::Duration,
+};
 
 use directories::ProjectDirs;
 use log::{info, trace};
@@ -259,11 +261,19 @@ impl Config {
         let path = Self::path(args);
         info!("Loading config from {}", path.display());
 
-        let raw = fs::read_to_string(path)?;
-        let raw = toml::from_str::<RawConfig>(&raw)?;
+        let raw = match fs::read_to_string(path) {
+            Ok(str) => toml::from_str::<RawConfig>(&str)?,
+            Err(e) if e.kind() == ErrorKind::NotFound => {
+                info!("No config file found, using default config");
+                RawConfig::default()
+            }
+            Err(e) => Err(e)?,
+        };
         trace!("Raw config: {raw:#?}");
+
         let config = Self::from_raw_config(raw, args);
         trace!("Config: {config:#?}");
+
         Ok(config)
     }
 }
