@@ -17,8 +17,7 @@ use self::{
             post_admin_queue_add, post_admin_queue_add_batch, post_admin_queue_decrease,
             post_admin_queue_delete, post_admin_queue_increase,
         },
-        refs::{post_admin_refs_track, post_admin_refs_untrack},
-        repo::post_admin_repo_update,
+        refs::{post_admin_refs_track, post_admin_refs_untrack, post_admin_repo_update},
     },
     api::worker::{
         get_api_worker_bench_repo_by_hash_tree_tar_gz, get_api_worker_repo_by_hash_tree_tar_gz,

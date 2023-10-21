@@ -62,8 +62,8 @@ pub struct PathAdminRefsTrack {}
 pub struct PathAdminRefsUntrack {}
 
 #[derive(Deserialize, TypedPath)]
-#[typed_path("/admin/repo/update")]
-pub struct PathAdminRepoUpdate {}
+#[typed_path("/admin/refs/update")]
+pub struct PathAdminRefsUpdate {}
 
 #[derive(Deserialize, TypedPath)]
 #[typed_path("/admin/queue/add")]

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     extract::State,
     response::{IntoResponse, Redirect},
@@ -6,12 +8,13 @@ use axum::{
 use log::info;
 use serde::Deserialize;
 use sqlx::SqlitePool;
+use tokio::sync::mpsc;
 
 use crate::{
     config::ServerConfig,
     server::web::{
         base::Base,
-        paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathIndex},
+        paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRefsUpdate, PathIndex},
     },
     somehow,
 };
@@ -52,6 +55,18 @@ pub async fn post_admin_refs_untrack(
     if result.rows_affected() > 0 {
         info!("Admin untracked {}", form.r#ref);
     }
+
+    let link = Base::link_with_config(config, PathIndex {});
+    Ok(Redirect::to(&link.to_string()))
+}
+
+pub async fn post_admin_repo_update(
+    _path: PathAdminRefsUpdate,
+    State(config): State<&'static ServerConfig>,
+    State(recurring_tx): State<Arc<mpsc::UnboundedSender<()>>>,
+) -> somehow::Result<impl IntoResponse> {
+    let _ = recurring_tx.send(());
+    info!("Admin updated repo");
 
     let link = Base::link_with_config(config, PathIndex {});
     Ok(Redirect::to(&link.to_string()))

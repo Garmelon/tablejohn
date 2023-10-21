@@ -8,7 +8,7 @@ use crate::{
     server::web::{
         base::{Base, Link, Tab},
         link::LinkCommit,
-        paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRepoUpdate, PathIndex},
+        paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRefsUpdate, PathIndex},
     },
     somehow,
 };
@@ -24,7 +24,7 @@ struct Ref {
 struct IndexTemplate {
     link_admin_refs_track: Link,
     link_admin_refs_untrack: Link,
-    link_admin_repo_update: Link,
+    link_admin_refs_update: Link,
     base: Base,
 
     tracked_refs: Vec<Ref>,
@@ -68,7 +68,7 @@ pub async fn get_index(
     Ok(IndexTemplate {
         link_admin_refs_track: base.link(PathAdminRefsTrack {}),
         link_admin_refs_untrack: base.link(PathAdminRefsUntrack {}),
-        link_admin_repo_update: base.link(PathAdminRepoUpdate {}),
+        link_admin_refs_update: base.link(PathAdminRefsUpdate {}),
         base: Base::new(config, Tab::Index),
 
         tracked_refs,
