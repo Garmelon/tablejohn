@@ -7,5 +7,4 @@
     "rust-analyzer.server.extraEnv": {
         "SQLX_OFFLINE": "false",
     },
-
 }
