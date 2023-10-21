@@ -81,18 +81,14 @@ async fn save_work(
                 id, \
                 metric, \
                 value, \
-                stddev, \
-                unit, \
-                direction \
+                unit \
             ) \
-            VALUES (?, ?, ?, ?, ?, ?) \
+            VALUES (?, ?, ?, ?) \
             ",
             run.id,
             metric,
             measurement.value,
-            measurement.stddev,
             measurement.unit,
-            measurement.direction,
         )
         .execute(&mut *conn)
         .await?;

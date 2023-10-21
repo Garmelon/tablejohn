@@ -23,9 +23,7 @@ use crate::{
 struct Measurement {
     metric: String,
     value: String,
-    stddev: String,
     unit: String,
-    direction: &'static str,
 }
 
 struct Line {
@@ -83,9 +81,7 @@ async fn from_finished_run(
         SELECT \
             metric, \
             value, \
-            stddev, \
-            unit, \
-            direction \
+            unit \
         FROM run_measurements \
         WHERE id = ? \
         ORDER BY metric ASC \
@@ -96,14 +92,7 @@ async fn from_finished_run(
     .map_ok(|r| Measurement {
         metric: r.metric,
         value: util::format_value(r.value),
-        stddev: r.stddev.map(util::format_value).unwrap_or_default(),
         unit: r.unit.unwrap_or_default(),
-        direction: match r.direction {
-            Some(..=-1) => "less is better",
-            Some(0) => "neutral",
-            Some(1..) => "more is better",
-            None => "",
-        },
     })
     .try_collect::<Vec<_>>()
     .await?;

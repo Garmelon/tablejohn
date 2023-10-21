@@ -43,9 +43,7 @@ CREATE TABLE run_measurements (
     id        TEXT NOT NULL,
     metric    TEXT NOT NULL,
     value     REAL NOT NULL,
-    stddev    REAL,
     unit      TEXT,
-    direction INT,
 
     PRIMARY KEY (id, metric),
     FOREIGN KEY (id) REFERENCES runs (id) ON DELETE CASCADE

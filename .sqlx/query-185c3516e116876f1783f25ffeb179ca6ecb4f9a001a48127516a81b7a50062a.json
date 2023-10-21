@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT metric, value, stddev, unit, direction FROM run_measurements WHERE id = ? ORDER BY metric ASC ",
+  "query": "SELECT metric, value, unit FROM run_measurements WHERE id = ? ORDER BY metric ASC ",
   "describe": {
     "columns": [
       {
@@ -14,19 +14,9 @@
         "type_info": "Float"
       },
       {
-        "name": "stddev",
-        "ordinal": 2,
-        "type_info": "Float"
-      },
-      {
         "name": "unit",
-        "ordinal": 3,
+        "ordinal": 2,
         "type_info": "Text"
-      },
-      {
-        "name": "direction",
-        "ordinal": 4,
-        "type_info": "Int64"
       }
     ],
     "parameters": {
@@ -35,10 +25,8 @@
     "nullable": [
       false,
       false,
-      true,
-      true,
       true
     ]
   },
-  "hash": "0a4a3c4090e70ca643c4af0368ecf5c8dde66d898a900afa299a94e9a7bc62f8"
+  "hash": "185c3516e116876f1783f25ffeb179ca6ecb4f9a001a48127516a81b7a50062a"
 }

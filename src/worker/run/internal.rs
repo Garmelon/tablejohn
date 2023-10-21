@@ -8,11 +8,7 @@ use std::{
 use regex::RegexBuilder;
 use walkdir::WalkDir;
 
-use crate::{
-    shared::{Direction, Measurement},
-    somehow,
-    worker::server::Server,
-};
+use crate::{shared::Measurement, somehow, worker::server::Server};
 
 use super::{Finished, RunInProgress};
 
@@ -110,70 +106,47 @@ fn count(path: &Path) -> somehow::Result<Counts> {
     Ok(counts)
 }
 
-fn measurement(value: f64, direction: Direction) -> Measurement {
-    Measurement {
-        value,
-        stddev: None,
-        unit: None,
-        direction: Some(direction),
-    }
+fn measurement(value: f64) -> Measurement {
+    Measurement { value, unit: None }
 }
 
 fn measurements(counts: Counts) -> HashMap<String, Measurement> {
     let mut measurements = HashMap::new();
 
     // Files
-    measurements.insert(
-        "files".to_string(),
-        measurement(counts.files as f64, Direction::Neutral),
-    );
+    measurements.insert("files".to_string(), measurement(counts.files as f64));
     for (ext, count) in counts.files_by_ext {
         measurements.insert(
             format!("files/by extension/{ext}"),
-            measurement(count as f64, Direction::Neutral),
+            measurement(count as f64),
         );
     }
     for (dir, count) in counts.files_by_dir {
-        measurements.insert(
-            format!("files/by dir/{dir}/"),
-            measurement(count as f64, Direction::Neutral),
-        );
+        measurements.insert(format!("files/by dir/{dir}/"), measurement(count as f64));
     }
 
     // Lines
-    measurements.insert(
-        "lines".to_string(),
-        measurement(counts.lines as f64, Direction::Neutral),
-    );
+    measurements.insert("lines".to_string(), measurement(counts.lines as f64));
     for (ext, count) in counts.lines_by_ext {
         measurements.insert(
             format!("lines/by extension/{ext}"),
-            measurement(count as f64, Direction::Neutral),
+            measurement(count as f64),
         );
     }
     for (dir, count) in counts.lines_by_dir {
-        measurements.insert(
-            format!("lines/by dir/{dir}/"),
-            measurement(count as f64, Direction::Neutral),
-        );
+        measurements.insert(format!("lines/by dir/{dir}/"), measurement(count as f64));
     }
 
     // Todos
-    measurements.insert(
-        "todos".to_string(),
-        measurement(counts.todos as f64, Direction::LessIsBetter),
-    );
+    measurements.insert("todos".to_string(), measurement(counts.todos as f64));
     for (ext, count) in counts.todos_by_ext {
         measurements.insert(
             format!("todos/by extension/{ext}"),
-            measurement(count as f64, Direction::LessIsBetter),
+            measurement(count as f64),
         );
     }
     for (dir, count) in counts.todos_by_dir {
-        measurements.insert(
-            format!("todos/by dir/{dir}/"),
-            measurement(count as f64, Direction::LessIsBetter),
-        );
+        measurements.insert(format!("todos/by dir/{dir}/"), measurement(count as f64));
     }
 
     measurements

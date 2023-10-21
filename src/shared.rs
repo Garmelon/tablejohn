@@ -56,13 +56,7 @@ pub struct Measurement {
     pub value: f64,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub stddev: Option<f64>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub direction: Option<Direction>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
