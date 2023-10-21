@@ -57,7 +57,7 @@ class Folder {
     }
 }
 
-export function update(div: HTMLElement, metrics: string[]) {
+export function updateMetricsDiv(div: HTMLElement, metrics: string[]) {
     let folder = new Folder();
     for (let metric of metrics) {
         folder.add(metric);

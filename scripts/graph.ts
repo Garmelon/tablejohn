@@ -1,5 +1,5 @@
-import * as metrics from "./graph/metrics.js";
 import { Requests } from "./graph/requests.js";
+import { State } from "./graph/state.js";
 
 import uPlot from "./uPlot.js";
 
@@ -122,16 +122,10 @@ const COLORS = [
 // Initialization
 
 const plot_div = document.getElementById("plot")!;
-const metrics_div = document.getElementById("metrics")!;
+const metricsDiv = document.getElementById("metrics")!;
 let plot: uPlot | null = null;
 
 let requests = new Requests();
+let state = new State(requests, metricsDiv);
 
-async function init() {
-    let response = await requests.get_metrics();
-    console.log("Metrics:", response);
-    if (response !== null) {
-        metrics.update(metrics_div, response.metrics);
-    }
-}
-init();
+state.update();
