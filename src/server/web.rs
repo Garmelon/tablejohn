@@ -8,6 +8,7 @@ mod r#static;
 
 use axum::{extract::DefaultBodyLimit, routing::get, Router};
 use axum_extra::routing::RouterExt;
+use log::info;
 
 use crate::somehow;
 
@@ -66,7 +67,9 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .fallback(get(r#static::static_handler))
         .with_state(server.clone());
 
-    axum::Server::bind(&server.config.web_address)
+    let addr = &server.config.web_address;
+    info!("Launching web server at http://{}", addr);
+    axum::Server::bind(addr)
         .serve(app.into_make_service())
         .await?;
 
