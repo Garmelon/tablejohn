@@ -1,3 +1,6 @@
+import * as metrics from "./graph/metrics.js";
+import { Requests } from "./graph/requests.js";
+
 import uPlot from "./uPlot.js";
 
 /*
@@ -116,76 +119,19 @@ const COLORS = [
     "#000000", // Black
 ];
 
-interface GraphData {
-    hashes: string[];
-    times: number[];
-    measurements: { [key: string]: (number | null)[]; };
-}
-
-function update_plot_with_data(data: GraphData) {
-    let series: uPlot.Series[] = [{}];
-    let values: uPlot.AlignedData = [data.times];
-
-    for (const [i, metric] of Object.keys(data.measurements).sort().entries()) {
-        series.push({
-            label: metric,
-            spanGaps: true,
-            stroke: COLORS[i % COLORS.length],
-        });
-        values.push(data.measurements[metric]!);
-    }
-
-    const opts: uPlot.Options = {
-        title: "Measurements",
-        width: 600,
-        height: 400,
-        series,
-    };
-
-    plot?.destroy();
-    plot = new uPlot(opts, values, plot_div);
-}
-
-async function update_plot_with_metrics(metrics: string[]) {
-    const url = "data?" + new URLSearchParams(metrics.map(m => ["metric", m]));
-    const response = await fetch(url);
-    const data: GraphData = await response.json();
-    update_plot_with_data(data);
-}
-
-function find_selected_metrics(): string[] {
-    const inputs = metrics_div.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
-
-    let metrics: string[] = [];
-    for (const input of inputs) {
-        if (input.checked) {
-            metrics.push(input.name);
-        }
-    }
-    return metrics;
-};
-
-async function update_plot() {
-    const metrics = find_selected_metrics();
-    if (metrics.length > 0) {
-        await update_plot_with_metrics(metrics);
-    } else {
-        update_plot_with_data({
-            hashes: [],
-            times: [],
-            measurements: {},
-        });
-    }
-}
-
 // Initialization
 
 const plot_div = document.getElementById("plot")!;
 const metrics_div = document.getElementById("metrics")!;
 let plot: uPlot | null = null;
 
-for (const input of metrics_div.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')) {
-    input.addEventListener("change", update_plot);
-}
+let requests = new Requests();
 
-update_plot();
+async function init() {
+    let response = await requests.get_metrics();
+    console.log("Metrics:", response);
+    if (response !== null) {
+        metrics.update(metrics_div, response.metrics);
+    }
+}
+init();

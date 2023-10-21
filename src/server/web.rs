@@ -26,7 +26,7 @@ use self::{
     },
     pages::{
         commit::get_commit_by_hash,
-        graph::{get_graph, get_graph_data},
+        graph::{get_graph, get_graph_data, get_graph_metrics},
         index::get_index,
         queue::{get_queue, get_queue_delete, get_queue_inner},
         run::get_run_by_id,
@@ -49,6 +49,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .typed_get(get_commit_by_hash)
         .typed_get(get_graph)
         .typed_get(get_graph_data)
+        .typed_get(get_graph_metrics)
         .typed_get(get_index)
         .typed_get(get_queue)
         .typed_get(get_queue_delete)
