@@ -103,8 +103,12 @@ impl Workers {
 
     pub fn should_abort_work(&self, name: &str, queue: &[String]) -> bool {
         // A worker should abort work if...
-        let Some(info) = self.workers.get(name) else { return false; };
-        let WorkerStatus::Working (run) = &info.status else { return false; };
+        let Some(info) = self.workers.get(name) else {
+            return false;
+        };
+        let WorkerStatus::Working(run) = &info.status else {
+            return false;
+        };
 
         // The commit isn't in the queue
         if !queue.contains(&run.hash) {

@@ -86,13 +86,17 @@ impl Worker {
     async fn perform_run(&self, server: &Server) -> bool {
         // Request run
         let guard = server.status_lock.lock().await;
-        let Some(run) = self.request_run(server).await else { return false; };
+        let Some(run) = self.request_run(server).await else {
+            return false;
+        };
         let run = RunInProgress::new(server.name.clone(), server.server_config, run);
         *server.current_run.lock().unwrap() = Some(run.clone());
         drop(guard);
 
         // Perform run
-        let Some(run) = run.perform(server).await else { return false; };
+        let Some(run) = run.perform(server).await else {
+            return false;
+        };
 
         // Submit run
         let guard = server.status_lock.lock().await;

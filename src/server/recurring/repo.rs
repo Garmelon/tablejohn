@@ -175,7 +175,9 @@ async fn update_refs(conn: &mut SqliteConnection, refs: Vec<Reference>) -> someh
     // Add new refs and update existing refs
     for reference in refs {
         let name = reference.name.to_string();
-        let Some(hash) = reference.peeled else { continue; };
+        let Some(hash) = reference.peeled else {
+            continue;
+        };
         let hash = hash.to_string();
 
         sqlx::query!(
@@ -195,7 +197,9 @@ async fn update_refs(conn: &mut SqliteConnection, refs: Vec<Reference>) -> someh
 }
 
 async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> somehow::Result<()> {
-    let Some(head) = repo.head_ref()? else { return Ok(()); };
+    let Some(head) = repo.head_ref()? else {
+        return Ok(());
+    };
     let name = head.inner.name.to_string();
     sqlx::query!("UPDATE refs SET tracked = true WHERE name = ?", name)
         .execute(conn)
