@@ -122,7 +122,7 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
         );
     }
     for (dir, count) in counts.files_by_dir {
-        measurements.insert(format!("files/by dir/{dir}/"), measurement(count as f64));
+        measurements.insert(format!("files/by dir/{dir}"), measurement(count as f64));
     }
 
     // Lines
@@ -134,7 +134,7 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
         );
     }
     for (dir, count) in counts.lines_by_dir {
-        measurements.insert(format!("lines/by dir/{dir}/"), measurement(count as f64));
+        measurements.insert(format!("lines/by dir/{dir}"), measurement(count as f64));
     }
 
     // Todos
@@ -146,7 +146,7 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
         );
     }
     for (dir, count) in counts.todos_by_dir {
-        measurements.insert(format!("todos/by dir/{dir}/"), measurement(count as f64));
+        measurements.insert(format!("todos/by dir/{dir}"), measurement(count as f64));
     }
 
     measurements
