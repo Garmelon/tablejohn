@@ -4,16 +4,16 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.72"
-askama = { version = "0.12.0", features = ["with-axum"] }
+anyhow = "1.0.75"
+askama = { version = "0.12.1", features = ["with-axum"] }
 askama_axum = "0.3.0"
-axum = { version = "0.6.19", features = ["macros", "headers"] }
-axum-extra = { version = "0.7.7", features = ["typed-routing", "query"] }
-bytes = "1.4.0"
-clap = { version = "4.3.19", features = ["derive", "deprecated"] }
+axum = { version = "0.6.20", features = ["macros", "headers"] }
+axum-extra = { version = "0.8.0", features = ["typed-routing", "query"] }
+bytes = "1.5.0"
+clap = { version = "4.4.6", features = ["derive", "deprecated"] }
 directories = "5.0.1"
 env_logger = "0.10.0"
-flate2 = "1.0.26"
+flate2 = "1.0.28"
 futures = "0.3.28"
 gethostname = "0.4.3"
 humantime = "2.1.0"
@@ -21,36 +21,36 @@ log = "0.4.20"
 mime_guess = "2.0.4"
 open = "5.0.0"
 rand = "0.8.5"
-regex = "1.9.3"
-rust-embed = { version = "6.8.1", features = ["interpolate-folder-path"] }
-serde = { version = "1.0.181", features = ["derive"] }
+regex = "1.10.2"
+rust-embed = { version = "8.0.0", features = ["interpolate-folder-path"] }
+serde = { version = "1.0.189", features = ["derive"] }
 serde-humanize-rs = "0.1.1"
 serde_repr = "0.1.16"
-sqlx = { version = "0.7.1", features = ["runtime-tokio", "sqlite", "time"] }
+sqlx = { version = "0.7.2", features = ["runtime-tokio", "sqlite", "time"] }
 tar = { version = "0.4.40", default-features = false }
-tempfile = "3.7.1"
-tokio = { version = "1.29.1", features = ["full"] }
+tempfile = "3.8.0"
+tokio = { version = "1.33.0", features = ["full"] }
 tokio-stream = "0.1.14"
-toml = "0.7.6"
-walkdir = "2.3.3"
+toml = "0.8.2"
+walkdir = "2.4.0"
 
 [dependencies.gix]
-version = "0.51.0"
+version = "0.55.2"
 default-features = false
-features = ["max-performance-safe", "worktree-stream"]
+features = ["max-performance-safe", "revision", "worktree-stream"]
 
 [dependencies.reqwest]
-version = "0.11.18"
+version = "0.11.22"
 default-features = false
 features = ["json", "stream", "rustls-tls-native-roots"]
 
 [dependencies.time]
-version = "0.3.25"
+version = "0.3.30"
 features = ["formatting", "parsing", "macros", "serde-human-readable"]
 
 [build-dependencies]
-vergen = { version = "8.2.4", features = ["git", "gitcl"] }
-walkdir = "2.3.3"
+vergen = { version = "8.2.5", features = ["git", "gitcl"] }
+walkdir = "2.4.0"
 
 [profile.dev.package.sqlx-macros]
 opt-level = 3
