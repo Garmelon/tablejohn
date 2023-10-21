@@ -167,7 +167,7 @@ pub async fn post_api_worker_status(
     let (work, abort_work) = {
         let mut guard = workers.lock().unwrap();
         guard.clean();
-        if !guard.verify(&name, &request.secret) {
+        if !guard.verify_secret(&name, &request.secret) {
             return Ok((StatusCode::UNAUTHORIZED, "invalid secret").into_response());
         }
         guard.update(

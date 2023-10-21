@@ -47,9 +47,15 @@ impl Workers {
         self
     }
 
-    pub fn verify(&self, name: &str, secret: &str) -> bool {
-        let Some(worker) = self.workers.get(name) else { return true; };
-        worker.secret == secret
+    pub fn verify_secret(&self, name: &str, secret: &str) -> bool {
+        if let Some(worker) = self.workers.get(name) {
+            worker.secret == secret
+        } else {
+            // The per-worker secret exists to prevent two workers from using
+            // the same name at the same time (likely a misconfiguration). Since
+            // we don't know a worker under this name yet, any secret is valid.
+            true
+        }
     }
 
     pub fn update(&mut self, name: String, info: WorkerInfo) {
