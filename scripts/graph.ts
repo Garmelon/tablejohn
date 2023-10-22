@@ -1,3 +1,6 @@
+import { Metrics } from "./graph/metrics.js";
+import { State } from "./graph/state.js";
+
 import uPlot from "./uPlot.js";
 
 /*
@@ -120,4 +123,10 @@ const COLORS = [
 
 const plotDiv = document.getElementById("plot")!;
 const metricsDiv = document.getElementById("metrics")!;
-let plot: uPlot | null = null;
+
+const metrics = new Metrics(metricsDiv);
+const state = new State(metrics);
+state.update();
+
+// For debugging
+(window as any).state = state;

@@ -1,40 +1,67 @@
-import { updateMetricsDiv } from "./metrics.js";
-import { MetricsResponse, getMetrics } from "./requests.js";
+import { Metrics } from "./metrics.js";
+import { getMetrics } from "./requests.js";
 
 export class State {
-    #metricsDiv: HTMLElement;
+    #latestGraphId: number = -Infinity;
+    #latestDataId: number = -Infinity;
 
-    #updating: boolean = false;
-    #metrics: MetricsResponse | null = null;
+    #metrics: Metrics;
 
-    constructor(metricsDiv: HTMLElement) {
-        this.#metricsDiv = metricsDiv;
+    #requestingNewMetrics: boolean = false;
+
+    // commits (with graph id and data id)
+    // raw measurements (with graph id and data id)
+    // processed measurements (with graph id and data id)
+
+    constructor(metrics: Metrics) {
+        this.#metrics = metrics;
     }
 
     /**
-     * Look at current state and try to change it so that it represents what the
-     * user wants.
+     * Update state and plot and request new data if necessary. Tries to match
+     * the user's wishes as closely as possible.
      *
      * This function is idempotent.
      */
-    async update() {
-        if (this.#updating) {
-            return;
+    update() {
+        // TODO Invalidate and update data
+        // TODO Update graph
+        this.#requestDataWhereNecessary();
+    }
+
+    //////////////////////////////////
+    // Requesting and updating data //
+    //////////////////////////////////
+
+    #updateDataId(dataId: number) {
+        if (dataId > this.#latestDataId) {
+            this.#latestDataId = dataId;
         }
+    }
+
+    #updateGraphId(graphId: number) {
+        if (graphId > this.#latestGraphId) {
+            this.#latestGraphId = graphId;
+        }
+    }
+
+    #requestDataWhereNecessary() {
+        if (this.#metrics.requiresUpdate(this.#latestDataId)) {
+            this.#requestMetrics();
+        }
+    }
+
+    async #requestMetrics() {
+        if (this.#requestingNewMetrics) return;
+        console.log("Requesting new metrics");
         try {
-            await this.#update_impl();
+            this.#requestingNewMetrics = true;
+            const response = await getMetrics();
+            this.#updateDataId(response.dataId);
+            this.#metrics.update(response);
+            this.update();
         } finally {
-            this.#updating = false;
+            this.#requestingNewMetrics = false;
         }
-    }
-
-    async #update_impl() {
-        this.#update_metrics();
-    }
-
-    async #update_metrics() {
-        this.#metrics = await getMetrics();
-        if (this.#metrics === null) { return; }
-        updateMetricsDiv(this.#metricsDiv, this.#metrics.metrics);
     }
 }

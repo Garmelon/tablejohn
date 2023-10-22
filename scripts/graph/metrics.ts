@@ -1,3 +1,4 @@
+import { MetricsResponse } from "./requests.js";
 import { el } from "./util.js";
 
 class Folder {
@@ -57,12 +58,50 @@ class Folder {
     }
 }
 
-export function updateMetricsDiv(div: HTMLElement, metrics: string[]) {
-    let folder = new Folder();
-    for (let metric of metrics) {
-        folder.add(metric);
+export class Metrics {
+    #div: HTMLElement;
+    #dataId: number | null = null;
+
+    constructor(div: HTMLElement) {
+        this.#div = div;
     }
 
-    div.textContent = ""; // Remove children
-    div.append(folder.childrenToHtmlElements());
+    getSelected(): Set<string> {
+        const selected = new Set<string>();
+
+        const checkedInputs = this.#div.querySelectorAll<HTMLInputElement>("input:checked");
+        for (const input of checkedInputs) {
+            selected.add(input.name);
+        }
+
+        return selected;
+    }
+
+    requiresUpdate(dataId: number): boolean {
+        // At the moment, updating the metrics results in all <details> tags
+        // closing again. To prevent this (as it can be frustrating if you've
+        // navigated deep into the metrics hierarchy), we never require updates
+        // after the initial update.
+        return this.#dataId === null;
+        // return this.#dataId === null || this.#dataId < dataId;
+    }
+
+    update(response: MetricsResponse) {
+        const selected = this.getSelected();
+
+        const folder = new Folder();
+        for (const metric of response.metrics) {
+            folder.add(metric);
+        }
+
+        this.#div.textContent = ""; // Remove children
+        this.#div.append(folder.childrenToHtmlElements());
+
+        const inputs = this.#div.querySelectorAll<HTMLInputElement>("input");
+        for (const input of inputs) {
+            input.checked = selected.has(input.name);
+        }
+
+        this.#dataId = response.dataId;
+    }
 }
