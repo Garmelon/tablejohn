@@ -1,20 +1,16 @@
-mod util;
-
 use std::collections::HashMap;
 
 use askama::Template;
 use axum::{extract::State, response::IntoResponse, Json};
 use axum_extra::extract::Query;
-use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
-use sqlx::{Acquire, SqlitePool};
-use time::OffsetDateTime;
+use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
     server::web::{
         base::{Base, Link, Tab},
-        paths::{PathGraph, PathGraphData, PathGraphMetrics},
+        paths::{PathGraph, PathGraphCommits, PathGraphMeasurements, PathGraphMetrics},
         r#static::{GRAPH_JS, UPLOT_CSS},
     },
     somehow,
@@ -41,7 +37,9 @@ pub async fn get_graph(
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct MetricsResponse {
+    data_id: i64,
     metrics: Vec<String>,
 }
 
@@ -54,139 +52,59 @@ pub async fn get_graph_metrics(
             .fetch_all(&db)
             .await?;
 
-    Ok(Json(MetricsResponse { metrics }))
+    Ok(Json(MetricsResponse {
+        data_id: 0, // TODO Implement
+        metrics,
+    }))
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CommitsResponse {
+    graph_id: i64,
+    hash_by_hash: Vec<String>,
+    author_by_hash: Vec<String>,
+    committer_date_by_hash: Vec<i64>,
+    message_by_hash: Vec<String>,
+    parents_by_hash: Vec<Vec<String>>,
+}
+
+pub async fn get_graph_commits(
+    _path: PathGraphCommits,
+    State(db): State<SqlitePool>,
+) -> somehow::Result<impl IntoResponse> {
+    Ok(Json(CommitsResponse {
+        graph_id: 0,                    // TODO Implement
+        hash_by_hash: vec![],           // TODO Implement
+        author_by_hash: vec![],         // TODO Implement
+        committer_date_by_hash: vec![], // TODO Implement
+        message_by_hash: vec![],        // TODO Implement
+        parents_by_hash: vec![],        // TODO Implement
+    }))
 }
 
 #[derive(Deserialize)]
-pub struct QueryGraphData {
+pub struct QueryGraphMeasurements {
     #[serde(default)]
     metric: Vec<String>,
 }
 
 #[derive(Serialize)]
-struct GraphData {
-    hashes: Vec<String>,
-    parents: HashMap<usize, Vec<usize>>,
-    times: Vec<i64>,
-
-    // TODO f32 for smaller transmission size?
-    measurements: HashMap<String, Vec<Option<f64>>>,
+#[serde(rename_all = "camelCase")]
+struct MeasurementsResponse {
+    graph_id: i64,
+    data_id: i64,
+    measurements: HashMap<String, Vec<f64>>,
 }
 
-pub async fn get_graph_data(
-    _path: PathGraphData,
+pub async fn get_graph_measurements(
+    _path: PathGraphMeasurements,
     State(db): State<SqlitePool>,
-    Query(form): Query<QueryGraphData>,
+    Query(form): Query<QueryGraphMeasurements>,
 ) -> somehow::Result<impl IntoResponse> {
-    let mut tx = db.begin().await?;
-    let conn = tx.acquire().await?;
-
-    // The SQL queries that return one result per commit *must* return the same
-    // amount of rows in the same order!
-
-    // TODO Limit by date or amount
-
-    let mut unsorted_hashes = Vec::<String>::new();
-    let mut times_by_hash = HashMap::<String, i64>::new();
-    let mut rows = sqlx::query!(
-        "\
-        SELECT \
-            hash, \
-            committer_date AS \"time: OffsetDateTime\" \
-        FROM commits \
-        WHERE reachable = 2 \
-        ORDER BY hash ASC \
-        "
-    )
-    .fetch(&mut *conn);
-    while let Some(row) = rows.next().await {
-        let row = row?;
-        unsorted_hashes.push(row.hash.clone());
-        times_by_hash.insert(row.hash, row.time.unix_timestamp());
-    }
-    drop(rows);
-
-    let parent_child_pairs = sqlx::query!(
-        "\
-        SELECT parent, child \
-        FROM commit_links \
-        JOIN commits ON hash = parent \
-        WHERE reachable = 2 \
-        ORDER BY parent ASC, child ASC \
-        "
-    )
-    .fetch(&mut *conn)
-    .map_ok(|r| (r.parent, r.child))
-    .try_collect::<Vec<_>>()
-    .await?;
-
-    let mut hashes = util::sort_topologically(&unsorted_hashes, &parent_child_pairs);
-    hashes.sort_by_key(|hash| times_by_hash[hash]);
-
-    let sorted_hash_indices = hashes
-        .iter()
-        .cloned()
-        .enumerate()
-        .map(|(i, hash)| (hash, i))
-        .collect::<HashMap<_, _>>();
-
-    let mut parents = HashMap::<usize, Vec<usize>>::new();
-    for (parent, child) in &parent_child_pairs {
-        if let Some(parent_idx) = sorted_hash_indices.get(parent) {
-            if let Some(child_idx) = sorted_hash_indices.get(child) {
-                parents.entry(*parent_idx).or_default().push(*child_idx);
-            }
-        }
-    }
-
-    // Collect times
-    let times = hashes
-        .iter()
-        .map(|hash| times_by_hash[hash])
-        .collect::<Vec<_>>();
-
-    // permutation[unsorted_index] = sorted_index
-    let permutation = unsorted_hashes
-        .iter()
-        .map(|hash| sorted_hash_indices[hash])
-        .collect::<Vec<_>>();
-
-    // Collect and permutate measurements
-    let mut measurements = HashMap::new();
-    for metric in form.metric {
-        let mut values = vec![None; hashes.len()];
-        let mut rows = sqlx::query_scalar!(
-            "\
-            WITH \
-            measurements AS ( \
-                SELECT hash, value, MAX(start) \
-                FROM runs \
-                JOIN run_measurements USING (id) \
-                WHERE metric = ? \
-                GROUP BY hash \
-            ) \
-            SELECT value \
-            FROM commits \
-            LEFT JOIN measurements USING (hash) \
-            WHERE reachable = 2 \
-            ORDER BY hash ASC \
-            ",
-            metric,
-        )
-        .fetch(&mut *conn)
-        .enumerate();
-        while let Some((i, value)) = rows.next().await {
-            values[permutation[i]] = value?;
-        }
-        drop(rows);
-
-        measurements.insert(metric, values);
-    }
-
-    Ok(Json(GraphData {
-        hashes,
-        parents,
-        times,
-        measurements,
+    Ok(Json(MeasurementsResponse {
+        graph_id: 0,                  // TODO Implement
+        data_id: 0,                   // TODO Implement
+        measurements: HashMap::new(), // TODO Implement
     }))
 }

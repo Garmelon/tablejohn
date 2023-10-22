@@ -1,15 +1,13 @@
 import { updateMetricsDiv } from "./metrics.js";
-import { Requests, MetricsResponse } from "./requests.js";
+import { MetricsResponse, getMetrics } from "./requests.js";
 
 export class State {
-    #requests: Requests;
     #metricsDiv: HTMLElement;
 
     #updating: boolean = false;
     #metrics: MetricsResponse | null = null;
 
-    constructor(requests: Requests, metricsDiv: HTMLElement) {
-        this.#requests = requests;
+    constructor(metricsDiv: HTMLElement) {
         this.#metricsDiv = metricsDiv;
     }
 
@@ -35,7 +33,7 @@ export class State {
     }
 
     async #update_metrics() {
-        this.#metrics = await this.#requests.get_metrics();
+        this.#metrics = await getMetrics();
         if (this.#metrics === null) { return; }
         updateMetricsDiv(this.#metricsDiv, this.#metrics.metrics);
     }

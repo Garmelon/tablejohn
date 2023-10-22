@@ -1,6 +1,3 @@
-import { Requests } from "./graph/requests.js";
-import { State } from "./graph/state.js";
-
 import uPlot from "./uPlot.js";
 
 /*
@@ -121,11 +118,6 @@ const COLORS = [
 
 // Initialization
 
-const plot_div = document.getElementById("plot")!;
+const plotDiv = document.getElementById("plot")!;
 const metricsDiv = document.getElementById("metrics")!;
 let plot: uPlot | null = null;
-
-let requests = new Requests();
-let state = new State(requests, metricsDiv);
-
-state.update();

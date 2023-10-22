@@ -18,8 +18,12 @@ pub struct PathGraph {}
 pub struct PathGraphMetrics {}
 
 #[derive(Deserialize, TypedPath)]
-#[typed_path("/graph/data")]
-pub struct PathGraphData {}
+#[typed_path("/graph/commits")]
+pub struct PathGraphCommits {}
+
+#[derive(Deserialize, TypedPath)]
+#[typed_path("/graph/measurements")]
+pub struct PathGraphMeasurements {}
 
 #[derive(Deserialize, TypedPath)]
 #[typed_path("/queue/")]
