@@ -3,15 +3,19 @@ use std::collections::HashMap;
 use askama::Template;
 use axum::{extract::State, response::IntoResponse, Json};
 use axum_extra::extract::Query;
+use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::{Acquire, SqlitePool};
 
 use crate::{
     config::ServerConfig,
-    server::web::{
-        base::{Base, Link, Tab},
-        paths::{PathGraph, PathGraphCommits, PathGraphMeasurements, PathGraphMetrics},
-        r#static::{GRAPH_JS, UPLOT_CSS},
+    server::{
+        util,
+        web::{
+            base::{Base, Link, Tab},
+            paths::{PathGraph, PathGraphCommits, PathGraphMeasurements, PathGraphMetrics},
+            r#static::{GRAPH_JS, UPLOT_CSS},
+        },
     },
     somehow,
 };
@@ -65,21 +69,82 @@ struct CommitsResponse {
     hash_by_hash: Vec<String>,
     author_by_hash: Vec<String>,
     committer_date_by_hash: Vec<i64>,
-    message_by_hash: Vec<String>,
-    parents_by_hash: Vec<Vec<usize>>,
+    summary_by_hash: Vec<String>,
+    child_parent_index_pairs: Vec<(usize, usize)>,
 }
 
 pub async fn get_graph_commits(
     _path: PathGraphCommits,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
+    let mut tx = db.begin().await?;
+    let conn = tx.acquire().await?;
+
+    let mut hash_by_hash = vec![];
+    let mut author_by_hash = vec![];
+    let mut committer_date_by_hash = vec![];
+    let mut summary_by_hash = vec![];
+    let mut child_parent_index_pairs = vec![];
+
+    // Fetch main commit info
+    let mut rows = sqlx::query!(
+        "\
+        SELECT \
+            hash, \
+            author, \
+            committer_date AS \"committer_date: time::OffsetDateTime\", \
+            message \
+        FROM commits \
+        WHERE reachable = 2 \
+        ORDER BY hash ASC \
+        "
+    )
+    .fetch(&mut *conn);
+    while let Some(row) = rows.try_next().await? {
+        hash_by_hash.push(row.hash);
+        author_by_hash.push(row.author);
+        committer_date_by_hash.push(row.committer_date.unix_timestamp());
+        summary_by_hash.push(util::format_commit_summary(&row.message));
+    }
+    drop(rows);
+
+    // Map from hash to index in "by hash" order
+    let index_of_hash = hash_by_hash
+        .iter()
+        .cloned()
+        .enumerate()
+        .map(|(idx, hash)| (hash, idx))
+        .collect::<HashMap<_, _>>();
+
+    // Fetch parent info
+    let mut rows = sqlx::query!(
+        "\
+        SELECT child, parent \
+        FROM commit_links \
+        JOIN commits ON hash = child \
+        WHERE reachable = 2 \
+        ORDER BY hash ASC \
+        "
+    )
+    .fetch(&mut *conn);
+    while let Some(row) = rows.try_next().await? {
+        // The child is tracked and must thus be in our map.
+        let child_index = *index_of_hash.get(&row.child).unwrap();
+
+        // The parent of a tracked commit must also be tracked.
+        let parent_index = *index_of_hash.get(&row.parent).unwrap();
+
+        child_parent_index_pairs.push((child_index, parent_index));
+    }
+    drop(rows);
+
     Ok(Json(CommitsResponse {
-        graph_id: 0,                    // TODO Implement
-        hash_by_hash: vec![],           // TODO Implement
-        author_by_hash: vec![],         // TODO Implement
-        committer_date_by_hash: vec![], // TODO Implement
-        message_by_hash: vec![],        // TODO Implement
-        parents_by_hash: vec![],        // TODO Implement
+        graph_id: 0, // TODO Implement
+        hash_by_hash,
+        author_by_hash,
+        committer_date_by_hash,
+        summary_by_hash,
+        child_parent_index_pairs,
     }))
 }
 

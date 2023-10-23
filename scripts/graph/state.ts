@@ -1,15 +1,17 @@
+import { Commits } from "./commits.js";
 import { Metrics } from "./metrics.js";
-import { getMetrics } from "./requests.js";
+import { getCommits, getMetrics } from "./requests.js";
 
 export class State {
     #latestGraphId: number = -Infinity;
     #latestDataId: number = -Infinity;
 
     #metrics: Metrics;
+    #commits: Commits = new Commits();
 
-    #requestingNewMetrics: boolean = false;
+    #requestingMetrics: boolean = false;
+    #requestingCommits: boolean = false;
 
-    // commits (with graph id and data id)
     // raw measurements (with graph id and data id)
     // processed measurements (with graph id and data id)
 
@@ -49,19 +51,37 @@ export class State {
         if (this.#metrics.requiresUpdate(this.#latestDataId)) {
             this.#requestMetrics();
         }
+
+        if (this.#commits.requiresUpdate(this.#latestGraphId)) {
+            this.#requestCommits();
+        }
     }
 
     async #requestMetrics() {
-        if (this.#requestingNewMetrics) return;
-        console.log("Requesting new metrics");
+        if (this.#requestingMetrics) return;
+        console.log("Requesting metrics");
         try {
-            this.#requestingNewMetrics = true;
+            this.#requestingMetrics = true;
             const response = await getMetrics();
             this.#updateDataId(response.dataId);
             this.#metrics.update(response);
             this.update();
         } finally {
-            this.#requestingNewMetrics = false;
+            this.#requestingMetrics = false;
+        }
+    }
+
+    async #requestCommits() {
+        if (this.#requestingCommits) return;
+        console.log("Requesting commits");
+        try {
+            this.#requestingCommits = true;
+            const response = await getCommits();
+            this.#updateGraphId(response.graphId);
+            this.#commits.update(response);
+            this.update();
+        } finally {
+            this.#requestingCommits = false;
         }
     }
 }

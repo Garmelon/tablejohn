@@ -14,8 +14,8 @@ export type CommitsResponse = {
     hashByHash: string[];
     authorByHash: string[];
     committerDateByHash: number[];
-    messageByHash: string[];
-    parentsByHash: number[][];
+    summaryByHash: string[];
+    childParentIndexPairs: [number, number][];
 };
 
 /**

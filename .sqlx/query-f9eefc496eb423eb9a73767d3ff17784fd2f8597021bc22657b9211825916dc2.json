@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT child, parent FROM commit_links JOIN commits ON hash = child WHERE reachable = 2 ORDER BY hash ASC ",
+  "describe": {
+    "columns": [
+      {
+        "name": "child",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "parent",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "f9eefc496eb423eb9a73767d3ff17784fd2f8597021bc22657b9211825916dc2"
+}
