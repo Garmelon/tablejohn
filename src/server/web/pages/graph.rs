@@ -66,7 +66,7 @@ struct CommitsResponse {
     author_by_hash: Vec<String>,
     committer_date_by_hash: Vec<i64>,
     message_by_hash: Vec<String>,
-    parents_by_hash: Vec<Vec<String>>,
+    parents_by_hash: Vec<Vec<usize>>,
 }
 
 pub async fn get_graph_commits(
