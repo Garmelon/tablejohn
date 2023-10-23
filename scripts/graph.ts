@@ -12,30 +12,30 @@ The graph should be fast. This requires a bit of careful thinking around data
 formats and resource usage.
 
 My plan is to get as far as possible without any sort of pagination or range
-limits. The plot should always display data for the repo's entire history
-(unless zoomed in). This will force me to optimize the entire pipeline. If
-the result is not fast enough, I can still add in range limits.
+limits. The graph should always display data for the repo's entire history
+(unless zoomed in). This will force me to optimize the entire pipeline. If the
+result is not fast enough, I can still add in range limits.
 
 uPlot is pretty fast at rendering large amounts of data points. It should be
-able to handle medium-sized git repos (tens of thousands of commits)
-displaying multiple metrics with no issues. The issue now becomes retrieving
-the data from the server.
+able to handle medium-sized git repos (tens of thousands of commits) displaying
+multiple metrics with no issues. The issue now becomes retrieving the data from
+the server.
 
-Since the graph should support thousands of metrics, it can't simply fetch
-all values for all metrics upfront. Instead, it must fetch metrics as the
-user selects them. It follows that when fetching a metric,
+Since the graph should support thousands of metrics, it can't simply fetch all
+values for all metrics upfront. Instead, it must fetch metrics as the user
+selects them. It follows that when fetching a metric,
 
 1. the server should have little work to do,
 2. the amount of data sent over the network should be small, and
 3. the client should have little work to do.
 
-The costs when initially loading the graph may be higher since it happens
-less frequently. We can fetch some more data and do some preprocessing to
-improve performance while interacting with the graph.
+The costs when initially loading the graph may be higher since it happens less
+frequently. We can fetch some more data and do some preprocessing to improve
+performance while interacting with the graph.
 
-Since we fetch data across multiple requests, we need some way to detect if
-all the data we have is consistent (at least in cases where things might
-otherwise break).
+Since we fetch data across multiple requests, we need some way to detect if all
+the data we have is consistent (at least in cases where things might otherwise
+break).
 
 Implementation
 ==============
@@ -49,7 +49,8 @@ The data for the graph consists of three main parts:
 Data consistency
 ----------------
 
-Each response by the server includes a graph id and a data id.
+Responses by the server include a graph id (for 2. and 3.) and a data id (for 1.
+and 3.).
 
 The graph id is incremented when the commit graph structure changes. Responses
 to 2. and 3. MUST have the same graph id. When they don't, the client must
@@ -67,7 +68,7 @@ Data flow
 │ /graph/metrics │   │ /graph/measurements │    │ /graph/commits │
 └──┬─────────────┘   └──┬──────────────────┘    └──────────┬─────┘
    │      Server        │                                  │
-───┼────────────────────┼─────────Requests─────────────────┼──────
+───┼────────────────────┼──────────────────────────────────┼──────
    │                    │                                  │
 ┌──▼─────┐    ┌─────────▼────┐  ┌─────────────────┐  ┌─────▼─────┐
 │ metric │    │ measurements │  │ permute by-hash ◄──┤commit info│
@@ -89,6 +90,26 @@ Data flow
 │  metric  │  │ day-equidistant ├──► plot │           UI
 │ selector │  │     checkbox    │  └──────┘
 └──────────┘  └─────────────────┘
+
+Commit orders
+-------------
+
+There are two main orders for commits in this implementation.
+
+The first order ("by hash") is simply sorting by commit hash. All data returned
+by the server is in this order. It easy for the server to retrieve data in this
+order, and the order is unambiguous.
+
+The second order ("by graph") is the order used to display commits in the graph.
+Points in the graph must be ordered in ascending order along the x axis or uPlot
+will produce graphical glitches. For this graph, the x value is either their
+exact committer time or, in day-equidistant mode, the committer day and a unique
+offset per commit in the same day.
+
+Multiple commits may share exactly the same committer time. To break such ties
+in day-equidistant mode, the commits are ordered in topological order. While
+this change is only relevant in day-equidistant mode, we can reuse the same
+ordering for both display modes, so this is also relevant to the normal mode.
 
 */
 
