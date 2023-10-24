@@ -1,4 +1,5 @@
-import { CommitsResponse } from "./requests";
+import { CommitsResponse } from "./requests.js";
+import { SECONDS_PER_DAY } from "./util.js";
 
 type Commit = {
     indexByHash: number;
@@ -14,6 +15,8 @@ type Commit = {
 export class Commits {
     #graphId: number | null = null;
     #commitsByGraph: Commit[] = [];
+    #committerDatesNormal: Date[] = [];
+    #committerDatesDayEquidistant: Date[] = [];
 
     requiresUpdate(graphId: number): boolean {
         return this.#graphId === null || this.#graphId < graphId;
@@ -33,8 +36,15 @@ export class Commits {
             commit.indexByGraph = idx;
         }
 
+        const committerDatesNormal = commits.map(c => c.committerDate);
+        const committerDatesDayEquidistant = this.#makeDayEquidistant(committerDatesNormal);
+
+        // To prevent exceptions and other weirdness from messing up our state,
+        // we update everything in one go.
         this.#graphId = response.graphId;
         this.#commitsByGraph = commits;
+        this.#committerDatesNormal = this.#epochTimesToDates(committerDatesNormal);
+        this.#committerDatesDayEquidistant = this.#epochTimesToDates(committerDatesDayEquidistant);
     }
 
     #loadCommits(response: CommitsResponse): Commit[] {
@@ -112,5 +122,36 @@ export class Commits {
         console.assert(visiting.length === 0);
         console.assert(sorted.length === commits.length);
         return sorted;
+    }
+
+    /**
+     * Assumes the times are sorted.
+     */
+    #makeDayEquidistant(times: number[]): number[] {
+        const days: { day: number, amount: number; }[] = [];
+        for (const time of times) {
+            const day = time % SECONDS_PER_DAY;
+            const prev = days.at(-1);
+            if (prev === undefined || prev.day !== day) {
+                days.push({ day, amount: 1 });
+            } else {
+                prev.amount++;
+            }
+        }
+
+        const result: number[] = [];
+        for (const day of days) {
+            const secondsPerCommit = SECONDS_PER_DAY / day.amount;
+            for (let i = 0; i < day.amount; i++) {
+                const time = day.day * SECONDS_PER_DAY + secondsPerCommit * (i + 0.5);
+                result.push(time);
+            }
+        }
+
+        return result;
+    }
+
+    #epochTimesToDates(times: number[]): Date[] {
+        return times.map(t => new Date(1000 * t));
     }
 }

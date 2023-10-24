@@ -9,3 +9,5 @@ export function el(name: string, attributes: { [key: string]: string; }, ...chil
     element.append(...children);
     return element;
 }
+
+export const SECONDS_PER_DAY = 24 * 60 * 60;
