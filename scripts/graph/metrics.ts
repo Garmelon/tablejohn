@@ -95,7 +95,11 @@ export class Metrics {
         }
 
         this.#div.textContent = ""; // Remove children
-        this.#div.append(folder.childrenToHtmlElements());
+        if (folder.children.size == 0) {
+            this.#div.append("There aren't yet any metrics");
+        } else {
+            this.#div.append(folder.childrenToHtmlElements());
+        }
 
         const inputs = this.#div.querySelectorAll<HTMLInputElement>("input");
         for (const input of inputs) {
