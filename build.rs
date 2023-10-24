@@ -72,6 +72,7 @@ fn make_static_constants(static_out_dir: &Path, static_out_file: &Path) {
             .join("_")
             .to_uppercase();
         let path = format!("/{relative_path}?h={hash:x}");
+        definitions.push_str("#[allow(dead_code)]\n");
         definitions.push_str(&format!("pub const {name}: &str = {path:?};\n"));
     }
 
