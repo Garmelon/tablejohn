@@ -80,51 +80,37 @@ export class Commits {
      *
      * Assumes that there are no duplicated commits anywhere.
      *
-     * The algorithm used is a version of [Kahn's algorithm][0] that starts at the
-     * nodes with no parents. It uses a stack for the set of parentless nodes,
-     * meaning the resulting commit order is depth-first-y, not breadth-first-y.
-     * For example, this commit graph (where children are ordered top to bottom)
-     * results in the order `A, B, C, D, E, F` and not an interleaved order like
-     * `A, B, D, C, E, F` (which a queue would produce):
-     *
-     * ```text
-     * A - B - C
-     *  \       \
-     *   D - E - F
-     * ```
-     *
-     * [0]: https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
+     * A reverse post-order DFS is a topological sort, so that is what this
+     * function implements.
      */
     #sortCommitsTopologically(commits: Commit[]): Commit[] {
-        // Track which unvisited parents are left for each commit
-        const childParentMap: Map<string, Set<string>> = new Map();
-        for (const commit of commits) {
-            childParentMap.set(commit.hash, new Set(commit.parents.map(p => p.hash)));
-        }
-
-        // Stack of parentless commits
-        const parentless = commits.filter(c => c.parents.length == 0);
+        const visited: Set<string> = new Set();
+        const visiting: Commit[] = commits.filter(c => c.parents.length == 0);
 
         const sorted: Commit[] = [];
-        while (parentless.length > 0) {
-            // Visit commit
-            const commit = parentless.pop()!;
-            sorted.push(commit);
+
+        while (visiting.length > 0) {
+            const commit = visiting.at(-1)!;
+            if (visited.has(commit.hash)) {
+                visiting.pop();
+                sorted.push(commit);
+                continue;
+            }
 
             for (const child of commit.children) {
-                const parents = childParentMap.get(child.hash)!;
-                parents.delete(commit.hash);
-                if (parents.size == 0) {
-                    parentless.push(child);
+                if (!visited.has(child.hash)) {
+                    visiting.push(child);
                 }
             }
+
+            visited.add(commit.hash);
         }
 
-        for (const [child, parents] of childParentMap.entries()) {
-            console.assert(parents.size == 0, child, "still has parents");
-        }
-        console.assert(parentless.length == 0);
-        console.assert(commits.length == sorted.length, "topo sort changed commit amount");
+        sorted.reverse();
+
+        console.assert(visited.size === commits.length);
+        console.assert(visiting.length === 0);
+        console.assert(sorted.length === commits.length);
         return sorted;
     }
 }
