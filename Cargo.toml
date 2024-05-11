@@ -18,6 +18,7 @@ futures = "0.3.30"
 gethostname = "0.4.3"
 humantime = "2.1.0"
 log = "0.4.21"
+maud = { version = "0.26.0", features = ["axum"] }
 mime_guess = "2.0.4"
 open = "5.1.2"
 rand = "0.8.5"

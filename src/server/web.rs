@@ -31,6 +31,7 @@ use self::{
         index::get_index,
         queue::{get_queue, get_queue_delete, get_queue_inner},
         run::get_run_by_id,
+        test::get_test,
         worker::get_worker_by_name,
     },
 };
@@ -57,6 +58,7 @@ pub async fn run(server: Server) -> somehow::Result<()> {
         .typed_get(get_queue_delete)
         .typed_get(get_queue_inner)
         .typed_get(get_run_by_id)
+        .typed_get(get_test)
         .typed_get(get_worker_by_name)
         .typed_post(post_admin_queue_add)
         .typed_post(post_admin_queue_add_batch)

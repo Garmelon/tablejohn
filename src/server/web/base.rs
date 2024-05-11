@@ -1,5 +1,7 @@
 use std::fmt;
 
+use maud::{html, Markup, DOCTYPE};
+
 use crate::config::ServerConfig;
 
 use super::{
@@ -59,6 +61,33 @@ impl Base {
 
     pub fn link<P: fmt::Display>(&self, to: P) -> Link {
         Self::link_with_base(&self.web_base, to)
+    }
+
+    pub fn html(&self, title: &str, head: Markup, body: Markup) -> Markup {
+        html!(
+            (DOCTYPE)
+            html lang="en" {
+                head {
+                    meta charset="utf-8";
+                    meta name="viewport" content="width=device-width";
+                    title { (title) " - " (self.repo_name) }
+                    link rel="icon" href=(self.link_logo_svg);
+                    link rel="stylesheet" href=(self.link_base_css);
+                    (head)
+                }
+                body {
+                    nav {
+                        a .current[self.tab == "index"] href=(self.link_index) {
+                            img src=(self.link_logo_svg) alt="";
+                            (self.repo_name)
+                        }
+                        a .current[self.tab == "graph"] href=(self.link_graph) { "graph" }
+                        a .current[self.tab == "queue"] href=(self.link_queue) { "queue" }
+                    }
+                    (body)
+                }
+            }
+        )
     }
 }
 

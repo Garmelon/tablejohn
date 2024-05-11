@@ -57,6 +57,10 @@ pub struct PathWorkerByName {
     pub name: String,
 }
 
+#[derive(Deserialize, TypedPath)]
+#[typed_path("/test")]
+pub struct PathTest {}
+
 ///////////////////
 // Admin actions //
 ///////////////////
