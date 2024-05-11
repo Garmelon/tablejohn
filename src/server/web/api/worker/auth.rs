@@ -1,9 +1,11 @@
 //! Verify worker basic authentication headers.
 
 use axum::{
-    headers::{authorization::Basic, Authorization},
     http::{header, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
+};
+use axum_extra::{
+    headers::{authorization::Basic, Authorization},
     TypedHeader,
 };
 

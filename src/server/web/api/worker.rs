@@ -4,13 +4,15 @@ mod stream;
 use std::sync::{Arc, Mutex};
 
 use axum::{
-    body::StreamBody,
+    body::Body,
     extract::State,
-    headers::{authorization::Basic, Authorization},
-    http::StatusCode,
-    http::{header, HeaderValue},
+    http::{header, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
-    Json, TypedHeader,
+    Json,
+};
+use axum_extra::{
+    headers::{authorization::Basic, Authorization},
+    TypedHeader,
 };
 use gix::{ObjectId, ThreadSafeRepository};
 use log::{debug, info};
@@ -201,7 +203,7 @@ fn stream_response(repo: Arc<ThreadSafeRepository>, id: ObjectId) -> impl IntoRe
                 HeaderValue::from_static("attachment; filename=\"tree.tar.gz\""),
             ),
         ],
-        StreamBody::new(stream::tar_and_gzip(repo, id)),
+        Body::from_stream(stream::tar_and_gzip(repo, id)),
     )
 }
 

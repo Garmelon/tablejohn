@@ -9,6 +9,7 @@ mod r#static;
 use axum::{extract::DefaultBodyLimit, routing::get, Router};
 use axum_extra::routing::RouterExt;
 use log::info;
+use tokio::net::TcpListener;
 
 use crate::somehow;
 
@@ -71,9 +72,8 @@ pub async fn run(server: Server) -> somehow::Result<()> {
 
     let addr = &server.config.web_address;
     info!("Launching web server at http://{}", addr);
-    axum::Server::bind(addr)
-        .serve(app.into_make_service())
-        .await?;
+    let listener = TcpListener::bind(addr).await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
