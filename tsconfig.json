@@ -1,5 +1,6 @@
-{ // See also https://aka.ms/tsconfig
-  "include": [ "scripts/**/*" ],
+{
+  // See also https://aka.ms/tsconfig
+  "include": ["scripts/**/*"],
 
   "compilerOptions": {
     "target": "ES2022", // Should be fine according to caniuse.com
@@ -19,6 +20,6 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
-    "strict": true,
+    "strict": true
   }
 }

@@ -1,13 +1,13 @@
 * {
-    font-family: monospace;
-    font-size: inherit;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  font-family: monospace;
+  font-size: inherit;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-    margin: .7em;
+  margin: 0.7em;
 }
 
 details,
@@ -15,251 +15,252 @@ ol,
 p,
 table,
 ul {
-    margin: 1em 0;
+  margin: 1em 0;
 }
 
 h2 {
-    font-size: 1.7em;
-    margin: 1em 0 .5em;
+  font-size: 1.7em;
+  margin: 1em 0 0.5em;
 }
 
 a {
-    text-decoration: underline;
-    color: black;
+  text-decoration: underline;
+  color: black;
 }
 
 a:hover {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 button {
-    padding: 0 .5ch;
+  padding: 0 0.5ch;
 }
 
 button.linkish {
-    background-color: unset;
-    border: unset;
-    text-decoration: underline;
-    padding: 0;
-    cursor: pointer;
+  background-color: unset;
+  border: unset;
+  text-decoration: underline;
+  padding: 0;
+  cursor: pointer;
 }
 
 details {
-    padding: .3em 1ch;
-    background-color: #ddd;
+  padding: 0.3em 1ch;
+  background-color: #ddd;
 }
 
-details>summary {
-    font-weight: bold;
-    cursor: pointer;
-    list-style: "> " inside;
+details > summary {
+  font-weight: bold;
+  cursor: pointer;
+  list-style: "> " inside;
 }
 
-details[open]>summary {
-    list-style: "v " inside;
+details[open] > summary {
+  list-style: "v " inside;
 }
 
 ul,
 ol {
-    list-style: "- " outside;
-    margin-left: 2ch;
+  list-style: "- " outside;
+  margin-left: 2ch;
 }
 
 dl {
-    margin: 1em 0;
+  margin: 1em 0;
 }
 
 dt {
-    margin-top: 1em;
+  margin-top: 1em;
 }
 
 dd {
-    margin-left: 4ch;
+  margin-left: 4ch;
 }
 
 table {
-    border-collapse: collapse;
+  border-collapse: collapse;
 }
 
 thead tr,
 tbody tr:hover {
-    background-color: #ddd;
+  background-color: #ddd;
 }
 
 th,
 td {
-    padding: .1em 0;
-
+  padding: 0.1em 0;
 }
 
-th+th,
-td+td {
-    padding-left: 2ch;
+th + th,
+td + td {
+  padding-left: 2ch;
 }
 
 /* Nav bar */
 
 nav {
-    font-size: 1.5em;
-    line-height: 1.2em;
-    padding: 0.3em;
-    background-color: #bdf;
-    border-radius: 0.3em;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
+  font-size: 1.5em;
+  line-height: 1.2em;
+  padding: 0.3em;
+  background-color: #bdf;
+  border-radius: 0.3em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
 }
 
-nav>* {
-    padding: 0 1ch;
-    border-right: 0.1em solid black;
+nav > * {
+  padding: 0 1ch;
+  border-right: 0.1em solid black;
 }
 
-nav>:first-child img {
-    width: 1.2em;
-    height: 1.2em;
-    vertical-align: bottom;
-    padding-right: 0.3em;
+nav > :first-child img {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: bottom;
+  padding-right: 0.3em;
 }
 
-nav>:first-child {
-    padding-left: 0;
+nav > :first-child {
+  padding-left: 0;
 }
 
-nav>:last-child {
-    padding-right: 0;
-    border: none;
+nav > :last-child {
+  padding-right: 0;
+  border: none;
 }
 
-nav>.current {
-    font-weight: bold;
+nav > .current {
+  font-weight: bold;
 }
 
 nav a {
-    text-decoration: none;
+  text-decoration: none;
 }
 
 nav a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 /* Commit status */
 
 .commit-reachable {
-    color: #777;
+  color: #777;
 }
 
 .commit-orphaned {
-    color: #a33;
+  color: #a33;
 }
 
 /* Index */
 
 .refs-list dl {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 /* Graph */
 
 .graph-container {
-    display: flex;
-    flex-flow: row wrap;
-    align-items: flex-start;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-start;
 }
 
 .graph-container #plot {
-    margin-right: 1em;
-    margin-bottom: 1em;
-    box-shadow: 0 0 .5em black;
+  margin-right: 1em;
+  margin-bottom: 1em;
+  box-shadow: 0 0 0.5em black;
 }
 
 .graph-container #metrics {
-    flex: 0 50ch;
-    box-shadow: 0 0 .5em black;
+  flex: 0 50ch;
+  box-shadow: 0 0 0.5em black;
 }
 
 .metrics-list {
-    background-color: #ddd;
-    padding: .3em 1ch;
+  background-color: #ddd;
+  padding: 0.3em 1ch;
 }
 
 .metrics-list * {
-    margin: 0;
-    padding: 0;
-    background-color: unset;
-    list-style: none;
+  margin: 0;
+  padding: 0;
+  background-color: unset;
+  list-style: none;
 }
 
-.metrics-list details[open]>summary {
-    list-style: none;
+.metrics-list details[open] > summary {
+  list-style: none;
 }
 
 .metrics-list input[type="checkbox"] {
-    width: 2ch;
+  width: 2ch;
 }
 
-.metrics-list details.no-metric>summary {
-    list-style: "-> " outside;
-    margin-left: 3ch;
+.metrics-list details.no-metric > summary {
+  list-style: "-> " outside;
+  margin-left: 3ch;
 }
 
-.metrics-list summary~* {
-    border-left: .1ch solid black;
-    margin-left: .9ch;
-    padding-left: 1ch;
+.metrics-list summary ~ * {
+  border-left: 0.1ch solid black;
+  margin-left: 0.9ch;
+  padding-left: 1ch;
 }
 
 /* Queue */
 
 .queue-commits form {
-    display: inline;
+  display: inline;
 }
 
 .queue-commits button:hover {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .queue-commits td:nth-child(2),
 .queue-commits td:nth-child(3) {
-    text-align: right;
+  text-align: right;
 }
 
 .queue-commits .odd {
-    background-color: #eee;
+  background-color: #eee;
 }
 
 .queue-commits .odd:hover {
-    background-color: #ddd;
+  background-color: #ddd;
 }
 
 /* Commit-like entities */
 
 .commit-like dl {
-    display: grid;
-    grid: auto-flow / max-content 1fr;
-    column-gap: 1ch;
+  display: grid;
+  grid: auto-flow / max-content 1fr;
+  column-gap: 1ch;
 }
 
-.commit-like dl, .commit-like dt, .commit-like dd {
-    margin: 0;
+.commit-like dl,
+.commit-like dt,
+.commit-like dd {
+  margin: 0;
 }
 
 .commit-like pre {
-    margin: 1em 0ch 1em 4ch;
-    white-space: pre-wrap;
+  margin: 1em 0ch 1em 4ch;
+  white-space: pre-wrap;
 }
 
 .commit-like.commit .title {
-    color: #b70;
-    font-weight: bold;
+  color: #b70;
+  font-weight: bold;
 }
 
 .commit-like.run .title {
-    color: #07e;
-    font-weight: bold;
+  color: #07e;
+  font-weight: bold;
 }
 
 .commit-like.worker .title {
-    color: #380;
-    font-weight: bold;
+  color: #380;
+  font-weight: bold;
 }
