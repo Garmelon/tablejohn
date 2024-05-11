@@ -1,0 +1,8 @@
+/.sqlx/
+/target/
+/templates/
+
+# Vendored uPlot files
+/scripts/uPlot.d.ts
+/scripts/uPlot.js
+/static/uPlot.css
