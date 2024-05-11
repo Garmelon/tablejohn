@@ -1,12 +1,12 @@
-use askama::Template;
 use axum::{extract::State, response::IntoResponse};
 use futures::TryStreamExt;
+use maud::html;
 use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
     server::web::{
-        base::{Base, Link, Tab},
+        base::{Base, Tab},
         link::LinkCommit,
         paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRefsUpdate, PathIndex},
     },
@@ -17,18 +17,6 @@ struct Ref {
     name: String,
     commit: LinkCommit,
     tracked: bool,
-}
-
-#[derive(Template)]
-#[template(path = "pages/index.html")]
-struct IndexTemplate {
-    link_admin_refs_track: Link,
-    link_admin_refs_untrack: Link,
-    link_admin_refs_update: Link,
-    base: Base,
-
-    tracked_refs: Vec<Ref>,
-    untracked_refs: Vec<Ref>,
 }
 
 pub async fn get_index(
@@ -65,13 +53,44 @@ pub async fn get_index(
         }
     }
 
-    Ok(IndexTemplate {
-        link_admin_refs_track: base.link(PathAdminRefsTrack {}),
-        link_admin_refs_untrack: base.link(PathAdminRefsUntrack {}),
-        link_admin_refs_update: base.link(PathAdminRefsUpdate {}),
-        base: Base::new(config, Tab::Index),
-
-        tracked_refs,
-        untracked_refs,
-    })
+    Ok(base.html(
+        "overview",
+        html! {},
+        html! {
+            h2 { "Refs" }
+            details .refs-list open {
+                summary { "Tracked (" (tracked_refs.len()) ")" }
+                form method="post" action=(base.link(PathAdminRefsUntrack {})) {
+                    dl {
+                        @for r#ref in tracked_refs {
+                            dt {
+                                (r#ref.name) " ["
+                                button .linkish name="ref" value=(r#ref.name) { "untrack" }
+                                "]"
+                            }
+                            dd { (r#ref.commit.html()) }
+                        }
+                    }
+                }
+            }
+            details .refs-list {
+                summary { "Untracked (" (untracked_refs.len()) ")" }
+                form method="post" action=(base.link(PathAdminRefsTrack {})) {
+                    dl {
+                        @for r#ref in untracked_refs {
+                            dt {
+                                (r#ref.name) " ["
+                                button .linkish name="ref" value=(r#ref.name) { "track" }
+                                "]"
+                            }
+                            dd { (r#ref.commit.html()) }
+                        }
+                    }
+                }
+            }
+            form method="post" action=(base.link(PathAdminRefsUpdate {})) {
+                button { "Update" }
+            }
+        },
+    ))
 }
