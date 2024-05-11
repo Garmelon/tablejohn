@@ -1,10 +1,10 @@
-use askama::Template;
 use axum::{
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
 use futures::TryStreamExt;
+use maud::html;
 use sqlx::SqlitePool;
 
 use crate::{
@@ -12,32 +12,13 @@ use crate::{
     server::{
         util,
         web::{
-            base::{Base, Link, Tab},
+            base::{Base, Tab},
             link::{LinkCommit, LinkRunDate},
             paths::{PathAdminQueueAdd, PathCommitByHash},
         },
     },
     somehow,
 };
-
-#[derive(Template)]
-#[template(path = "pages/commit.html")]
-struct Page {
-    link_admin_queue_add: Link,
-    base: Base,
-
-    summary: String,
-    hash: String,
-    author: String,
-    author_date: String,
-    commit: String,
-    commit_date: String,
-    parents: Vec<LinkCommit>,
-    children: Vec<LinkCommit>,
-    message: String,
-    reachable: i64,
-    runs: Vec<LinkRunDate>,
-}
 
 pub async fn get_commit_by_hash(
     path: PathCommitByHash,
@@ -109,21 +90,69 @@ pub async fn get_commit_by_hash(
     .try_collect::<Vec<_>>()
     .await?;
 
-    Ok(Page {
-        link_admin_queue_add: base.link(PathAdminQueueAdd {}),
-        base,
+    // TODO Somewhat inefficient to construct full LinkCommit for this
+    let (class, title) = LinkCommit::new(
+        &base,
+        commit.hash.clone(),
+        &commit.message,
+        commit.reachable,
+    )
+    .class_and_title();
 
-        summary: util::format_commit_summary(&commit.message),
-        hash: commit.hash,
-        author: commit.author,
-        author_date: util::format_time(commit.author_date),
-        commit: commit.committer,
-        commit_date: util::format_time(commit.committer_date),
-        parents,
-        children,
-        message: commit.message.trim_end().to_string(),
-        reachable: commit.reachable,
-        runs,
-    }
-    .into_response())
+    Ok(base
+        .html(
+            &util::format_commit_summary(&commit.message),
+            html! {},
+            html! {
+                h2 { "Commit" }
+                div .commit-like .commit {
+                    span .title { "commit " (commit.hash) }
+                    dl {
+                        dt { "Author:" }
+                        dd { (commit.author) }
+
+                        dt { "AuthorDate:" }
+                        dd { (util::format_time(commit.author_date)) }
+
+                        dt { "Commit:" }
+                        dd { (commit.committer) }
+
+                        dt { "CommitDate:" }
+                        dd { (util::format_time(commit.committer_date)) }
+
+                        @for commit in parents {
+                            dt { "Parent:" }
+                            dd { (commit.html()) }
+                        }
+
+                        @for commit in children {
+                            dt { "Child:" }
+                            dd { (commit.html()) }
+                        }
+                    }
+                    pre .(class) title=(title) {
+                        (commit.message.trim_end())
+                    }
+                }
+
+                h2 { "Runs" }
+                @if runs.is_empty() {
+                    p { "There aren't any runs yet." }
+                } @else {
+                    ul {
+                        @for run in runs {
+                            li { (run.html()) }
+                        }
+                    }
+                }
+                form method="post" action=(base.link(PathAdminQueueAdd {})) {
+                    input type="hidden" name="hash" value=(commit.hash);
+                    button { "Add to queue" } " with a "
+                    label for="priority" { "priority" } " of "
+                    input id="priority" name="priority" type="number" value="10" min="-2147483648" max="2147483647";
+                    "."
+                }
+            },
+        )
+        .into_response())
 }

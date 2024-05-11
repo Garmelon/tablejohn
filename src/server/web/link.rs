@@ -1,4 +1,5 @@
 use askama::Template;
+use maud::{html, Markup};
 use time::OffsetDateTime;
 
 use crate::server::util;
@@ -32,6 +33,44 @@ impl LinkCommit {
             short: util::format_commit_short(&hash, message),
             link: base.link(PathCommitByHash { hash }),
             reachable,
+        }
+    }
+
+    pub fn class_and_title(&self) -> (&'static str, &'static str) {
+        if self.reachable == 0 {
+            (
+                "commit-orphaned",
+                "This commit is orphaned. It can't be reached from any ref.",
+            )
+        } else if self.reachable == -1 {
+            (
+                "commit-reachable",
+                "This commit can only be reached from untracked refs.",
+            )
+        } else {
+            (
+                "commit-tracked",
+                "This commit can be reached from a tracked ref.",
+            )
+        }
+    }
+
+    pub fn html(&self) -> Markup {
+        let (class, title) = self.class_and_title();
+
+        let truncate = self.short.chars().take(81).count() > 80;
+        let short = if truncate {
+            self.short
+                .chars()
+                .take(80 - 3)
+                .chain("...".chars())
+                .collect::<String>()
+        } else {
+            self.short.to_string()
+        };
+
+        html! {
+            a href=(self.link) .(class) title=(title) { (short) }
         }
     }
 }
@@ -70,6 +109,12 @@ impl LinkRunDate {
         Self {
             link: base.link(PathRunById { id }),
             date: util::format_time(start),
+        }
+    }
+
+    pub fn html(&self) -> Markup {
+        html! {
+            a href=(self.link) { "Run from " (self.date) }
         }
     }
 }
