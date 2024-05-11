@@ -36,7 +36,7 @@ toml = "0.8.12"
 walkdir = "2.5.0"
 
 [dependencies.gix]
-version = "0.55.2"
+version = "0.62.0"
 default-features = false
 features = ["max-performance-safe", "revision", "worktree-stream"]
 

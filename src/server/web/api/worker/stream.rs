@@ -9,7 +9,7 @@ use axum::{body::Bytes, BoxError};
 use flate2::{write::GzEncoder, Compression};
 use futures::TryStream;
 use gix::{
-    bstr::ByteSlice, objs::tree::EntryMode, prelude::ObjectIdExt, worktree::stream::Entry,
+    bstr::ByteSlice, objs::tree::EntryKind, prelude::ObjectIdExt, worktree::stream::Entry,
     ObjectId, ThreadSafeRepository,
 };
 use log::warn;
@@ -47,17 +47,18 @@ fn write_entry(
     writer: &mut tar::Builder<impl io::Write>,
 ) -> Result<(), BoxError> {
     let mut header = tar::Header::new_gnu();
-    header.set_entry_type(match entry.mode {
-        EntryMode::Tree | EntryMode::Commit => tar::EntryType::Directory,
-        EntryMode::Blob | EntryMode::BlobExecutable => tar::EntryType::Regular,
-        EntryMode::Link => tar::EntryType::Symlink,
+    header.set_entry_type(match entry.mode.kind() {
+        EntryKind::Tree | EntryKind::Commit => tar::EntryType::Directory,
+        EntryKind::Blob | EntryKind::BlobExecutable => tar::EntryType::Regular,
+        EntryKind::Link => tar::EntryType::Symlink,
     });
-    header.set_mode(match entry.mode {
-        EntryMode::BlobExecutable => 0o755, // rwxr-xr-x
-        _ => 0o644,                         // rw-r--r--
+    header.set_mode(if entry.mode.is_executable() {
+        0o755 // rwxr-xr-x
+    } else {
+        0o644 // rw-r--r--
     });
 
-    if entry.mode == EntryMode::Link {
+    if entry.mode.is_link() {
         let mut buf = vec![];
         entry.read_to_end(&mut buf)?;
         header.set_size(0);
