@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use askama::Template;
 use axum::{extract::State, response::IntoResponse, Json};
 use axum_extra::extract::Query;
 use futures::TryStreamExt;
+use maud::html;
 use serde::{Deserialize, Serialize};
 use sqlx::{Acquire, SqlitePool};
 
@@ -12,7 +12,7 @@ use crate::{
     server::{
         util,
         web::{
-            base::{Base, Link, Tab},
+            base::{Base, Tab},
             paths::{PathGraph, PathGraphCommits, PathGraphMeasurements, PathGraphMetrics},
             r#static::{GRAPH_JS, UPLOT_CSS},
         },
@@ -20,24 +20,26 @@ use crate::{
     somehow,
 };
 
-#[derive(Template)]
-#[template(path = "pages/graph.html")]
-struct Page {
-    link_uplot_css: Link,
-    link_graph_js: Link,
-    base: Base,
-}
-
 pub async fn get_graph(
     _path: PathGraph,
     State(config): State<&'static ServerConfig>,
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Graph);
-    Ok(Page {
-        link_uplot_css: base.link(UPLOT_CSS),
-        link_graph_js: base.link(GRAPH_JS),
-        base,
-    })
+
+    Ok(base.html(
+        "graph",
+        html! {
+            link rel="stylesheet" href=(base.link(UPLOT_CSS));
+            script type="module" src=(base.link(GRAPH_JS)) {}
+        },
+        html! {
+            h2 { "Graph" }
+            div .graph-container {
+                div #plot {}
+                div #metrics .metrics-list { "Loading metrics..." }
+            }
+        },
+    ))
 }
 
 #[derive(Serialize)]
