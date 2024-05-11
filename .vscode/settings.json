@@ -7,4 +7,5 @@
     "rust-analyzer.server.extraEnv": {
         "SQLX_OFFLINE": "false",
     },
+    "evenBetterToml.formatter.columnWidth": 120,
 }
