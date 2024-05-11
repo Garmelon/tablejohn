@@ -3,7 +3,6 @@ import argparse
 import base64
 import datetime
 import json
-import math
 import re
 import sqlite3
 import statistics
