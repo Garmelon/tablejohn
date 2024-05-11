@@ -57,7 +57,11 @@ fn set_up_logging(verbose: u8) {
                 log::Level::Info => 6,
                 log::Level::Debug | log::Level::Trace => 7,
             };
-            let level = f.default_styled_level(record.level());
+            let level = {
+                let level = record.level();
+                let style = f.default_level_style(level);
+                format!("{style}{level:>5}{style:#}")
+            };
             let args = record.args();
             let module = match record.module_path() {
                 Some("tablejohn::server") => Some("server"),
@@ -70,12 +74,11 @@ fn set_up_logging(verbose: u8) {
                 None => None,
             };
             if let Some(module) = module {
-                let style = &mut f.style();
-                style.set_bold(true);
-                let module = style.value(module);
-                writeln!(f, "<{syslog_level}>[{level:>5}] {module}: {args}")
+                let style = env_logger::fmt::style::Style::new().bold();
+                let module = format!("{style}{module}{style:#}");
+                writeln!(f, "<{syslog_level}>[{level}] {module}: {args}")
             } else {
-                writeln!(f, "<{syslog_level}>[{level:>5}] {args}")
+                writeln!(f, "<{syslog_level}>[{level}] {args}")
             }
         })
         .init();
