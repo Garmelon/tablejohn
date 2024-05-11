@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 curl 'https://raw.githubusercontent.com/leeoniya/uPlot/master/dist/uPlot.d.ts' -o scripts/uPlot.d.ts
 curl 'https://raw.githubusercontent.com/leeoniya/uPlot/master/dist/uPlot.esm.js' -o scripts/uPlot.js
 curl 'https://raw.githubusercontent.com/leeoniya/uPlot/master/dist/uPlot.min.css' -o static/uPlot.css
