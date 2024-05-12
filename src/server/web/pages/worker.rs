@@ -1,11 +1,11 @@
 use std::sync::{Arc, Mutex};
 
-use askama::Template;
 use axum::{
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use maud::html;
 use sqlx::SqlitePool;
 
 use crate::{
@@ -27,16 +27,6 @@ enum Status {
     Idle,
     Busy,
     Working { link: LinkRunShort, since: String },
-}
-
-#[derive(Template)]
-#[template(path = "pages/worker.html")]
-struct Page {
-    base: Base,
-
-    name: String,
-    connected: String,
-    status: Status,
 }
 
 async fn status(status: &WorkerStatus, db: &SqlitePool, base: &Base) -> somehow::Result<Status> {
@@ -68,12 +58,41 @@ pub async fn get_worker_by_name(
     };
 
     let base = Base::new(config, Tab::None);
-    Ok(Page {
-        name: path.name,
-        connected: util::format_time(info.first_seen),
-        status: status(&info.status, &db, &base).await?,
 
-        base,
-    }
-    .into_response())
+    let status = status(&info.status, &db, &base).await?;
+
+    Ok(base
+        .html(
+            &path.name,
+            html! {},
+            html! {
+                h2 { "Worker" }
+                div .commit-like .worker {
+                    span .title { "worker " (path.name) }
+                    dl {
+                        dt { "Connected:" }
+                        dd { (util::format_time(info.first_seen)) }
+
+                        @match status {
+                            Status::Idle => {
+                                dt { "Working on:" }
+                                dd { "nothing" }
+                            }
+                            Status::Busy => {
+                                dt { "Working on:" }
+                                dd { "run for another server" }
+                            }
+                            Status::Working { link, since } => {
+                                dt { "Working on:" }
+                                dd { (link.html()) }
+
+                                dt { "Working since:" }
+                                dd { (since) }
+                            }
+                        }
+                    }
+                }
+            },
+        )
+        .into_response())
 }
