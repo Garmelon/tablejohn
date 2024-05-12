@@ -9,6 +9,7 @@ use crate::{
         base::{Base, Tab},
         link::LinkCommit,
         paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRefsUpdate, PathIndex},
+        server_config_ext::ServerConfigExt,
     },
     somehow,
 };
@@ -60,7 +61,7 @@ pub async fn get_index(
             h2 { "Refs" }
             details .refs-list open {
                 summary { "Tracked (" (tracked_refs.len()) ")" }
-                form method="post" action=(base.link(PathAdminRefsUntrack {})) {
+                form method="post" action=(config.path(PathAdminRefsUntrack {})) {
                     dl {
                         @for r#ref in tracked_refs {
                             dt {
@@ -75,7 +76,7 @@ pub async fn get_index(
             }
             details .refs-list {
                 summary { "Untracked (" (untracked_refs.len()) ")" }
-                form method="post" action=(base.link(PathAdminRefsTrack {})) {
+                form method="post" action=(config.path(PathAdminRefsTrack {})) {
                     dl {
                         @for r#ref in untracked_refs {
                             dt {
@@ -88,7 +89,7 @@ pub async fn get_index(
                     }
                 }
             }
-            form method="post" action=(base.link(PathAdminRefsUpdate {})) {
+            form method="post" action=(config.path(PathAdminRefsUpdate {})) {
                 button { "Update" }
             }
         },

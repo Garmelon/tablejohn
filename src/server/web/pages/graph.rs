@@ -15,6 +15,7 @@ use crate::{
             base::{Base, Tab},
             paths::{PathGraph, PathGraphCommits, PathGraphMeasurements, PathGraphMetrics},
             r#static::{GRAPH_JS, UPLOT_CSS},
+            server_config_ext::ServerConfigExt,
         },
     },
     somehow,
@@ -29,8 +30,8 @@ pub async fn get_graph(
     Ok(base.html(
         "graph",
         html! {
-            link rel="stylesheet" href=(base.link(UPLOT_CSS));
-            script type="module" src=(base.link(GRAPH_JS)) {}
+            link rel="stylesheet" href=(config.path(UPLOT_CSS));
+            script type="module" src=(config.path(GRAPH_JS)) {}
         },
         html! {
             h2 { "Graph" }

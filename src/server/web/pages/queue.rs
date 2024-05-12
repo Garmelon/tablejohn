@@ -17,13 +17,14 @@ use crate::{
     server::{
         util,
         web::{
-            base::{Base, Link, Tab},
+            base::{Base, Tab},
             link::{LinkCommit, LinkRunShort, LinkWorker},
             paths::{
                 PathAdminQueueAddBatch, PathAdminQueueDecrease, PathAdminQueueDelete,
                 PathAdminQueueIncrease, PathQueue, PathQueueDelete, PathQueueInner,
             },
             r#static::QUEUE_JS,
+            server_config_ext::{AbsPath, ServerConfigExt},
         },
         workers::{WorkerInfo, Workers},
     },
@@ -43,9 +44,9 @@ struct Worker {
 }
 
 struct Task {
-    link_delete: Link,
-    link_increase: Link,
-    link_decrease: Link,
+    link_delete: AbsPath,
+    link_increase: AbsPath,
+    link_decrease: AbsPath,
     hash: String,
     commit: LinkCommit,
     since: String,
@@ -125,11 +126,11 @@ async fn get_queue_data(
     .fetch(db)
     .map_ok(|r| Task {
         workers: workers_by_commit.remove(&r.hash).unwrap_or_default(),
-        link_delete: base.link(PathQueueDelete {
+        link_delete: base.config.path(PathQueueDelete {
             hash: r.hash.clone(),
         }),
-        link_increase: base.link(PathAdminQueueIncrease {}),
-        link_decrease: base.link(PathAdminQueueDecrease {}),
+        link_increase: base.config.path(PathAdminQueueIncrease {}),
+        link_decrease: base.config.path(PathAdminQueueDecrease {}),
         hash: r.hash.clone(),
         commit: LinkCommit::new(base, r.hash, &r.message, r.reachable),
         since: util::format_delta_from_now(r.date),
@@ -246,11 +247,11 @@ pub async fn get_queue(
     Ok(base.html(
         &format!("queue ({})", tasks.len()),
         html! {
-            script type="module" src=(base.link(QUEUE_JS)) {}
+            script type="module" src=(config.path(QUEUE_JS)) {}
         },
         html! {
             div #inner { (page_inner(workers, tasks)) }
-            form method="post" action=(base.link(PathAdminQueueAddBatch {})) {
+            form method="post" action=(config.path(PathAdminQueueAddBatch {})) {
                 label {
                     "Batch size: "
                     input name="amount" type="number" value="10" min="1";
@@ -299,7 +300,7 @@ pub async fn get_queue_delete(
                 p { "You are about to delete this commit from the queue:" }
                 p { (commit.html()) }
                 p { "All runs of this commit currently in progress will be aborted!" }
-                form method="post" action=(base.link(PathAdminQueueDelete {})) {
+                form method="post" action=(config.path(PathAdminQueueDelete {})) {
                     input name="hash" type="hidden" value=(r.hash);
                     button { "Delete commit and abort runs" }
                 }

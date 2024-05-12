@@ -4,6 +4,7 @@ mod base;
 mod link;
 mod pages;
 pub mod paths;
+mod server_config_ext;
 mod r#static;
 
 use axum::{extract::DefaultBodyLimit, routing::get, Router};

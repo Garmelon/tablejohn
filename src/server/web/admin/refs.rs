@@ -13,8 +13,8 @@ use tokio::sync::mpsc;
 use crate::{
     config::ServerConfig,
     server::web::{
-        base::Base,
         paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRefsUpdate, PathIndex},
+        server_config_ext::ServerConfigExt,
     },
     somehow,
 };
@@ -38,8 +38,7 @@ pub async fn post_admin_refs_track(
         info!("Admin tracked {}", form.r#ref);
     }
 
-    let link = Base::link_with_config(config, PathIndex {});
-    Ok(Redirect::to(&link.to_string()))
+    Ok(Redirect::to(config.path(PathIndex {}).as_ref()))
 }
 
 pub async fn post_admin_refs_untrack(
@@ -56,8 +55,7 @@ pub async fn post_admin_refs_untrack(
         info!("Admin untracked {}", form.r#ref);
     }
 
-    let link = Base::link_with_config(config, PathIndex {});
-    Ok(Redirect::to(&link.to_string()))
+    Ok(Redirect::to(config.path(PathIndex {}).as_ref()))
 }
 
 pub async fn post_admin_repo_update(
@@ -68,6 +66,5 @@ pub async fn post_admin_repo_update(
     let _ = recurring_tx.send(());
     info!("Admin updated repo");
 
-    let link = Base::link_with_config(config, PathIndex {});
-    Ok(Redirect::to(&link.to_string()))
+    Ok(Redirect::to(config.path(PathIndex {}).as_ref()))
 }

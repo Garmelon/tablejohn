@@ -15,6 +15,7 @@ use crate::{
             base::{Base, Tab},
             link::{LinkCommit, LinkRunDate},
             paths::{PathAdminQueueAdd, PathCommitByHash},
+            server_config_ext::ServerConfigExt,
         },
     },
     somehow,
@@ -145,7 +146,7 @@ pub async fn get_commit_by_hash(
                         }
                     }
                 }
-                form method="post" action=(base.link(PathAdminQueueAdd {})) {
+                form method="post" action=(config.path(PathAdminQueueAdd {})) {
                     input type="hidden" name="hash" value=(commit.hash);
                     button { "Add to queue" } " with a "
                     label for="priority" { "priority" } " of "

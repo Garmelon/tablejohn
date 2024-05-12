@@ -4,12 +4,13 @@ use time::OffsetDateTime;
 use crate::server::util;
 
 use super::{
-    base::{Base, Link},
+    base::Base,
     paths::{PathCommitByHash, PathRunById, PathWorkerByName},
+    server_config_ext::{AbsPath, ServerConfigExt},
 };
 
 pub struct LinkCommit {
-    link: Link,
+    link: AbsPath,
     short: String,
     reachable: i64,
 }
@@ -18,7 +19,7 @@ impl LinkCommit {
     pub fn new(base: &Base, hash: String, message: &str, reachable: i64) -> Self {
         Self {
             short: util::format_commit_short(&hash, message),
-            link: base.link(PathCommitByHash { hash }),
+            link: base.config.path(PathCommitByHash { hash }),
             reachable,
         }
     }
@@ -53,14 +54,14 @@ impl LinkCommit {
 }
 
 pub struct LinkRunShort {
-    link: Link,
+    link: AbsPath,
     short: String,
 }
 
 impl LinkRunShort {
     pub fn new(base: &Base, id: String, hash: &str, message: &str) -> Self {
         Self {
-            link: base.link(PathRunById { id }),
+            link: base.config.path(PathRunById { id }),
             short: util::format_commit_short(hash, message),
         }
     }
@@ -73,14 +74,14 @@ impl LinkRunShort {
 }
 
 pub struct LinkRunDate {
-    link: Link,
+    link: AbsPath,
     date: String, // TODO base.date(...)?
 }
 
 impl LinkRunDate {
     pub fn new(base: &Base, id: String, start: OffsetDateTime) -> Self {
         Self {
-            link: base.link(PathRunById { id }),
+            link: base.config.path(PathRunById { id }),
             date: util::format_time(start),
         }
     }
@@ -93,14 +94,14 @@ impl LinkRunDate {
 }
 
 pub struct LinkWorker {
-    link: Link,
+    link: AbsPath,
     name: String,
 }
 
 impl LinkWorker {
     pub fn new(base: &Base, name: String) -> Self {
         Self {
-            link: base.link(PathWorkerByName { name: name.clone() }),
+            link: base.config.path(PathWorkerByName { name: name.clone() }),
             name,
         }
     }

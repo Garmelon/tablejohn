@@ -11,11 +11,11 @@ use time::OffsetDateTime;
 use crate::{
     config::ServerConfig,
     server::web::{
-        base::Base,
         paths::{
             PathAdminQueueAdd, PathAdminQueueAddBatch, PathAdminQueueDecrease,
             PathAdminQueueDelete, PathAdminQueueIncrease, PathQueue,
         },
+        server_config_ext::ServerConfigExt,
     },
     somehow,
 };
@@ -52,8 +52,7 @@ pub async fn post_admin_queue_add(
         form.hash, form.priority,
     );
 
-    let link = Base::link_with_config(config, PathQueue {});
-    Ok(Redirect::to(&format!("{link}")))
+    Ok(Redirect::to(config.path(PathQueue {}).as_ref()))
 }
 
 #[derive(Deserialize)]
@@ -95,8 +94,7 @@ pub async fn post_admin_queue_add_batch(
         );
     }
 
-    let link = Base::link_with_config(config, PathQueue {});
-    Ok(Redirect::to(&format!("{link}")))
+    Ok(Redirect::to(config.path(PathQueue {}).as_ref()))
 }
 
 #[derive(Deserialize)]
@@ -116,8 +114,7 @@ pub async fn post_admin_queue_delete(
 
     info!("Admin deleted {} from queue", form.hash);
 
-    let link = Base::link_with_config(config, PathQueue {});
-    Ok(Redirect::to(&format!("{link}")))
+    Ok(Redirect::to(config.path(PathQueue {}).as_ref()))
 }
 
 #[derive(Deserialize)]
@@ -140,8 +137,7 @@ pub async fn post_admin_queue_increase(
 
     info!("Admin increased queue priority of {} by one", form.hash);
 
-    let link = Base::link_with_config(config, PathQueue {});
-    Ok(Redirect::to(&format!("{link}")))
+    Ok(Redirect::to(config.path(PathQueue {}).as_ref()))
 }
 
 #[derive(Deserialize)]
@@ -164,6 +160,5 @@ pub async fn post_admin_queue_decrease(
 
     info!("Admin decreased queue priority of {} by one", form.hash);
 
-    let link = Base::link_with_config(config, PathQueue {});
-    Ok(Redirect::to(&format!("{link}")))
+    Ok(Redirect::to(config.path(PathQueue {}).as_ref()))
 }
