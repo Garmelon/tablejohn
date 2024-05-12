@@ -1,10 +1,10 @@
-use askama::Template;
 use axum::{
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
 use futures::TryStreamExt;
+use maud::html;
 use sqlx::SqlitePool;
 
 use crate::{
@@ -29,23 +29,6 @@ struct Measurement {
 struct Line {
     err: bool,
     text: String,
-}
-
-#[derive(Template)]
-#[template(path = "pages/run_finished.html")]
-struct PageFinished {
-    base: Base,
-
-    summary: String,
-    id: String,
-    commit: LinkCommit,
-    bench_method: String,
-    start: String,
-    end: String,
-    duration: String,
-    exit_code: i64,
-    measurements: Vec<Measurement>,
-    output: Vec<Line>,
 }
 
 async fn from_finished_run(
@@ -114,21 +97,62 @@ async fn from_finished_run(
     .await?;
 
     let base = Base::new(config, Tab::None);
-    Ok(Some(
-        PageFinished {
-            summary: util::format_commit_summary(&run.message),
-            id: run.id,
-            commit: LinkCommit::new(&base, run.hash, &run.message, run.reachable),
-            bench_method: run.bench_method,
-            start: util::format_time(run.start),
-            end: util::format_time(run.end),
-            duration: util::format_duration(run.end - run.start),
-            exit_code: run.exit_code,
-            measurements,
-            output,
 
-            base,
-        }
+    let commit = LinkCommit::new(&base, run.hash, &run.message, run.reachable);
+
+    Ok(Some(
+        base.html(
+            &format!("Run of {}", util::format_commit_summary(&run.message)),
+            html! {},
+            html! {
+                h2 { "Run" }
+                div .commit-like .run {
+                    span .title { "run " (run.id) }
+                    dl {
+                        dt { "Commit:" }
+                        dd { (commit.html())}
+
+                        dt { "Benchmark:" }
+                        dd { (run.bench_method) }
+
+                        dt { "Start:" }
+                        dd { (util::format_time(run.start)) }
+
+                        dt { "End:" }
+                        dd { (util::format_time(run.end)) }
+
+                        dt { "Duration:" }
+                        dd { (util::format_duration(run.end - run.start)) }
+
+                        dt { "Exit code:" }
+                        dd { (run.exit_code) }
+                    }
+                }
+                h2 { "Measurements" }
+                table {
+                    thead {
+                        tr {
+                            th { "metric" }
+                            th { "value" }
+                            th { "unit" }
+                        }
+                    }
+                    tbody {
+                        @for mm in measurements { tr {
+                            td { (mm.metric) }
+                            td { (mm.value) }
+                            td { (mm.unit) }
+                        } }
+                    }
+                }
+                h2 { "Output" }
+                div .run-output {
+                    @for line in output {
+                        pre { (line.text) }
+                    }
+                }
+            },
+        )
         .into_response(),
     ))
 }
