@@ -12,8 +12,8 @@ use crate::{
     server::{
         util,
         web::{
-            base::{Base, Tab},
             components,
+            page::{Page, Tab},
             paths::{PathAdminQueueAdd, PathCommitByHash},
             server_config_ext::ServerConfigExt,
         },
@@ -26,8 +26,6 @@ pub async fn get_commit_by_hash(
     State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
-    let base = Base::new(config, Tab::None);
-
     let Some(commit) = sqlx::query!(
         "\
         SELECT \
@@ -93,60 +91,61 @@ pub async fn get_commit_by_hash(
 
     let (class, title) = components::commit_class_and_title(commit.reachable);
 
-    Ok(base
-        .html(
-            &util::format_commit_summary(&commit.message),
-            html! {},
-            html! {
-                h2 { "Commit" }
-                div .commit-like .commit {
-                    span .title { "commit " (commit.hash) }
-                    dl {
-                        dt { "Author:" }
-                        dd { (commit.author) }
+    let html = Page::new(config)
+        .title(util::format_commit_summary(&commit.message))
+        .nav(Tab::None)
+        .body(html! {
+            h2 { "Commit" }
+            div .commit-like .commit {
+                span .title { "commit " (commit.hash) }
+                dl {
+                    dt { "Author:" }
+                    dd { (commit.author) }
 
-                        dt { "AuthorDate:" }
-                        dd { (util::format_time(commit.author_date)) }
+                    dt { "AuthorDate:" }
+                    dd { (util::format_time(commit.author_date)) }
 
-                        dt { "Commit:" }
-                        dd { (commit.committer) }
+                    dt { "Commit:" }
+                    dd { (commit.committer) }
 
-                        dt { "CommitDate:" }
-                        dd { (util::format_time(commit.committer_date)) }
+                    dt { "CommitDate:" }
+                    dd { (util::format_time(commit.committer_date)) }
 
-                        @for commit in parents {
-                            dt { "Parent:" }
-                            dd { (commit) }
-                        }
-
-                        @for commit in children {
-                            dt { "Child:" }
-                            dd { (commit) }
-                        }
+                    @for commit in parents {
+                        dt { "Parent:" }
+                        dd { (commit) }
                     }
-                    pre .(class) title=(title) {
-                        (commit.message.trim_end())
+
+                    @for commit in children {
+                        dt { "Child:" }
+                        dd { (commit) }
                     }
                 }
-
-                h2 { "Runs" }
-                @if runs.is_empty() {
-                    p { "There aren't any runs yet." }
-                } @else {
-                    ul {
-                        @for run in runs {
-                            li { (run) }
-                        }
+                pre .(class) title=(title) {
+                    (commit.message.trim_end())
+                }
+            }
+        })
+        .body(html!{
+            h2 { "Runs" }
+            @if runs.is_empty() {
+                p { "There aren't any runs yet." }
+            } @else {
+                ul {
+                    @for run in runs {
+                        li { (run) }
                     }
                 }
-                form method="post" action=(config.path(PathAdminQueueAdd {})) {
-                    input type="hidden" name="hash" value=(commit.hash);
-                    button { "Add to queue" } " with a "
-                    label for="priority" { "priority" } " of "
-                    input id="priority" name="priority" type="number" value="10" min="-2147483648" max="2147483647";
-                    "."
-                }
-            },
-        )
-        .into_response())
+            }
+            form method="post" action=(config.path(PathAdminQueueAdd {})) {
+                input type="hidden" name="hash" value=(commit.hash);
+                button { "Add to queue" } " with a "
+                label for="priority" { "priority" } " of "
+                input id="priority" name="priority" type="number" value="10" min="-2147483648" max="2147483647";
+                "."
+            }
+        })
+        .build();
+
+    Ok(html.into_response())
 }
