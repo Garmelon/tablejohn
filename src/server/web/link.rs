@@ -57,17 +57,7 @@ impl LinkCommit {
 
     pub fn html(&self) -> Markup {
         let (class, title) = self.class_and_title();
-
-        let truncate = self.short.chars().take(81).count() > 80;
-        let short = if truncate {
-            self.short
-                .chars()
-                .take(80 - 3)
-                .chain("...".chars())
-                .collect::<String>()
-        } else {
-            self.short.to_string()
-        };
+        let short = util::truncate(&self.short, 80);
 
         html! {
             a href=(self.link) .(class) title=(title) { (short) }
@@ -90,6 +80,12 @@ impl LinkRunShort {
         Self {
             link: base.link(PathRunById { id }),
             short: util::format_commit_short(hash, message),
+        }
+    }
+
+    pub fn html(&self) -> Markup {
+        html! {
+            a href=(self.link) { "Run of " (util::truncate(&self.short, 80)) }
         }
     }
 }
@@ -131,6 +127,12 @@ impl LinkWorker {
         Self {
             link: base.link(PathWorkerByName { name: name.clone() }),
             name,
+        }
+    }
+
+    pub fn html(&self) -> Markup {
+        html! {
+            a href=(self.link) { (self.name) }
         }
     }
 }

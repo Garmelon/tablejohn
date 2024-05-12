@@ -70,3 +70,15 @@ pub fn format_value(value: f64) -> String {
         format!("{value:.2}")
     }
 }
+
+pub fn truncate(text: &str, width: usize) -> String {
+    let truncate = text.chars().take(width + 1).count() > width;
+    if truncate {
+        text.chars()
+            .take(80 - 3)
+            .chain("...".chars())
+            .collect::<String>()
+    } else {
+        text.to_string()
+    }
+}

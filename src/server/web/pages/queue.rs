@@ -3,13 +3,13 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use askama::Template;
 use axum::{
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
 use futures::TryStreamExt;
+use maud::{html, Markup};
 use sqlx::SqlitePool;
 
 use crate::{
@@ -152,11 +152,71 @@ async fn get_queue_data(
     Ok(tasks)
 }
 
-#[derive(Template)]
-#[template(path = "pages/queue_inner.html")]
-struct PageInner {
-    workers: Vec<Worker>,
-    tasks: Vec<Task>,
+fn page_inner(workers: Vec<Worker>, tasks: Vec<Task>) -> Markup {
+    html! {
+        h2 { "Workers" }
+        @if workers.is_empty() {
+            p { "No workers connected" }
+        } @else {
+            table .queue-workers {
+                thead {
+                    tr {
+                        th { "worker" }
+                        th { "status" }
+                    }
+                }
+                tbody {
+                    @for worker in workers { tr {
+                        td { (worker.link.html()) }
+                        td { @match worker.status {
+                            Status::Idle => "idle",
+                            Status::Busy => "busy",
+                            Status::Working(link) => (link.html()),
+                        } }
+                    } }
+                }
+            }
+        }
+        h2 { "Queue (" (tasks.len()) ")" }
+        form .queue-commits method="post" {
+            table #queue data-count=(tasks.len()) {
+                thead {
+                    tr {
+                        th { "commit" }
+                        th { "since" }
+                        th { "priority" }
+                        th { "worker" }
+                    }
+                }
+                tbody {
+                    @for task in tasks { tr .odd[task.odd] {
+                        td { (task.commit.html()) }
+                        td {
+                            (task.since) " ["
+                            a href=(task.link_delete) title="Delete from queue" { "del" }
+                            "]"
+                        }
+                        td {
+                            (task.priority) " ["
+                            button .linkish title="Increase priority by 1" formaction=(task.link_increase) name="hash" value=(task.hash) { "inc" }
+                            "/"
+                            button .linkish title="Decrease priority by 1" formaction=(task.link_decrease) name="hash" value=(task.hash) { "dec" }
+                            "]"
+                            td {
+                                @if task.workers.is_empty() {
+                                    "-"
+                                }
+                                @for (i, worker) in task.workers.iter().enumerate() {
+                                    @if i > 0 { ", " }
+                                    (worker.html())
+                                }
+                            }
+                        }
+                    } }
+                }
+            }
+        }
+    }
 }
 
 pub async fn get_queue_inner(
@@ -169,16 +229,7 @@ pub async fn get_queue_inner(
     let sorted_workers = sorted_workers(&workers);
     let workers = get_workers(&db, &sorted_workers, &base).await?;
     let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
-    Ok(PageInner { workers, tasks })
-}
-
-#[derive(Template)]
-#[template(path = "pages/queue.html")]
-struct Page {
-    link_queue_js: Link,
-    link_admin_queue_add_batch: Link,
-    base: Base,
-    inner: PageInner,
+    Ok(page_inner(workers, tasks))
 }
 
 pub async fn get_queue(
@@ -191,23 +242,29 @@ pub async fn get_queue(
     let sorted_workers = sorted_workers(&workers);
     let workers = get_workers(&db, &sorted_workers, &base).await?;
     let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
-    Ok(Page {
-        link_queue_js: base.link(QUEUE_JS),
-        link_admin_queue_add_batch: base.link(PathAdminQueueAddBatch {}),
-        base,
-        inner: PageInner { workers, tasks },
-    })
-}
 
-#[derive(Template)]
-#[template(path = "pages/queue_delete.html")]
-struct PageDelete {
-    base: Base,
-    link_delete: Link,
-
-    short: String,
-    commit: LinkCommit,
-    hash: String,
+    Ok(base.html(
+        &format!("queue ({})", tasks.len()),
+        html! {
+            script type="module" src=(base.link(QUEUE_JS)) {}
+        },
+        html! {
+            div #inner { (page_inner(workers, tasks)) }
+            form method="post" action=(base.link(PathAdminQueueAddBatch {})) {
+                label {
+                    "Batch size: "
+                    input name="amount" type="number" value="10" min="1";
+                }
+                " "
+                label {
+                    "Priority: "
+                    input #priority name="priority" type="number" value="-1" min="-2147483648" max="2147483647";
+                }
+                " "
+                button { "Add batch to queue" }
+            }
+        },
+    ))
 }
 
 pub async fn get_queue_delete(
@@ -231,13 +288,22 @@ pub async fn get_queue_delete(
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
 
-    Ok(PageDelete {
-        short: util::format_commit_short(&r.hash, &r.message),
-        commit: LinkCommit::new(&base, r.hash.clone(), &r.message, r.reachable),
-        hash: r.hash,
+    let commit = LinkCommit::new(&base, r.hash.clone(), &r.message, r.reachable);
 
-        link_delete: base.link(PathAdminQueueDelete {}),
-        base,
-    }
-    .into_response())
+    Ok(base
+        .html(
+            &format!("del {}", util::format_commit_short(&r.hash, &r.message)),
+            html! {},
+            html! {
+                h2 { "Delete commit from queue" }
+                p { "You are about to delete this commit from the queue:" }
+                p { (commit.html()) }
+                p { "All runs of this commit currently in progress will be aborted!" }
+                form method="post" action=(base.link(PathAdminQueueDelete {})) {
+                    input name="hash" type="hidden" value=(r.hash);
+                    button { "Delete commit and abort runs" }
+                }
+            },
+        )
+        .into_response())
 }
