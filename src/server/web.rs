@@ -1,7 +1,7 @@
 mod admin;
 mod api;
 mod base;
-mod link;
+mod components;
 mod pages;
 pub mod paths;
 mod server_config_ext;

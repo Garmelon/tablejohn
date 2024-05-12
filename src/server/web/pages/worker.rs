@@ -5,7 +5,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use maud::html;
+use maud::{html, Markup};
 use sqlx::SqlitePool;
 
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
         util,
         web::{
             base::{Base, Tab},
-            link::LinkRunShort,
+            components,
             paths::PathWorkerByName,
         },
         workers::Workers,
@@ -26,10 +26,14 @@ use crate::{
 enum Status {
     Idle,
     Busy,
-    Working { link: LinkRunShort, since: String },
+    Working { link: Markup, since: String },
 }
 
-async fn status(status: &WorkerStatus, db: &SqlitePool, base: &Base) -> somehow::Result<Status> {
+async fn status(
+    config: &ServerConfig,
+    status: &WorkerStatus,
+    db: &SqlitePool,
+) -> somehow::Result<Status> {
     Ok(match status {
         WorkerStatus::Idle => Status::Idle,
         WorkerStatus::Busy => Status::Busy,
@@ -39,7 +43,7 @@ async fn status(status: &WorkerStatus, db: &SqlitePool, base: &Base) -> somehow:
                     .fetch_one(db)
                     .await?;
             Status::Working {
-                link: LinkRunShort::new(base, run.id.clone(), &run.hash, &message),
+                link: components::link_run_short(config, run.id.clone(), &run.hash, &message),
                 since: util::format_time(run.start.0),
             }
         }
@@ -59,7 +63,7 @@ pub async fn get_worker_by_name(
 
     let base = Base::new(config, Tab::None);
 
-    let status = status(&info.status, &db, &base).await?;
+    let status = status(config, &info.status, &db).await?;
 
     Ok(base
         .html(
@@ -84,7 +88,7 @@ pub async fn get_worker_by_name(
                             }
                             Status::Working { link, since } => {
                                 dt { "Working on:" }
-                                dd { (link.html()) }
+                                dd { (link) }
 
                                 dt { "Working since:" }
                                 dd { (since) }

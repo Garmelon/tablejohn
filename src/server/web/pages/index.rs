@@ -1,13 +1,13 @@
 use axum::{extract::State, response::IntoResponse};
 use futures::TryStreamExt;
-use maud::html;
+use maud::{html, Markup};
 use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
     server::web::{
         base::{Base, Tab},
-        link::LinkCommit,
+        components,
         paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRefsUpdate, PathIndex},
         server_config_ext::ServerConfigExt,
     },
@@ -16,7 +16,7 @@ use crate::{
 
 struct Ref {
     name: String,
-    commit: LinkCommit,
+    commit: Markup,
     tracked: bool,
 }
 
@@ -38,7 +38,7 @@ pub async fn get_index(
     .fetch(&db)
     .map_ok(|r| Ref {
         name: r.name.clone(),
-        commit: LinkCommit::new(&base, r.hash, &r.message, r.reachable),
+        commit: components::link_commit(config, r.hash, &r.message, r.reachable),
         tracked: r.tracked != 0,
     })
     .try_collect::<Vec<_>>()
@@ -69,7 +69,7 @@ pub async fn get_index(
                                 button .linkish name="ref" value=(r#ref.name) { "untrack" }
                                 "]"
                             }
-                            dd { (r#ref.commit.html()) }
+                            dd { (r#ref.commit) }
                         }
                     }
                 }
@@ -84,7 +84,7 @@ pub async fn get_index(
                                 button .linkish name="ref" value=(r#ref.name) { "track" }
                                 "]"
                             }
-                            dd { (r#ref.commit.html()) }
+                            dd { (r#ref.commit) }
                         }
                     }
                 }

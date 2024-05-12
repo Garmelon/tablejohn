@@ -18,7 +18,7 @@ use crate::{
         util,
         web::{
             base::{Base, Tab},
-            link::{LinkCommit, LinkRunShort, LinkWorker},
+            components,
             paths::{
                 PathAdminQueueAddBatch, PathAdminQueueDecrease, PathAdminQueueDelete,
                 PathAdminQueueIncrease, PathQueue, PathQueueDelete, PathQueueInner,
@@ -35,11 +35,11 @@ use crate::{
 enum Status {
     Idle,
     Busy,
-    Working(LinkRunShort),
+    Working(Markup),
 }
 
 struct Worker {
-    link: LinkWorker,
+    link: Markup,
     status: Status,
 }
 
@@ -48,10 +48,10 @@ struct Task {
     link_increase: AbsPath,
     link_decrease: AbsPath,
     hash: String,
-    commit: LinkCommit,
+    commit: Markup,
     since: String,
     priority: i64,
-    workers: Vec<LinkWorker>,
+    workers: Vec<Markup>,
     odd: bool,
 }
 
@@ -68,9 +68,9 @@ fn sorted_workers(workers: &Mutex<Workers>) -> Vec<(String, WorkerInfo)> {
 }
 
 async fn get_workers(
+    config: &ServerConfig,
     db: &SqlitePool,
     workers: &[(String, WorkerInfo)],
-    base: &Base,
 ) -> somehow::Result<Vec<Worker>> {
     let mut result = vec![];
     for (name, info) in workers {
@@ -82,12 +82,17 @@ async fn get_workers(
                     sqlx::query_scalar!("SELECT message FROM commits WHERE hash = ?", run.hash)
                         .fetch_one(db)
                         .await?;
-                Status::Working(LinkRunShort::new(base, run.id.clone(), &run.hash, &message))
+                Status::Working(components::link_run_short(
+                    config,
+                    run.id.clone(),
+                    &run.hash,
+                    &message,
+                ))
             }
         };
 
         result.push(Worker {
-            link: LinkWorker::new(base, name.clone()),
+            link: components::link_worker(config, name.clone()),
             status,
         })
     }
@@ -95,18 +100,18 @@ async fn get_workers(
 }
 
 async fn get_queue_data(
+    config: &ServerConfig,
     db: &SqlitePool,
     workers: &[(String, WorkerInfo)],
-    base: &Base,
 ) -> somehow::Result<Vec<Task>> {
     // Group workers by commit hash
-    let mut workers_by_commit: HashMap<String, Vec<LinkWorker>> = HashMap::new();
+    let mut workers_by_commit: HashMap<String, Vec<Markup>> = HashMap::new();
     for (name, info) in workers {
         if let WorkerStatus::Working(run) = &info.status {
             workers_by_commit
                 .entry(run.hash.clone())
                 .or_default()
-                .push(LinkWorker::new(base, name.clone()));
+                .push(components::link_worker(config, name.clone()));
         }
     }
 
@@ -126,13 +131,13 @@ async fn get_queue_data(
     .fetch(db)
     .map_ok(|r| Task {
         workers: workers_by_commit.remove(&r.hash).unwrap_or_default(),
-        link_delete: base.config.path(PathQueueDelete {
+        link_delete: config.path(PathQueueDelete {
             hash: r.hash.clone(),
         }),
-        link_increase: base.config.path(PathAdminQueueIncrease {}),
-        link_decrease: base.config.path(PathAdminQueueDecrease {}),
+        link_increase: config.path(PathAdminQueueIncrease {}),
+        link_decrease: config.path(PathAdminQueueDecrease {}),
         hash: r.hash.clone(),
-        commit: LinkCommit::new(base, r.hash, &r.message, r.reachable),
+        commit: components::link_commit(config, r.hash, &r.message, r.reachable),
         since: util::format_delta_from_now(r.date),
         priority: r.priority,
         odd: false,
@@ -168,11 +173,11 @@ fn page_inner(workers: Vec<Worker>, tasks: Vec<Task>) -> Markup {
                 }
                 tbody {
                     @for worker in workers { tr {
-                        td { (worker.link.html()) }
+                        td { (worker.link) }
                         td { @match worker.status {
                             Status::Idle => "idle",
                             Status::Busy => "busy",
-                            Status::Working(link) => (link.html()),
+                            Status::Working(link) => (link),
                         } }
                     } }
                 }
@@ -191,7 +196,7 @@ fn page_inner(workers: Vec<Worker>, tasks: Vec<Task>) -> Markup {
                 }
                 tbody {
                     @for task in tasks { tr .odd[task.odd] {
-                        td { (task.commit.html()) }
+                        td { (task.commit) }
                         td {
                             (task.since) " ["
                             a href=(task.link_delete) title="Delete from queue" { "del" }
@@ -207,10 +212,7 @@ fn page_inner(workers: Vec<Worker>, tasks: Vec<Task>) -> Markup {
                                 @if task.workers.is_empty() {
                                     "-"
                                 }
-                                @for (i, worker) in task.workers.iter().enumerate() {
-                                    @if i > 0 { ", " }
-                                    (worker.html())
-                                }
+                                (components::join(&task.workers, html! { ", " }))
                             }
                         }
                     } }
@@ -226,10 +228,9 @@ pub async fn get_queue_inner(
     State(db): State<SqlitePool>,
     State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<impl IntoResponse> {
-    let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
-    let workers = get_workers(&db, &sorted_workers, &base).await?;
-    let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
+    let workers = get_workers(config, &db, &sorted_workers).await?;
+    let tasks = get_queue_data(config, &db, &sorted_workers).await?;
     Ok(page_inner(workers, tasks))
 }
 
@@ -241,8 +242,8 @@ pub async fn get_queue(
 ) -> somehow::Result<impl IntoResponse> {
     let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
-    let workers = get_workers(&db, &sorted_workers, &base).await?;
-    let tasks = get_queue_data(&db, &sorted_workers, &base).await?;
+    let workers = get_workers(config, &db, &sorted_workers).await?;
+    let tasks = get_queue_data(config, &db, &sorted_workers).await?;
 
     Ok(base.html(
         &format!("queue ({})", tasks.len()),
@@ -289,7 +290,7 @@ pub async fn get_queue_delete(
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
 
-    let commit = LinkCommit::new(&base, r.hash.clone(), &r.message, r.reachable);
+    let commit = components::link_commit(config, r.hash.clone(), &r.message, r.reachable);
 
     Ok(base
         .html(
@@ -298,7 +299,7 @@ pub async fn get_queue_delete(
             html! {
                 h2 { "Delete commit from queue" }
                 p { "You are about to delete this commit from the queue:" }
-                p { (commit.html()) }
+                p { (commit) }
                 p { "All runs of this commit currently in progress will be aborted!" }
                 form method="post" action=(config.path(PathAdminQueueDelete {})) {
                     input name="hash" type="hidden" value=(r.hash);

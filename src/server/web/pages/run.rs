@@ -13,7 +13,7 @@ use crate::{
         util,
         web::{
             base::{Base, Tab},
-            link::LinkCommit,
+            components,
             paths::PathRunById,
         },
     },
@@ -98,7 +98,7 @@ async fn from_finished_run(
 
     let base = Base::new(config, Tab::None);
 
-    let commit = LinkCommit::new(&base, run.hash, &run.message, run.reachable);
+    let commit = components::link_commit(config, run.hash, &run.message, run.reachable);
 
     Ok(Some(
         base.html(
@@ -110,7 +110,7 @@ async fn from_finished_run(
                     span .title { "run " (run.id) }
                     dl {
                         dt { "Commit:" }
-                        dd { (commit.html())}
+                        dd { (commit)}
 
                         dt { "Benchmark:" }
                         dd { (run.bench_method) }

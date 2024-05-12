@@ -13,7 +13,7 @@ use crate::{
         util,
         web::{
             base::{Base, Tab},
-            link::{LinkCommit, LinkRunDate},
+            components,
             paths::{PathAdminQueueAdd, PathCommitByHash},
             server_config_ext::ServerConfigExt,
         },
@@ -59,7 +59,7 @@ pub async fn get_commit_by_hash(
         path.hash,
     )
     .fetch(&db)
-    .map_ok(|r| LinkCommit::new(&base, r.hash, &r.message, r.reachable))
+    .map_ok(|r| components::link_commit(config, r.hash, &r.message, r.reachable))
     .try_collect::<Vec<_>>()
     .await?;
 
@@ -73,7 +73,7 @@ pub async fn get_commit_by_hash(
         path.hash,
     )
     .fetch(&db)
-    .map_ok(|r| LinkCommit::new(&base, r.hash, &r.message, r.reachable))
+    .map_ok(|r| components::link_commit(config, r.hash, &r.message, r.reachable))
     .try_collect::<Vec<_>>()
     .await?;
 
@@ -87,18 +87,11 @@ pub async fn get_commit_by_hash(
         path.hash
     )
     .fetch(&db)
-    .map_ok(|r| LinkRunDate::new(&base, r.id, r.start))
+    .map_ok(|r| components::link_run_date(config, r.id, r.start))
     .try_collect::<Vec<_>>()
     .await?;
 
-    // TODO Somewhat inefficient to construct full LinkCommit for this
-    let (class, title) = LinkCommit::new(
-        &base,
-        commit.hash.clone(),
-        &commit.message,
-        commit.reachable,
-    )
-    .class_and_title();
+    let (class, title) = components::commit_class_and_title(commit.reachable);
 
     Ok(base
         .html(
@@ -123,12 +116,12 @@ pub async fn get_commit_by_hash(
 
                         @for commit in parents {
                             dt { "Parent:" }
-                            dd { (commit.html()) }
+                            dd { (commit) }
                         }
 
                         @for commit in children {
                             dt { "Child:" }
-                            dd { (commit.html()) }
+                            dd { (commit) }
                         }
                     }
                     pre .(class) title=(title) {
@@ -142,7 +135,7 @@ pub async fn get_commit_by_hash(
                 } @else {
                     ul {
                         @for run in runs {
-                            li { (run.html()) }
+                            li { (run) }
                         }
                     }
                 }
