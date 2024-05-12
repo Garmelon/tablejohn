@@ -6,8 +6,8 @@ use sqlx::SqlitePool;
 use crate::{
     config::ServerConfig,
     server::web::{
-        base::{Base, Tab},
         components,
+        page::{Page, Tab},
         paths::{PathAdminRefsTrack, PathAdminRefsUntrack, PathAdminRefsUpdate, PathIndex},
         server_config_ext::ServerConfigExt,
     },
@@ -25,8 +25,6 @@ pub async fn get_index(
     State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
-    let base = Base::new(config, Tab::Index);
-
     let refs = sqlx::query!(
         "\
         SELECT name, hash, message, reachable, tracked \
@@ -54,10 +52,10 @@ pub async fn get_index(
         }
     }
 
-    Ok(base.html(
-        "overview",
-        html! {},
-        html! {
+    let html = Page::new(config)
+        .title("overview")
+        .nav(Tab::Index)
+        .body(html! {
             h2 { "Refs" }
             details .refs-list open {
                 summary { "Tracked (" (tracked_refs.len()) ")" }
@@ -92,6 +90,8 @@ pub async fn get_index(
             form method="post" action=(config.path(PathAdminRefsUpdate {})) {
                 button { "Update" }
             }
-        },
-    ))
+        })
+        .build();
+
+    Ok(html)
 }
