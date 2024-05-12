@@ -12,7 +12,7 @@ use crate::{
     server::{
         util,
         web::{
-            base::{Base, Tab},
+            page::{Page, Tab},
             paths::{PathGraph, PathGraphCommits, PathGraphMeasurements, PathGraphMetrics},
             r#static::{GRAPH_JS, UPLOT_CSS},
             server_config_ext::ServerConfigExt,
@@ -25,22 +25,23 @@ pub async fn get_graph(
     _path: PathGraph,
     State(config): State<&'static ServerConfig>,
 ) -> somehow::Result<impl IntoResponse> {
-    let base = Base::new(config, Tab::Graph);
-
-    Ok(base.html(
-        "graph",
-        html! {
+    let html = Page::new(config)
+        .title("graph")
+        .nav(Tab::Graph)
+        .head(html! {
             link rel="stylesheet" href=(config.path(UPLOT_CSS));
             script type="module" src=(config.path(GRAPH_JS)) {}
-        },
-        html! {
+        })
+        .body(html! {
             h2 { "Graph" }
             div .graph-container {
                 div #plot {}
                 div #metrics .metrics-list { "Loading metrics..." }
             }
-        },
-    ))
+        })
+        .build();
+
+    Ok(html)
 }
 
 #[derive(Serialize)]
