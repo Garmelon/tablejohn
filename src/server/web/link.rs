@@ -1,4 +1,3 @@
-use askama::Template;
 use maud::{html, Markup};
 use time::OffsetDateTime;
 
@@ -9,18 +8,6 @@ use super::{
     paths::{PathCommitByHash, PathRunById, PathWorkerByName},
 };
 
-#[derive(Template)]
-#[template(
-    ext = "html",
-    source = "\
-{% import \"util.html\" as util %}
-<a href=\"{{ link }}\" \
-   class=\"{% call util::commit_class(reachable) %}\" \
-   title=\"{% call util::commit_title(reachable) %}\">
-   {{ short|truncate(80) }}
-</a>
-"
-)]
 pub struct LinkCommit {
     link: Link,
     short: String,
@@ -65,11 +52,6 @@ impl LinkCommit {
     }
 }
 
-#[derive(Template)]
-#[template(
-    ext = "html",
-    source = "<a href=\"{{ link }}\">Run of {{ short|truncate(80) }}</a>"
-)]
 pub struct LinkRunShort {
     link: Link,
     short: String,
@@ -90,11 +72,6 @@ impl LinkRunShort {
     }
 }
 
-#[derive(Template)]
-#[template(
-    ext = "html",
-    source = "<a href=\"{{ link }}\">Run from {{ date }}</a>"
-)]
 pub struct LinkRunDate {
     link: Link,
     date: String, // TODO base.date(...)?
@@ -115,8 +92,6 @@ impl LinkRunDate {
     }
 }
 
-#[derive(Template)]
-#[template(ext = "html", source = "<a href=\"{{ link }}\">{{ name }}</a>")]
 pub struct LinkWorker {
     link: Link,
     name: String,

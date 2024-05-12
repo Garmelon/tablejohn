@@ -5,8 +5,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.83"
-askama = { version = "0.12.1", features = ["with-axum"] }
-askama_axum = "0.4.0"
 axum = { version = "0.7.5", features = ["macros"] }
 axum-extra = { version = "0.9.3", features = ["query", "typed-routing", "typed-header"] }
 bytes = "1.6.0"
