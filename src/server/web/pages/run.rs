@@ -4,18 +4,14 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use futures::TryStreamExt;
-use maud::html;
+use maud::{html, Markup};
 use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
     server::{
         util,
-        web::{
-            base::{Base, Tab},
-            components,
-            paths::PathRunById,
-        },
+        web::{components, page::Page, paths::PathRunById},
     },
     somehow,
 };
@@ -35,7 +31,7 @@ async fn from_finished_run(
     id: &str,
     config: &'static ServerConfig,
     db: &SqlitePool,
-) -> somehow::Result<Option<Response>> {
+) -> somehow::Result<Option<Markup>> {
     let Some(run) = sqlx::query!(
         "\
         SELECT \
@@ -96,65 +92,68 @@ async fn from_finished_run(
     .try_collect::<Vec<_>>()
     .await?;
 
-    let base = Base::new(config, Tab::None);
-
     let commit = components::link_commit(config, run.hash, &run.message, run.reachable);
 
-    Ok(Some(
-        base.html(
-            &format!("Run of {}", util::format_commit_summary(&run.message)),
-            html! {},
-            html! {
-                h2 { "Run" }
-                div .commit-like .run {
-                    span .title { "run " (run.id) }
-                    dl {
-                        dt { "Commit:" }
-                        dd { (commit)}
+    let html = Page::new(config)
+        .title(format!(
+            "Run of {}",
+            util::format_commit_summary(&run.message)
+        ))
+        .body(html! {
+            h2 { "Run" }
+            div .commit-like .run {
+                span .title { "run " (run.id) }
+                dl {
+                    dt { "Commit:" }
+                    dd { (commit)}
 
-                        dt { "Benchmark:" }
-                        dd { (run.bench_method) }
+                    dt { "Benchmark:" }
+                    dd { (run.bench_method) }
 
-                        dt { "Start:" }
-                        dd { (util::format_time(run.start)) }
+                    dt { "Start:" }
+                    dd { (util::format_time(run.start)) }
 
-                        dt { "End:" }
-                        dd { (util::format_time(run.end)) }
+                    dt { "End:" }
+                    dd { (util::format_time(run.end)) }
 
-                        dt { "Duration:" }
-                        dd { (util::format_duration(run.end - run.start)) }
+                    dt { "Duration:" }
+                    dd { (util::format_duration(run.end - run.start)) }
 
-                        dt { "Exit code:" }
-                        dd { (run.exit_code) }
+                    dt { "Exit code:" }
+                    dd { (run.exit_code) }
+                }
+            }
+        })
+        .body(html! {
+            h2 { "Measurements" }
+            table {
+                thead {
+                    tr {
+                        th { "metric" }
+                        th { "value" }
+                        th { "unit" }
                     }
                 }
-                h2 { "Measurements" }
-                table {
-                    thead {
-                        tr {
-                            th { "metric" }
-                            th { "value" }
-                            th { "unit" }
-                        }
-                    }
-                    tbody {
-                        @for mm in measurements { tr {
-                            td { (mm.metric) }
-                            td { (mm.value) }
-                            td { (mm.unit) }
-                        } }
-                    }
+                tbody {
+                    @for mm in measurements { tr {
+                        td { (mm.metric) }
+                        td { (mm.value) }
+                        td { (mm.unit) }
+                    } }
                 }
-                h2 { "Output" }
-                div .run-output {
-                    @for line in output {
-                        pre { (line.text) }
-                    }
+            }
+        })
+        .body(html! {
+            h2 { "Output" }
+            div .run-output {
+                @for line in output {
+                    pre { (line.text) }
                 }
-            },
-        )
-        .into_response(),
-    ))
+            }
+        })
+        .build();
+
+    Ok(Some(html))
 }
 
 pub async fn get_run_by_id(
@@ -162,8 +161,8 @@ pub async fn get_run_by_id(
     State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
-    if let Some(response) = from_finished_run(&path.id, config, &db).await? {
-        Ok(response)
+    if let Some(markup) = from_finished_run(&path.id, config, &db).await? {
+        Ok(markup.into_response())
     } else {
         // TODO Show unfinished runs
         Ok(StatusCode::NOT_FOUND.into_response())
