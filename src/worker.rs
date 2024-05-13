@@ -89,7 +89,7 @@ impl Worker {
         let Some(run) = self.request_run(server).await else {
             return false;
         };
-        let run = RunInProgress::new(server.name.clone(), server.server_config, run);
+        let run = RunInProgress::new(server.name.clone(), run);
         *server.current_run.lock().unwrap() = Some(run.clone());
         drop(guard);
 

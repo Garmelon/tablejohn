@@ -153,7 +153,7 @@ fn measurements(counts: Counts) -> HashMap<String, Measurement> {
 }
 
 impl RunInProgress {
-    pub(super) async fn perform_internal(
+    pub(super) async fn execute_internal(
         &self,
         server: &Server,
     ) -> somehow::Result<Option<Finished>> {

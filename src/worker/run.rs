@@ -1,4 +1,5 @@
 mod internal;
+mod repo;
 
 use std::{
     collections::HashMap,
@@ -9,9 +10,9 @@ use log::{error, warn};
 use tokio::{select, sync::Notify};
 
 use crate::{
-    config::WorkerServerConfig,
     primitive::Source,
     shared::{BenchMethod, FinishedRun, Measurement, Run, UnfinishedRun},
+    somehow,
 };
 
 use super::server::Server;
@@ -26,17 +27,15 @@ const SCROLLBACK: usize = 50;
 #[derive(Clone)]
 pub struct RunInProgress {
     server_name: String,
-    server_config: &'static WorkerServerConfig,
     run: Run,
     output: Arc<Mutex<Vec<(Source, String)>>>,
     abort: Arc<Notify>,
 }
 
 impl RunInProgress {
-    pub fn new(server_name: String, server_config: &'static WorkerServerConfig, run: Run) -> Self {
+    pub fn new(server_name: String, run: Run) -> Self {
         Self {
             server_name,
-            server_config,
             run,
             output: Arc::new(Mutex::new(vec![])),
             abort: Arc::new(Notify::new()),
@@ -80,16 +79,18 @@ impl RunInProgress {
         self.output.lock().unwrap().push((Source::Stderr, line));
     }
 
+    async fn execute_bench_method(&self, server: &Server) -> somehow::Result<Option<Finished>> {
+        match &self.run.bench_method {
+            BenchMethod::Internal => self.execute_internal(server).await,
+            BenchMethod::Repo { hash } => self.execute_repo(server, hash).await,
+        }
+    }
+
     pub async fn perform(&self, server: &Server) -> Option<FinishedRun> {
         // TODO Log system info
 
-        let run_future = match &self.run.bench_method {
-            BenchMethod::Internal => self.perform_internal(server),
-            BenchMethod::Repo { hash } => todo!(),
-        };
-
         let result = select! {
-            result = run_future => result,
+            result = self.execute_bench_method(server) => result,
             _ = self.abort.notified() => {
                 warn!("Run for {} was aborted", server.name);
                 Ok(None)

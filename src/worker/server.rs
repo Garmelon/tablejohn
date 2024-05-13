@@ -98,6 +98,8 @@ impl Server {
             },
         );
 
+        debug!("Downloading repo from {url}");
+
         let response = self
             .client
             .get(url)
@@ -116,6 +118,8 @@ impl Server {
                 hash: hash.to_string()
             },
         );
+
+        debug!("Downloading bench repo from {url}");
 
         let response = self
             .client
