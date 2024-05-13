@@ -12,11 +12,7 @@ use crate::{
     config::ServerConfig,
     server::{
         util,
-        web::{
-            base::{Base, Tab},
-            components,
-            paths::PathWorkerByName,
-        },
+        web::{components, page::Page, paths::PathWorkerByName},
         workers::Workers,
     },
     shared::WorkerStatus,
@@ -61,42 +57,39 @@ pub async fn get_worker_by_name(
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
 
-    let base = Base::new(config, Tab::None);
-
     let status = status(config, &info.status, &db).await?;
 
-    Ok(base
-        .html(
-            &path.name,
-            html! {},
-            html! {
-                h2 { "Worker" }
-                div .commit-like .worker {
-                    span .title { "worker " (path.name) }
-                    dl {
-                        dt { "Connected:" }
-                        dd { (util::format_time(info.first_seen)) }
+    let html = Page::new(config)
+        .title(&path.name)
+        .body(html! {
+            h2 { "Worker" }
+            div .commit-like .worker {
+                span .title { "worker " (path.name) }
+                dl {
+                    dt { "Connected:" }
+                    dd { (util::format_time(info.first_seen)) }
 
-                        @match status {
-                            Status::Idle => {
-                                dt { "Working on:" }
-                                dd { "nothing" }
-                            }
-                            Status::Busy => {
-                                dt { "Working on:" }
-                                dd { "run for another server" }
-                            }
-                            Status::Working { link, since } => {
-                                dt { "Working on:" }
-                                dd { (link) }
+                    @match status {
+                        Status::Idle => {
+                            dt { "Working on:" }
+                            dd { "nothing" }
+                        }
+                        Status::Busy => {
+                            dt { "Working on:" }
+                            dd { "run for another server" }
+                        }
+                        Status::Working { link, since } => {
+                            dt { "Working on:" }
+                            dd { (link) }
 
-                                dt { "Working since:" }
-                                dd { (since) }
-                            }
+                            dt { "Working since:" }
+                            dd { (since) }
                         }
                     }
                 }
-            },
-        )
-        .into_response())
+            }
+        })
+        .build();
+
+    Ok(html.into_response())
 }
