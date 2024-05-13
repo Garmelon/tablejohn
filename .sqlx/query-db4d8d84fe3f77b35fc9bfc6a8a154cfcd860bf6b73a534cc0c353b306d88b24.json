@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT hash, message, reachable AS \"reachable: Reachable\" FROM commits JOIN commit_edges ON hash = parent WHERE child = ? ORDER BY reachable DESC, unixepoch(committer_date) ASC ",
+  "query": "\n        SELECT\n            hash,\n            message,\n            reachable AS \"reachable: Reachable\"\n        FROM commits\n        JOIN commit_edges ON hash = parent\n        WHERE child = ?\n        ORDER BY reachable DESC, unixepoch(committer_date) ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "595f95ecdafb7c94bcf4cc81222e207079e2da3779a1ce3c8b5833e335faf130"
+  "hash": "db4d8d84fe3f77b35fc9bfc6a8a154cfcd860bf6b73a534cc0c353b306d88b24"
 }

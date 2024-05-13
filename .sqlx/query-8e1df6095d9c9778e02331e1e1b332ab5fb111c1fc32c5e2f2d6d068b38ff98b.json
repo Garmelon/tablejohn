@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT name, hash, message, reachable AS \"reachable: Reachable\", tracked FROM refs JOIN commits USING (hash) ORDER BY name ASC ",
+  "query": "\n        SELECT\n            name,\n            hash,\n            message,\n            reachable AS \"reachable: Reachable\",\n            tracked\n        FROM refs\n        JOIN commits USING (hash)\n        ORDER BY name ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "1df8ec0b41dbafe191f6990d6be6f6f3c9d86ea9ca8112f16b5735b1193ea243"
+  "hash": "8e1df6095d9c9778e02331e1e1b332ab5fb111c1fc32c5e2f2d6d068b38ff98b"
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT hash, message, reachable AS \"reachable: Reachable\" FROM commits JOIN queue USING (hash) WHERE hash = ? ",
+  "query": "\n        SELECT\n            hash,\n            message,\n            reachable AS \"reachable: Reachable\"\n            FROM commits\n        JOIN queue USING (hash)\n        WHERE hash = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "dcd37f22be87b31a7edaba2c4225d3ddfb9802c532102036e1d2ec3cd1adc51f"
+  "hash": "cdc415297929fc696b8633bac5e12e6e3be1fd0dfcf188d0b778ebea92bf4a36"
 }

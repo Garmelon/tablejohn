@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT hash, author, author_date AS \"author_date: time::OffsetDateTime\", committer, committer_date AS \"committer_date: time::OffsetDateTime\", message, reachable AS \"reachable: Reachable\" FROM commits WHERE hash = ? ",
+  "query": "\n        SELECT\n            hash,\n            author,\n            author_date AS \"author_date: time::OffsetDateTime\",\n            committer,\n            committer_date AS \"committer_date: time::OffsetDateTime\",\n            message,\n            reachable AS \"reachable: Reachable\"\n        FROM commits\n        WHERE hash = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -52,5 +52,5 @@
       false
     ]
   },
-  "hash": "c75001269238285e4de8d609a404b7249df61711324b3cae4c21b74b0875100d"
+  "hash": "9ffcba9ec91ee686072b0c06b59d6bbcb59e36c51141ca5ea57ea69c21ba119b"
 }

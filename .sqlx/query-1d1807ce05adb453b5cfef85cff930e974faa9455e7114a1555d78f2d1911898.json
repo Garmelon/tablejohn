@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO queue (hash, date, priority) VALUES (?, ?, ?)\n        ON CONFLICT (hash) DO UPDATE\n        SET priority = excluded.priority WHERE priority < excluded.priority\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "1d1807ce05adb453b5cfef85cff930e974faa9455e7114a1555d78f2d1911898"
+}

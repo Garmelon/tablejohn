@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT hash, author, message, committer_date AS \"committer_date: OffsetDateTime\" FROM commits WHERE reachable = ? ORDER BY hash ASC ",
+  "query": "\n        SELECT\n            hash,\n            author,\n            message,\n            committer_date AS \"committer_date: OffsetDateTime\"\n        FROM commits\n        WHERE reachable = ?\n        ORDER BY hash ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -34,5 +34,5 @@
       false
     ]
   },
-  "hash": "2d4ddb045e286955334793d7610f1f1ee1d7d825031b003db6117231a16d2f50"
+  "hash": "7bdc8131149c3ea2a905e9eba48afaf0ee56f280456879c34b7b1528fd9c8024"
 }

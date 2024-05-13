@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        WITH RECURSIVE\n            tracked (hash) AS (\n                SELECT hash FROM refs WHERE tracked\n                UNION\n                SELECT parent FROM commit_edges\n                JOIN tracked ON hash = child\n            ),\n            reachable (hash) AS (\n                SELECT hash FROM refs\n                UNION\n                SELECT hash FROM tracked\n                UNION\n                SELECT parent FROM commit_edges\n                JOIN reachable ON hash = child\n            )\n        UPDATE commits\n        SET reachable = CASE\n            WHEN hash IN tracked   THEN ?\n            WHEN hash IN reachable THEN ?\n            ELSE ?\n        END\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "f5c0c5d1fc0b1eaf3fd18614c6abd5c261b130e3af0ce0a67780203ec12aefdd"
+}

@@ -27,17 +27,17 @@ pub async fn get_index(
     State(db): State<SqlitePool>,
 ) -> somehow::Result<impl IntoResponse> {
     let refs = sqlx::query!(
-        "\
-        SELECT \
-            name, \
-            hash, \
-            message, \
-            reachable AS \"reachable: Reachable\", \
-            tracked \
-        FROM refs \
-        JOIN commits USING (hash) \
-        ORDER BY name ASC \
-        "
+        r#"
+        SELECT
+            name,
+            hash,
+            message,
+            reachable AS "reachable: Reachable",
+            tracked
+        FROM refs
+        JOIN commits USING (hash)
+        ORDER BY name ASC
+        "#
     )
     .fetch(&db)
     .map_ok(|r| Ref {

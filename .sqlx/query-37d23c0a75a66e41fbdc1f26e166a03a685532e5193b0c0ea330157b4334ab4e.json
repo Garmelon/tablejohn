@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT metric, value, unit FROM run_measurements WHERE id = ? ORDER BY metric ASC ",
+  "query": "\n        SELECT\n            metric,\n            value,\n            unit\n        FROM run_measurements\n        WHERE id = ?\n        ORDER BY metric ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       true
     ]
   },
-  "hash": "185c3516e116876f1783f25ffeb179ca6ecb4f9a001a48127516a81b7a50062a"
+  "hash": "37d23c0a75a66e41fbdc1f26e166a03a685532e5193b0c0ea330157b4334ab4e"
 }

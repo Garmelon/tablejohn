@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT hash, message, reachable AS \"reachable: Reachable\", date AS \"date: time::OffsetDateTime\", priority FROM queue JOIN commits USING (hash) ORDER BY priority DESC, unixepoch(date) DESC, hash ASC ",
+  "query": "\n        SELECT\n            hash,\n            message,\n            reachable AS \"reachable: Reachable\",\n            date AS \"date: time::OffsetDateTime\",\n            priority\n        FROM queue\n        JOIN commits USING (hash)\n        ORDER BY priority DESC, unixepoch(date) DESC, hash ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "5da81c9c9875bf4fd4e894ca54be65aee3d76a26c12feb1e4f25e9f482cd153e"
+  "hash": "af399d06762680bbb967bd4665444a816f936e59e89b4042931de82054a2c067"
 }

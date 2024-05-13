@@ -36,10 +36,10 @@ pub async fn post_admin_queue_add(
 ) -> somehow::Result<impl IntoResponse> {
     let date = OffsetDateTime::now_utc();
     sqlx::query!(
-        "\
-        INSERT INTO queue (hash, date, priority) VALUES (?, ?, ?) \
-        ON CONFLICT (hash) DO UPDATE \
-        SET priority = excluded.priority WHERE priority < excluded.priority \
+        "
+        INSERT INTO queue (hash, date, priority) VALUES (?, ?, ?)
+        ON CONFLICT (hash) DO UPDATE
+        SET priority = excluded.priority WHERE priority < excluded.priority
         ",
         form.hash,
         date,
@@ -71,14 +71,14 @@ pub async fn post_admin_queue_add_batch(
 ) -> somehow::Result<impl IntoResponse> {
     let date = OffsetDateTime::now_utc();
     let added = sqlx::query!(
-        "\
-        INSERT OR IGNORE INTO queue (hash, date, priority) \
-        SELECT hash, ?, ? \
-        FROM commits \
-        LEFT JOIN runs USING (hash) \
-        WHERE reachable = ? AND id IS NULL \
-        ORDER BY unixepoch(committer_date) DESC \
-        LIMIT ? \
+        "
+        INSERT OR IGNORE INTO queue (hash, date, priority)
+        SELECT hash, ?, ?
+        FROM commits
+        LEFT JOIN runs USING (hash)
+        WHERE reachable = ? AND id IS NULL
+        ORDER BY unixepoch(committer_date) DESC
+        LIMIT ?
         ",
         date,
         form.priority,
@@ -132,7 +132,7 @@ pub async fn post_admin_queue_increase(
 ) -> somehow::Result<impl IntoResponse> {
     sqlx::query!(
         "UPDATE queue SET priority = priority + 1 WHERE hash = ?",
-        form.hash
+        form.hash,
     )
     .execute(&db)
     .await?;
@@ -155,7 +155,7 @@ pub async fn post_admin_queue_decrease(
 ) -> somehow::Result<impl IntoResponse> {
     sqlx::query!(
         "UPDATE queue SET priority = priority - 1 WHERE hash = ?",
-        form.hash
+        form.hash,
     )
     .execute(&db)
     .await?;

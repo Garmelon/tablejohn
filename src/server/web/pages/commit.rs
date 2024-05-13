@@ -28,18 +28,18 @@ pub async fn get_commit_by_hash(
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
     let Some(commit) = sqlx::query!(
-        "\
-        SELECT \
-            hash, \
-            author, \
-            author_date AS \"author_date: time::OffsetDateTime\", \
-            committer, \
-            committer_date AS \"committer_date: time::OffsetDateTime\", \
-            message, \
-            reachable AS \"reachable: Reachable\" \
-        FROM commits \
-        WHERE hash = ? \
-        ",
+        r#"
+        SELECT
+            hash,
+            author,
+            author_date AS "author_date: time::OffsetDateTime",
+            committer,
+            committer_date AS "committer_date: time::OffsetDateTime",
+            message,
+            reachable AS "reachable: Reachable"
+        FROM commits
+        WHERE hash = ?
+        "#,
         path.hash,
     )
     .fetch_optional(&db)
@@ -49,16 +49,16 @@ pub async fn get_commit_by_hash(
     };
 
     let parents = sqlx::query!(
-        "\
-        SELECT \
-            hash, \
-            message, \
-            reachable AS \"reachable: Reachable\" \
-        FROM commits \
-        JOIN commit_edges ON hash = parent \
-        WHERE child = ? \
-        ORDER BY reachable DESC, unixepoch(committer_date) ASC \
-        ",
+        r#"
+        SELECT
+            hash,
+            message,
+            reachable AS "reachable: Reachable"
+        FROM commits
+        JOIN commit_edges ON hash = parent
+        WHERE child = ?
+        ORDER BY reachable DESC, unixepoch(committer_date) ASC
+        "#,
         path.hash,
     )
     .fetch(&db)
@@ -67,16 +67,16 @@ pub async fn get_commit_by_hash(
     .await?;
 
     let children = sqlx::query!(
-        "\
-        SELECT \
-            hash, \
-            message, \
-            reachable AS \"reachable: Reachable\" \
-        FROM commits \
-        JOIN commit_edges ON hash = child \
-        WHERE parent = ? \
-        ORDER BY reachable DESC, unixepoch(committer_date) ASC \
-        ",
+        r#"
+        SELECT
+            hash,
+            message,
+            reachable AS "reachable: Reachable"
+        FROM commits
+        JOIN commit_edges ON hash = child
+        WHERE parent = ?
+        ORDER BY reachable DESC, unixepoch(committer_date) ASC
+        "#,
         path.hash,
     )
     .fetch(&db)
@@ -85,13 +85,13 @@ pub async fn get_commit_by_hash(
     .await?;
 
     let runs = sqlx::query!(
-        "\
-        SELECT \
-            id, \
-            start AS \"start: time::OffsetDateTime\" \
-        FROM runs WHERE hash = ? \
-        ",
-        path.hash
+        r#"
+        SELECT
+            id,
+            start AS "start: time::OffsetDateTime"
+        FROM runs WHERE hash = ?
+        "#,
+        path.hash,
     )
     .fetch(&db)
     .map_ok(|r| components::link_run_date(config, r.id, r.start))

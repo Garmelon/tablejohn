@@ -91,23 +91,23 @@ async fn insert_new_commits(
         let message = commit.message_raw()?.to_string();
 
         sqlx::query!(
-            "\
-            INSERT OR IGNORE INTO commits ( \
-                hash, \
-                author, \
-                author_date, \
-                committer, \
-                committer_date, \
-                message \
-            ) \
-            VALUES (?, ?, ?, ?, ?, ?) \
+            "
+            INSERT OR IGNORE INTO commits (
+                hash,
+                author,
+                author_date,
+                committer,
+                committer_date,
+                message
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
             ",
             hash,
             author,
             author_date,
             committer,
             committer_date,
-            message
+            message,
         )
         .execute(&mut *conn)
         .await?;
@@ -182,13 +182,13 @@ async fn update_refs(conn: &mut SqliteConnection, refs: Vec<Reference>) -> someh
         let hash = hash.to_string();
 
         sqlx::query!(
-            "\
-            INSERT INTO refs (name, hash) VALUES (?, ?) \
-            ON CONFLICT (name) DO UPDATE \
-                SET hash = excluded.hash \
+            "
+            INSERT INTO refs (name, hash) VALUES (?, ?)
+            ON CONFLICT (name) DO UPDATE
+            SET hash = excluded.hash
             ",
             name,
-            hash
+            hash,
         )
         .execute(&mut *conn)
         .await?;
@@ -210,28 +210,28 @@ async fn track_main_branch(conn: &mut SqliteConnection, repo: &Repository) -> so
 
 async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::Result<()> {
     sqlx::query!(
-        "\
-        WITH RECURSIVE \
-            tracked (hash) AS ( \
-                SELECT hash FROM refs WHERE tracked \
-                UNION \
-                SELECT parent FROM commit_edges \
-                JOIN tracked ON hash = child \
-            ), \
-            reachable (hash) AS ( \
-                SELECT hash FROM refs \
-                UNION \
-                SELECT hash FROM tracked \
-                UNION \
-                SELECT parent FROM commit_edges \
-                JOIN reachable ON hash = child \
-            ) \
-        UPDATE commits \
-        SET reachable = CASE \
-            WHEN hash IN tracked   THEN ? \
-            WHEN hash IN reachable THEN ? \
-            ELSE ? \
-        END \
+        "
+        WITH RECURSIVE
+            tracked (hash) AS (
+                SELECT hash FROM refs WHERE tracked
+                UNION
+                SELECT parent FROM commit_edges
+                JOIN tracked ON hash = child
+            ),
+            reachable (hash) AS (
+                SELECT hash FROM refs
+                UNION
+                SELECT hash FROM tracked
+                UNION
+                SELECT parent FROM commit_edges
+                JOIN reachable ON hash = child
+            )
+        UPDATE commits
+        SET reachable = CASE
+            WHEN hash IN tracked   THEN ?
+            WHEN hash IN reachable THEN ?
+            ELSE ?
+        END
         ",
         Reachable::FromTrackedRef,
         Reachable::FromAnyRef,

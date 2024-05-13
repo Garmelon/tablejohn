@@ -34,20 +34,20 @@ async fn from_finished_run(
     db: &SqlitePool,
 ) -> somehow::Result<Option<Markup>> {
     let Some(run) = sqlx::query!(
-        "\
-        SELECT \
-            id, \
-            hash, \
-            bench_method, \
-            start AS \"start: time::OffsetDateTime\", \
-            end AS \"end: time::OffsetDateTime\", \
-            exit_code, \
-            message, \
-            reachable AS \"reachable: Reachable\" \
-        FROM runs \
-        JOIN commits USING (hash) \
-        WHERE id = ? \
-        ",
+        r#"
+        SELECT
+            id,
+            hash,
+            bench_method,
+            start AS "start: time::OffsetDateTime",
+            end AS "end: time::OffsetDateTime",
+            exit_code,
+            message,
+            reachable AS "reachable: Reachable"
+        FROM runs
+        JOIN commits USING (hash)
+        WHERE id = ?
+        "#,
         id,
     )
     .fetch_optional(db)
@@ -57,14 +57,14 @@ async fn from_finished_run(
     };
 
     let measurements = sqlx::query!(
-        "\
-        SELECT \
-            metric, \
-            value, \
-            unit \
-        FROM run_measurements \
-        WHERE id = ? \
-        ORDER BY metric ASC \
+        "
+        SELECT
+            metric,
+            value,
+            unit
+        FROM run_measurements
+        WHERE id = ?
+        ORDER BY metric ASC
         ",
         id,
     )
@@ -78,10 +78,10 @@ async fn from_finished_run(
     .await?;
 
     let output = sqlx::query!(
-        "\
-        SELECT source, text FROM run_output \
-        WHERE id = ? \
-        ORDER BY line ASC \
+        "
+        SELECT source, text FROM run_output
+        WHERE id = ?
+        ORDER BY line ASC
         ",
         id,
     )

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT child, parent FROM commit_edges JOIN commits ON hash = child WHERE reachable = ? ORDER BY hash ASC ",
+  "query": "\n        SELECT child, parent\n        FROM commit_edges\n        JOIN commits ON hash = child\n        WHERE reachable = ?\n        ORDER BY hash ASC\n        ",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "ba09c191e2a83d4398b26888f041c93095ba82693b0b9c2c2eebd65078f7d168"
+  "hash": "7520b53b64047c62443d415bdf37b875dc4f75a4c953f82aa72c1e42de53e8d2"
 }

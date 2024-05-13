@@ -117,17 +117,17 @@ async fn get_queue_data(
     }
 
     let mut tasks = sqlx::query!(
-        "\
-        SELECT \
-            hash, \
-            message, \
-            reachable AS \"reachable: Reachable\", \
-            date AS \"date: time::OffsetDateTime\", \
-            priority \
-        FROM queue \
-        JOIN commits USING (hash) \
-        ORDER BY priority DESC, unixepoch(date) DESC, hash ASC \
-        "
+        r#"
+        SELECT
+            hash,
+            message,
+            reachable AS "reachable: Reachable",
+            date AS "date: time::OffsetDateTime",
+            priority
+        FROM queue
+        JOIN commits USING (hash)
+        ORDER BY priority DESC, unixepoch(date) DESC, hash ASC
+        "#
     )
     .fetch(db)
     .map_ok(|r| Task {
@@ -276,15 +276,15 @@ pub async fn get_queue_delete(
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
     let Some(r) = sqlx::query!(
-        "\
-        SELECT \
-            hash, \
-            message, \
-            reachable AS \"reachable: Reachable\" \
-            FROM commits \
-        JOIN queue USING (hash) \
-        WHERE hash = ? \
-        ",
+        r#"
+        SELECT
+            hash,
+            message,
+            reachable AS "reachable: Reachable"
+            FROM commits
+        JOIN queue USING (hash)
+        WHERE hash = ?
+        "#,
         path.hash,
     )
     .fetch_optional(&db)

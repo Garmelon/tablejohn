@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id, start AS \"start: time::OffsetDateTime\" FROM runs WHERE hash = ? ",
+  "query": "\n        SELECT\n            id,\n            start AS \"start: time::OffsetDateTime\"\n        FROM runs WHERE hash = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "b43ea10c6fd75dfe251c3dc3001649a13b9893722b23c2bbcec1f015e57b5613"
+  "hash": "808b4cccd8740d62cf860782be780a54e5724c38ce415f852e36e2607e3266f2"
 }

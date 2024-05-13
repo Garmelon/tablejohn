@@ -93,16 +93,16 @@ pub async fn get_graph_commits(
 
     // Fetch main commit info
     let mut rows = sqlx::query!(
-        "\
-        SELECT \
-            hash, \
-            author, \
-            message, \
-            committer_date AS \"committer_date: OffsetDateTime\" \
-        FROM commits \
-        WHERE reachable = ? \
-        ORDER BY hash ASC \
-        ",
+        r#"
+        SELECT
+            hash,
+            author,
+            message,
+            committer_date AS "committer_date: OffsetDateTime"
+        FROM commits
+        WHERE reachable = ?
+        ORDER BY hash ASC
+        "#,
         Reachable::FromTrackedRef,
     )
     .fetch(&mut *conn);
@@ -124,12 +124,12 @@ pub async fn get_graph_commits(
 
     // Fetch parent info
     let mut rows = sqlx::query!(
-        "\
-        SELECT child, parent \
-        FROM commit_edges \
-        JOIN commits ON hash = child \
-        WHERE reachable = ? \
-        ORDER BY hash ASC \
+        "
+        SELECT child, parent
+        FROM commit_edges
+        JOIN commits ON hash = child
+        WHERE reachable = ?
+        ORDER BY hash ASC
         ",
         Reachable::FromTrackedRef,
     )

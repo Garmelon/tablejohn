@@ -45,18 +45,18 @@ async fn save_work(
     let end = run.end.map(|t| t.0).unwrap_or_else(OffsetDateTime::now_utc);
 
     sqlx::query!(
-        "\
-        INSERT INTO runs ( \
-            id, \
-            hash, \
-            bench_method, \
-            worker_name, \
-            worker_info, \
-            start, \
-            end, \
-            exit_code \
-        ) \
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?) \
+        "
+        INSERT INTO runs (
+            id,
+            hash,
+            bench_method,
+            worker_name,
+            worker_info,
+            start,
+            end,
+            exit_code
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ",
         run.id,
         run.hash,
@@ -78,14 +78,14 @@ async fn save_work(
 
     for (metric, measurement) in run.measurements {
         sqlx::query!(
-            "\
-            INSERT INTO run_measurements ( \
-                id, \
-                metric, \
-                value, \
-                unit \
-            ) \
-            VALUES (?, ?, ?, ?) \
+            "
+            INSERT INTO run_measurements (
+                id,
+                metric,
+                value,
+                unit
+            )
+            VALUES (?, ?, ?, ?)
             ",
             run.id,
             metric,
@@ -100,14 +100,14 @@ async fn save_work(
         // Hopefully we won't need more than 4294967296 lines per run :P
         let line = line as u32;
         sqlx::query!(
-            "\
-            INSERT INTO run_output ( \
-                id, \
-                line, \
-                source, \
-                text \
-            ) \
-            VALUES (?, ?, ?, ?) \
+            "
+            INSERT INTO run_output (
+                id,
+                line,
+                source,
+                text
+            )
+            VALUES (?, ?, ?, ?)
             ",
             run.id,
             line,
