@@ -5,7 +5,7 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 /// The source of a line of output.
-#[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
+#[derive(Debug, Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
 #[repr(u8)]
 pub enum Source {
     Internal = 0,
@@ -14,7 +14,7 @@ pub enum Source {
 }
 
 /// The direction a measured value improves in.
-#[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
+#[derive(Debug, Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
 #[repr(i8)]
 pub enum Direction {
     LessIsBetter = -1,
@@ -32,9 +32,15 @@ pub enum Reachable {
 }
 
 /// A time stamp, usually formatted using RFC3339.
-#[derive(Clone, Copy, sqlx::Type)]
+#[derive(Debug, Clone, Copy, sqlx::Type)]
 #[sqlx(transparent)]
 pub struct Timestamp(pub OffsetDateTime);
+
+impl Timestamp {
+    pub fn now() -> Self {
+        Self(OffsetDateTime::now_utc())
+    }
+}
 
 impl serde::Serialize for Timestamp {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

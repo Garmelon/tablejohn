@@ -40,7 +40,7 @@ async fn status(
                     .await?;
             Status::Working {
                 link: components::link_run_short(config, run.id.clone(), &run.hash, &message),
-                since: format::time(run.start.0),
+                since: format::time(run.start),
             }
         }
     })

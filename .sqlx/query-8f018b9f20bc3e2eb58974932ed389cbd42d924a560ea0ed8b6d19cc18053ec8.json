@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT\n            id,\n            start AS \"start: time::OffsetDateTime\"\n        FROM runs WHERE hash = ?\n        ",
+  "query": "\n        SELECT\n            id,\n            start AS \"start: Timestamp\"\n        FROM runs WHERE hash = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -9,7 +9,7 @@
         "type_info": "Text"
       },
       {
-        "name": "start: time::OffsetDateTime",
+        "name": "start: Timestamp",
         "ordinal": 1,
         "type_info": "Text"
       }
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "808b4cccd8740d62cf860782be780a54e5724c38ce415f852e36e2607e3266f2"
+  "hash": "8f018b9f20bc3e2eb58974932ed389cbd42d924a560ea0ed8b6d19cc18053ec8"
 }

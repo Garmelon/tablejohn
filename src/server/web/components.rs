@@ -1,7 +1,10 @@
 use maud::{html, Markup};
-use time::OffsetDateTime;
 
-use crate::{config::ServerConfig, primitive::Reachable, server::format};
+use crate::{
+    config::ServerConfig,
+    primitive::{Reachable, Timestamp},
+    server::format,
+};
 
 use super::{
     paths::{PathCommitByHash, PathRunById, PathWorkerByName},
@@ -60,7 +63,7 @@ pub fn link_run_short(config: &ServerConfig, id: String, hash: &str, message: &s
 }
 
 /// Link to a run by its start time.
-pub fn link_run_date(config: &ServerConfig, id: String, start: OffsetDateTime) -> Markup {
+pub fn link_run_date(config: &ServerConfig, id: String, start: Timestamp) -> Markup {
     let start = format::time(start);
     let path = config.path(PathRunById { id });
 

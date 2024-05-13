@@ -9,7 +9,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
-    primitive::Reachable,
+    primitive::{Reachable, Timestamp},
     server::{
         format,
         web::{
@@ -32,9 +32,9 @@ pub async fn get_commit_by_hash(
         SELECT
             hash,
             author,
-            author_date AS "author_date: time::OffsetDateTime",
+            author_date AS "author_date: Timestamp",
             committer,
-            committer_date AS "committer_date: time::OffsetDateTime",
+            committer_date AS "committer_date: Timestamp",
             message,
             reachable AS "reachable: Reachable"
         FROM commits
@@ -88,7 +88,7 @@ pub async fn get_commit_by_hash(
         r#"
         SELECT
             id,
-            start AS "start: time::OffsetDateTime"
+            start AS "start: Timestamp"
         FROM runs WHERE hash = ?
         "#,
         path.hash,

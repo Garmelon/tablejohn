@@ -21,6 +21,7 @@ use time::OffsetDateTime;
 
 use crate::{
     config::ServerConfig,
+    primitive::Timestamp,
     server::{
         web::paths::{
             PathApiWorkerBenchRepoByHashTreeTarGz, PathApiWorkerRepoByHashTreeTarGz,
@@ -174,7 +175,7 @@ pub async fn post_api_worker_status(
         }
         guard.update(
             name.clone(),
-            WorkerInfo::new(request.secret, OffsetDateTime::now_utc(), request.status),
+            WorkerInfo::new(request.secret, Timestamp::now(), request.status),
         );
         let work = match request.request_run {
             true => guard.find_and_reserve_run(&name, &queue, bench_method),

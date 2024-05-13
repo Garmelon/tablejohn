@@ -9,7 +9,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
-    primitive::Reachable,
+    primitive::{Reachable, Timestamp},
     server::{
         format,
         web::{components, page::Page, paths::PathRunById},
@@ -39,8 +39,8 @@ async fn from_finished_run(
             id,
             hash,
             bench_method,
-            start AS "start: time::OffsetDateTime",
-            end AS "end: time::OffsetDateTime",
+            start AS "start: Timestamp",
+            end AS "end: Timestamp",
             exit_code,
             message,
             reachable AS "reachable: Reachable"
@@ -115,7 +115,7 @@ async fn from_finished_run(
                     dd { (format::time(run.end)) }
 
                     dt { "Duration:" }
-                    dd { (format::duration(run.end - run.start)) }
+                    dd { (format::duration(run.end.0 - run.start.0)) }
 
                     dt { "Exit code:" }
                     dd { (run.exit_code) }

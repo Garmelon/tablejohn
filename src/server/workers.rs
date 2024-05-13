@@ -12,16 +12,16 @@ use crate::{
 #[derive(Clone)]
 pub struct WorkerInfo {
     pub secret: String,
-    pub first_seen: OffsetDateTime,
-    pub last_seen: OffsetDateTime,
+    pub first_seen: Timestamp,
+    pub last_seen: Timestamp,
     pub status: WorkerStatus,
 }
 
 impl WorkerInfo {
-    pub fn new(secret: String, last_seen: OffsetDateTime, status: WorkerStatus) -> Self {
+    pub fn new(secret: String, last_seen: Timestamp, status: WorkerStatus) -> Self {
         Self {
             secret,
-            first_seen: OffsetDateTime::now_utc(),
+            first_seen: Timestamp::now(),
             last_seen,
             status,
         }
@@ -44,7 +44,7 @@ impl Workers {
     pub fn clean(&mut self) -> &mut Self {
         let now = OffsetDateTime::now_utc();
         self.workers
-            .retain(|_, v| now <= v.last_seen + self.config.worker_timeout);
+            .retain(|_, v| now <= v.last_seen.0 + self.config.worker_timeout);
         self
     }
 
@@ -85,7 +85,7 @@ impl Workers {
             id,
             hash,
             bench_method,
-            start: Timestamp(OffsetDateTime::now_utc()),
+            start: Timestamp::now(),
         };
 
         // Reserve work so other workers don't choose it

@@ -3,7 +3,7 @@ use std::time::Duration;
 use gix::actor::IdentityRef;
 use time::{macros::format_description, OffsetDateTime};
 
-use crate::somehow;
+use crate::{primitive::Timestamp, somehow};
 
 pub fn duration(duration: time::Duration) -> String {
     let seconds = duration.unsigned_abs().as_secs(); // To nearest second
@@ -11,9 +11,9 @@ pub fn duration(duration: time::Duration) -> String {
     format!("{formatted}")
 }
 
-pub fn delta_from_now(time: OffsetDateTime) -> String {
+pub fn delta_from_now(time: Timestamp) -> String {
     let now = OffsetDateTime::now_utc();
-    let delta = time - now;
+    let delta = time.0 - now;
     let seconds = delta.unsigned_abs().as_secs();
     let seconds = seconds + 30 - (seconds + 30) % 60; // To nearest minute
     if seconds == 0 {
@@ -27,8 +27,9 @@ pub fn delta_from_now(time: OffsetDateTime) -> String {
     }
 }
 
-pub fn time(time: OffsetDateTime) -> String {
+pub fn time(time: Timestamp) -> String {
     let formatted_time = time
+        .0
         .format(format_description!(
         "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory][offset_minute]"
     ))

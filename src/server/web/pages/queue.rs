@@ -14,7 +14,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
-    primitive::Reachable,
+    primitive::{Reachable, Timestamp},
     server::{
         format,
         web::{
@@ -122,7 +122,7 @@ async fn get_queue_data(
             hash,
             message,
             reachable AS "reachable: Reachable",
-            date AS "date: time::OffsetDateTime",
+            date AS "date: Timestamp",
             priority
         FROM queue
         JOIN commits USING (hash)
