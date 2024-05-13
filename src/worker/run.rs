@@ -10,7 +10,8 @@ use tokio::sync::Notify;
 
 use crate::{
     config::WorkerServerConfig,
-    shared::{BenchMethod, FinishedRun, Measurement, Run, Source, UnfinishedRun},
+    primitive::Source,
+    shared::{BenchMethod, FinishedRun, Measurement, Run, UnfinishedRun},
 };
 
 use super::server::Server;

@@ -3,6 +3,7 @@
 mod args;
 mod config;
 mod id;
+mod primitive;
 mod server;
 mod shared;
 mod somehow;

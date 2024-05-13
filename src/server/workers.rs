@@ -5,7 +5,8 @@ use time::OffsetDateTime;
 use crate::{
     config::ServerConfig,
     id,
-    shared::{BenchMethod, Rfc3339Time, Run, UnfinishedRun, WorkerStatus},
+    primitive::Timestamp,
+    shared::{BenchMethod, Run, UnfinishedRun, WorkerStatus},
 };
 
 #[derive(Clone)]
@@ -84,7 +85,7 @@ impl Workers {
             id,
             hash,
             bench_method,
-            start: Rfc3339Time(OffsetDateTime::now_utc()),
+            start: Timestamp(OffsetDateTime::now_utc()),
         };
 
         // Reserve work so other workers don't choose it

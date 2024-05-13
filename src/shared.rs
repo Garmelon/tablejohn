@@ -2,53 +2,12 @@
 
 use std::{collections::HashMap, fmt};
 
-use serde::{de, Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
-use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+use serde::{Deserialize, Serialize};
+
+use crate::primitive::{Source, Timestamp};
 
 fn is_false(b: &bool) -> bool {
     !b
-}
-
-#[derive(Clone, Copy)]
-pub struct Rfc3339Time(pub OffsetDateTime);
-
-impl serde::Serialize for Rfc3339Time {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        self.0.format(&Rfc3339).unwrap().serialize(serializer)
-    }
-}
-
-impl<'de> serde::Deserialize<'de> for Rfc3339Time {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let input: &str = serde::Deserialize::deserialize(deserializer)?;
-        OffsetDateTime::parse(input, &Rfc3339)
-            .map_err(de::Error::custom)
-            .map(Self)
-    }
-}
-
-#[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
-#[repr(u8)]
-pub enum Source {
-    // TODO Internal = 0 ?
-    // Stdin would be fd 0
-    Stdout = 1,
-    Stderr = 2,
-}
-
-#[derive(Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
-#[repr(i8)]
-pub enum Direction {
-    LessIsBetter = -1,
-    Neutral = 0,
-    MoreIsBetter = 1,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -81,7 +40,7 @@ pub struct Run {
     pub id: String,
     pub hash: String,
     pub bench_method: BenchMethod,
-    pub start: Rfc3339Time,
+    pub start: Timestamp,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -89,7 +48,7 @@ pub struct UnfinishedRun {
     pub id: String,
     pub hash: String,
     pub bench_method: String,
-    pub start: Rfc3339Time,
+    pub start: Timestamp,
 
     #[serde(default)]
     pub last_output: Vec<(Source, String)>,
@@ -100,13 +59,13 @@ pub struct FinishedRun {
     pub id: String,
     pub hash: String,
     pub bench_method: String,
-    pub start: Rfc3339Time,
+    pub start: Timestamp,
 
     /// Override the server's end time.
     ///
     /// Should not be used in normal operation, but can be used when importing
     /// completed runs from other sources.
-    pub end: Option<Rfc3339Time>,
+    pub end: Option<Timestamp>,
 
     #[serde(default)]
     pub exit_code: i32,
