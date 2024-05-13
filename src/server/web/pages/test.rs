@@ -4,7 +4,7 @@ use maud::html;
 use crate::{
     config::ServerConfig,
     server::web::{
-        base::{Base, Tab},
+        page::{Page, Tab},
         paths::PathTest,
     },
     somehow,
@@ -14,14 +14,14 @@ pub async fn get_test(
     _path: PathTest,
     State(config): State<&'static ServerConfig>,
 ) -> somehow::Result<impl IntoResponse> {
-    let base = Base::new(config, Tab::Index);
-
-    Ok(base.html(
-        "test",
-        html! {},
-        html! {
+    let html = Page::new(config)
+        .title("test")
+        .tab(Tab::Index)
+        .body(html! {
             h2 { "Test" }
             p { "Hello world!" }
-        },
-    ))
+        })
+        .build();
+
+    Ok(html)
 }
