@@ -17,8 +17,8 @@ use crate::{
     server::{
         util,
         web::{
-            base::{Base, Tab},
             components,
+            page::{Page, Tab},
             paths::{
                 PathAdminQueueAddBatch, PathAdminQueueDecrease, PathAdminQueueDelete,
                 PathAdminQueueIncrease, PathQueue, PathQueueDelete, PathQueueInner,
@@ -240,33 +240,33 @@ pub async fn get_queue(
     State(db): State<SqlitePool>,
     State(workers): State<Arc<Mutex<Workers>>>,
 ) -> somehow::Result<impl IntoResponse> {
-    let base = Base::new(config, Tab::Queue);
     let sorted_workers = sorted_workers(&workers);
     let workers = get_workers(config, &db, &sorted_workers).await?;
     let tasks = get_queue_data(config, &db, &sorted_workers).await?;
 
-    Ok(base.html(
-        &format!("queue ({})", tasks.len()),
-        html! {
+    let html = Page::new(config)
+        .title(format!("queue ({})", tasks.len()))
+        .tab(Tab::Queue)
+        .head(html! {
             script type="module" src=(config.path(QUEUE_JS)) {}
-        },
-        html! {
+        })
+        .body(html!{
             div #inner { (page_inner(workers, tasks)) }
             form method="post" action=(config.path(PathAdminQueueAddBatch {})) {
                 label {
                     "Batch size: "
                     input name="amount" type="number" value="10" min="1";
-                }
-                " "
+                } " "
                 label {
                     "Priority: "
                     input #priority name="priority" type="number" value="-1" min="-2147483648" max="2147483647";
-                }
-                " "
+                } " "
                 button { "Add batch to queue" }
             }
-        },
-    ))
+        })
+        .build();
+
+    Ok(html)
 }
 
 pub async fn get_queue_delete(
@@ -274,8 +274,6 @@ pub async fn get_queue_delete(
     State(config): State<&'static ServerConfig>,
     State(db): State<SqlitePool>,
 ) -> somehow::Result<Response> {
-    let base = Base::new(config, Tab::Queue);
-
     let Some(r) = sqlx::query!(
         "\
         SELECT hash, message, reachable FROM commits \
@@ -292,20 +290,23 @@ pub async fn get_queue_delete(
 
     let commit = components::link_commit(config, r.hash.clone(), &r.message, r.reachable);
 
-    Ok(base
-        .html(
-            &format!("del {}", util::format_commit_short(&r.hash, &r.message)),
-            html! {},
-            html! {
-                h2 { "Delete commit from queue" }
-                p { "You are about to delete this commit from the queue:" }
-                p { (commit) }
-                p { "All runs of this commit currently in progress will be aborted!" }
-                form method="post" action=(config.path(PathAdminQueueDelete {})) {
-                    input name="hash" type="hidden" value=(r.hash);
-                    button { "Delete commit and abort runs" }
-                }
-            },
-        )
-        .into_response())
+    let html = Page::new(config)
+        .title(format!(
+            "del {}",
+            util::format_commit_short(&r.hash, &r.message)
+        ))
+        .tab(Tab::Queue)
+        .body(html! {
+            h2 { "Delete commit from queue" }
+            p { "You are about to delete this commit from the queue:" }
+            p { (commit) }
+            p { "All runs of this commit currently in progress will be aborted!" }
+            form method="post" action=(config.path(PathAdminQueueDelete {})) {
+                input name="hash" type="hidden" value=(r.hash);
+                button { "Delete commit and abort runs" }
+            }
+        })
+        .build();
+
+    Ok(html.into_response())
 }
