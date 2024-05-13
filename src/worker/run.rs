@@ -5,8 +5,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use log::error;
-use tokio::sync::Notify;
+use log::{error, warn};
+use tokio::{select, sync::Notify};
 
 use crate::{
     config::WorkerServerConfig,
@@ -82,12 +82,19 @@ impl RunInProgress {
 
     pub async fn perform(&self, server: &Server) -> Option<FinishedRun> {
         // TODO Log system info
-        // TODO Handle aborts
-        let result = match &self.run.bench_method {
+
+        let run_future = match &self.run.bench_method {
             BenchMethod::Internal => self.perform_internal(server),
             BenchMethod::Repo { hash } => todo!(),
-        }
-        .await;
+        };
+
+        let result = select! {
+            result = run_future => result,
+            _ = self.abort.notified() => {
+                warn!("Run for {} was aborted", server.name);
+                Ok(None)
+            },
+        };
 
         let run = match result {
             Ok(outcome) => outcome,
@@ -115,5 +122,9 @@ impl RunInProgress {
             output,
             measurements: run.measurements,
         })
+    }
+
+    pub fn abort(&self) {
+        self.abort.notify_one();
     }
 }

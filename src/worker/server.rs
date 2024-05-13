@@ -38,7 +38,7 @@ pub struct Server {
     /// 1. The main task requests a run
     /// 2. The ping task sends a status update where the worker is idle
     /// 3. The server receives 1, reserves a run and replies
-    /// 4. The server receives 2 and clears the reservatio
+    /// 4. The server receives 2 and clears the reservation
     /// 5. Another worker requests a run before this worker's next ping
     pub status_lock: Arc<AsyncMutex<()>>,
 }
@@ -79,6 +79,12 @@ impl Server {
             .error_for_status()?
             .json::<ServerResponse>()
             .await?;
+
+        if response.abort_run {
+            if let Some(current_run) = &*self.current_run.lock().unwrap() {
+                current_run.abort();
+            }
+        }
 
         Ok(response)
     }
@@ -123,13 +129,11 @@ impl Server {
 
     async fn ping(&self) -> somehow::Result<()> {
         debug!("Pinging {}", self.name);
+
         let guard = self.status_lock.lock().await;
-
-        let response = self.post_status(false, None).await?;
-
-        // TODO Signal that run should be aborted
-
+        let _ = self.post_status(false, None).await?;
         drop(guard);
+
         Ok(())
     }
 
