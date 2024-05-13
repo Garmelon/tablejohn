@@ -15,7 +15,7 @@ use sqlx::SqlitePool;
 use crate::{
     config::ServerConfig,
     server::{
-        util,
+        format,
         web::{
             components,
             page::{Page, Tab},
@@ -138,7 +138,7 @@ async fn get_queue_data(
         link_decrease: config.path(PathAdminQueueDecrease {}),
         hash: r.hash.clone(),
         commit: components::link_commit(config, r.hash, &r.message, r.reachable),
-        since: util::format_delta_from_now(r.date),
+        since: format::delta_from_now(r.date),
         priority: r.priority,
         odd: false,
     })
@@ -291,10 +291,7 @@ pub async fn get_queue_delete(
     let commit = components::link_commit(config, r.hash.clone(), &r.message, r.reachable);
 
     let html = Page::new(config)
-        .title(format!(
-            "del {}",
-            util::format_commit_short(&r.hash, &r.message)
-        ))
+        .title(format!("del {}", format::commit_short(&r.hash, &r.message)))
         .tab(Tab::Queue)
         .body(html! {
             h2 { "Delete commit from queue" }

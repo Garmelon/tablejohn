@@ -11,7 +11,7 @@ use time::OffsetDateTime;
 use crate::{
     config::ServerConfig,
     server::{
-        util,
+        format,
         web::{
             page::{Page, Tab},
             paths::{PathGraph, PathGraphCommits, PathGraphMeasurements, PathGraphMetrics},
@@ -108,7 +108,7 @@ pub async fn get_graph_commits(
         hash_by_hash.push(row.hash);
         author_by_hash.push(row.author);
         committer_date_by_hash.push(row.committer_date.unix_timestamp());
-        summary_by_hash.push(util::format_commit_summary(&row.message));
+        summary_by_hash.push(format::commit_summary(&row.message));
     }
     drop(rows);
 

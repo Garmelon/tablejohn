@@ -9,7 +9,7 @@ use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use time::{OffsetDateTime, UtcOffset};
 
 use crate::{
-    server::{util, Repo},
+    server::{format, Repo},
     somehow,
 };
 
@@ -82,10 +82,10 @@ async fn insert_new_commits(
         let commit = id.attach(repo).object()?.try_into_commit()?;
         let hash = commit.id.to_string();
         let author_info = commit.author()?;
-        let author = util::format_actor(author_info.actor())?;
+        let author = format::actor(author_info.actor())?;
         let author_date = time_to_offset_datetime(author_info.time)?;
         let committer_info = commit.committer()?;
-        let committer = util::format_actor(committer_info.actor())?;
+        let committer = format::actor(committer_info.actor())?;
         let committer_date = time_to_offset_datetime(committer_info.time)?;
         let message = commit.message_raw()?.to_string();
 

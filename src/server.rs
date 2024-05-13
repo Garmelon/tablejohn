@@ -1,6 +1,6 @@
+mod format;
 mod git;
 mod recurring;
-mod util;
 pub mod web;
 mod workers;
 

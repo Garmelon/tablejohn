@@ -5,13 +5,13 @@ use time::{macros::format_description, OffsetDateTime};
 
 use crate::somehow;
 
-pub fn format_duration(duration: time::Duration) -> String {
+pub fn duration(duration: time::Duration) -> String {
     let seconds = duration.unsigned_abs().as_secs(); // To nearest second
     let formatted = humantime::format_duration(Duration::from_secs(seconds));
     format!("{formatted}")
 }
 
-pub fn format_delta_from_now(time: OffsetDateTime) -> String {
+pub fn delta_from_now(time: OffsetDateTime) -> String {
     let now = OffsetDateTime::now_utc();
     let delta = time - now;
     let seconds = delta.unsigned_abs().as_secs();
@@ -27,24 +27,24 @@ pub fn format_delta_from_now(time: OffsetDateTime) -> String {
     }
 }
 
-pub fn format_time(time: OffsetDateTime) -> String {
+pub fn time(time: OffsetDateTime) -> String {
     let formatted_time = time
         .format(format_description!(
         "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory][offset_minute]"
     ))
         .expect("invalid date format");
 
-    let formatted_delta = format_delta_from_now(time);
+    let formatted_delta = delta_from_now(time);
     format!("{formatted_time} ({formatted_delta})")
 }
 
-pub fn format_actor(author: IdentityRef<'_>) -> somehow::Result<String> {
+pub fn actor(author: IdentityRef<'_>) -> somehow::Result<String> {
     let mut buffer = vec![];
     author.trim().write_to(&mut buffer)?;
     Ok(String::from_utf8_lossy(&buffer).to_string())
 }
 
-pub fn format_commit_summary(message: &str) -> String {
+pub fn commit_summary(message: &str) -> String {
     // Take everything up to the first double newline
     let title = message
         .split_once("\n\n")
@@ -55,13 +55,13 @@ pub fn format_commit_summary(message: &str) -> String {
     title.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-pub fn format_commit_short(hash: &str, message: &str) -> String {
+pub fn commit_short(hash: &str, message: &str) -> String {
     let short_hash = hash.chars().take(8).collect::<String>();
-    let summary = format_commit_summary(message);
+    let summary = commit_summary(message);
     format!("{short_hash} ({summary})")
 }
 
-pub fn format_value(value: f64) -> String {
+pub fn measurement_value(value: f64) -> String {
     if value.abs() >= 1e6 {
         format!("{value:.3e}")
     } else if value.fract() == 0.0 {

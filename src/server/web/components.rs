@@ -1,7 +1,7 @@
 use maud::{html, Markup};
 use time::OffsetDateTime;
 
-use crate::{config::ServerConfig, server::util};
+use crate::{config::ServerConfig, server::format};
 
 use super::{
     paths::{PathCommitByHash, PathRunById, PathWorkerByName},
@@ -37,7 +37,7 @@ pub fn commit_class_and_title(reachable: i64) -> (&'static str, &'static str) {
 }
 
 pub fn link_commit(config: &ServerConfig, hash: String, message: &str, reachable: i64) -> Markup {
-    let short = util::truncate(&util::format_commit_short(&hash, message), 80);
+    let short = format::truncate(&format::commit_short(&hash, message), 80);
     let path = config.path(PathCommitByHash { hash });
     let (class, title) = commit_class_and_title(reachable);
 
@@ -48,7 +48,7 @@ pub fn link_commit(config: &ServerConfig, hash: String, message: &str, reachable
 
 /// Link to a run by its commit's short message.
 pub fn link_run_short(config: &ServerConfig, id: String, hash: &str, message: &str) -> Markup {
-    let short = util::truncate(&util::format_commit_short(hash, message), 80);
+    let short = format::truncate(&format::commit_short(hash, message), 80);
     let path = config.path(PathRunById { id });
 
     html! {
@@ -58,7 +58,7 @@ pub fn link_run_short(config: &ServerConfig, id: String, hash: &str, message: &s
 
 /// Link to a run by its start time.
 pub fn link_run_date(config: &ServerConfig, id: String, start: OffsetDateTime) -> Markup {
-    let start = util::format_time(start);
+    let start = format::time(start);
     let path = config.path(PathRunById { id });
 
     html! {

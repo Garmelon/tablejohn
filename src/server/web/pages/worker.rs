@@ -11,7 +11,7 @@ use sqlx::SqlitePool;
 use crate::{
     config::ServerConfig,
     server::{
-        util,
+        format,
         web::{components, page::Page, paths::PathWorkerByName},
         workers::Workers,
     },
@@ -40,7 +40,7 @@ async fn status(
                     .await?;
             Status::Working {
                 link: components::link_run_short(config, run.id.clone(), &run.hash, &message),
-                since: util::format_time(run.start.0),
+                since: format::time(run.start.0),
             }
         }
     })
@@ -67,7 +67,7 @@ pub async fn get_worker_by_name(
                 span .title { "worker " (path.name) }
                 dl {
                     dt { "Connected:" }
-                    dd { (util::format_time(info.first_seen)) }
+                    dd { (format::time(info.first_seen)) }
 
                     @match status {
                         Status::Idle => {

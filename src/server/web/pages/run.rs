@@ -10,7 +10,7 @@ use sqlx::SqlitePool;
 use crate::{
     config::ServerConfig,
     server::{
-        util,
+        format,
         web::{components, page::Page, paths::PathRunById},
     },
     somehow,
@@ -70,7 +70,7 @@ async fn from_finished_run(
     .fetch(db)
     .map_ok(|r| Measurement {
         metric: r.metric,
-        value: util::format_value(r.value),
+        value: format::measurement_value(r.value),
         unit: r.unit.unwrap_or_default(),
     })
     .try_collect::<Vec<_>>()
@@ -95,10 +95,7 @@ async fn from_finished_run(
     let commit = components::link_commit(config, run.hash, &run.message, run.reachable);
 
     let html = Page::new(config)
-        .title(format!(
-            "Run of {}",
-            util::format_commit_summary(&run.message)
-        ))
+        .title(format!("Run of {}", format::commit_summary(&run.message)))
         .body(html! {
             h2 { "Run" }
             div .commit-like .run {
@@ -111,13 +108,13 @@ async fn from_finished_run(
                     dd { (run.bench_method) }
 
                     dt { "Start:" }
-                    dd { (util::format_time(run.start)) }
+                    dd { (format::time(run.start)) }
 
                     dt { "End:" }
-                    dd { (util::format_time(run.end)) }
+                    dd { (format::time(run.end)) }
 
                     dt { "Duration:" }
-                    dd { (util::format_duration(run.end - run.start)) }
+                    dd { (format::duration(run.end - run.start)) }
 
                     dt { "Exit code:" }
                     dd { (run.exit_code) }

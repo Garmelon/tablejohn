@@ -10,7 +10,7 @@ use sqlx::SqlitePool;
 use crate::{
     config::ServerConfig,
     server::{
-        util,
+        format,
         web::{
             components,
             page::Page,
@@ -92,7 +92,7 @@ pub async fn get_commit_by_hash(
     let (class, title) = components::commit_class_and_title(commit.reachable);
 
     let html = Page::new(config)
-        .title(util::format_commit_summary(&commit.message))
+        .title(format::commit_summary(&commit.message))
         .body(html! {
             h2 { "Commit" }
             div .commit-like .commit {
@@ -102,13 +102,13 @@ pub async fn get_commit_by_hash(
                     dd { (commit.author) }
 
                     dt { "AuthorDate:" }
-                    dd { (util::format_time(commit.author_date)) }
+                    dd { (format::time(commit.author_date)) }
 
                     dt { "Commit:" }
                     dd { (commit.committer) }
 
                     dt { "CommitDate:" }
-                    dd { (util::format_time(commit.committer_date)) }
+                    dd { (format::time(commit.committer_date)) }
 
                     @for commit in parents {
                         dt { "Parent:" }
