@@ -38,7 +38,7 @@ CREATE TABLE refs (
 CREATE TABLE metrics (
     name      TEXT NOT NULL PRIMARY KEY,
     unit      TEXT,
-    direction INT
+    direction INT  NOT NULL DEFAULT 0
 ) STRICT;
 
 CREATE TABLE runs (
