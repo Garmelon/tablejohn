@@ -58,6 +58,7 @@ impl RunInProgress {
             .rev()
             .cloned()
             .collect();
+
         UnfinishedRun {
             id: self.run.id.clone(),
             hash: self.run.hash.clone(),
@@ -65,6 +66,10 @@ impl RunInProgress {
             start: self.run.start,
             last_output,
         }
+    }
+
+    pub fn log_internal(&self, line: String) {
+        self.output.lock().unwrap().push((Source::Internal, line));
     }
 
     pub fn log_stdout(&self, line: String) {
@@ -76,6 +81,7 @@ impl RunInProgress {
     }
 
     pub async fn perform(&self, server: &Server) -> Option<FinishedRun> {
+        // TODO Log system info
         // TODO Handle aborts
         let result = match &self.run.bench_method {
             BenchMethod::Internal => self.perform_internal(server),
@@ -87,8 +93,8 @@ impl RunInProgress {
             Ok(outcome) => outcome,
             Err(e) => {
                 error!("Error during run for {}:\n{e:?}", server.name);
-                self.log_stderr("Internal error:".to_string());
-                self.log_stderr(format!("{e:?}"));
+                self.log_internal("Internal error:".to_string());
+                self.log_internal(format!("{e:?}"));
                 Some(Finished {
                     exit_code: -1,
                     measurements: HashMap::new(),
