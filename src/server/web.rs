@@ -1,6 +1,5 @@
 mod admin;
 mod api;
-mod base;
 mod components;
 mod page;
 mod pages;

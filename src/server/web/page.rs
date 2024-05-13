@@ -4,7 +4,7 @@ use crate::{
     config::ServerConfig,
     server::web::{
         paths::{PathGraph, PathIndex, PathQueue},
-        r#static::{BASE_CSS, LOGO_SVG},
+        r#static::{LOGO_SVG, PAGE_CSS},
         server_config_ext::ServerConfigExt,
     },
 };
@@ -64,7 +64,7 @@ impl Page {
                     meta name="viewport" content="width=device-width";
                     title { (self.title) " - " (self.config.repo_name) }
                     link rel="icon" href=(self.config.path(LOGO_SVG));
-                    link rel="stylesheet" href=(self.config.path(BASE_CSS));
+                    link rel="stylesheet" href=(self.config.path(PAGE_CSS));
                     @for head in self.heads { (head) }
                 }
                 body {
