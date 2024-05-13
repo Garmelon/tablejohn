@@ -27,7 +27,7 @@ pub async fn get_graph(
 ) -> somehow::Result<impl IntoResponse> {
     let html = Page::new(config)
         .title("graph")
-        .nav(Tab::Graph)
+        .tab(Tab::Graph)
         .head(html! {
             link rel="stylesheet" href=(config.path(UPLOT_CSS));
             script type="module" src=(config.path(GRAPH_JS)) {}

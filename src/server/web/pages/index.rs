@@ -54,7 +54,7 @@ pub async fn get_index(
 
     let html = Page::new(config)
         .title("overview")
-        .nav(Tab::Index)
+        .tab(Tab::Index)
         .body(html! {
             h2 { "Refs" }
             details .refs-list open {

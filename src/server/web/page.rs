@@ -11,7 +11,6 @@ use crate::{
 
 #[derive(PartialEq, Eq)]
 pub enum Tab {
-    None,
     Index,
     Graph,
     Queue,
@@ -20,7 +19,7 @@ pub enum Tab {
 pub struct Page {
     config: &'static ServerConfig,
     title: String,
-    nav: Option<Markup>,
+    tab: Option<Tab>,
     heads: Vec<Markup>,
     bodies: Vec<Markup>,
 }
@@ -30,7 +29,7 @@ impl Page {
         Self {
             config,
             title: "???".to_string(),
-            nav: None,
+            tab: None,
             heads: vec![],
             bodies: vec![],
         }
@@ -41,18 +40,8 @@ impl Page {
         self
     }
 
-    pub fn nav(mut self, tab: Tab) -> Self {
-        self.nav = Some(html! {
-            nav {
-                a .current[tab == Tab::Index] href=(self.config.path(PathIndex {})) {
-                    img src=(self.config.path(LOGO_SVG)) alt="";
-                    (self.config.repo_name)
-                }
-                a .current[tab == Tab::Graph] href=(self.config.path(PathGraph {})) { "graph" }
-                a .current[tab == Tab::Queue] href=(self.config.path(PathQueue {})) { "queue" }
-            }
-        });
-
+    pub fn tab(mut self, tab: Tab) -> Self {
+        self.tab = Some(tab);
         self
     }
 
@@ -76,10 +65,17 @@ impl Page {
                     title { (self.title) " - " (self.config.repo_name) }
                     link rel="icon" href=(self.config.path(LOGO_SVG));
                     link rel="stylesheet" href=(self.config.path(BASE_CSS));
-                    @if let Some(nav) = self.nav { (nav) }
                     @for head in self.heads { (head) }
                 }
                 body {
+                    nav {
+                        a .current[self.tab == Some(Tab::Index)] href=(self.config.path(PathIndex {})) {
+                            img src=(self.config.path(LOGO_SVG)) alt="";
+                            (self.config.repo_name)
+                        }
+                        a .current[self.tab == Some(Tab::Graph)] href=(self.config.path(PathGraph {})) { "graph" }
+                        a .current[self.tab == Some(Tab::Queue)] href=(self.config.path(PathQueue {})) { "queue" }
+                    }
                     @for body in self.bodies { (body) }
                 }
             }

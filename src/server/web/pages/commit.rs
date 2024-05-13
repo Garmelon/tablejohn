@@ -13,7 +13,7 @@ use crate::{
         util,
         web::{
             components,
-            page::{Page, Tab},
+            page::Page,
             paths::{PathAdminQueueAdd, PathCommitByHash},
             server_config_ext::ServerConfigExt,
         },
@@ -93,7 +93,6 @@ pub async fn get_commit_by_hash(
 
     let html = Page::new(config)
         .title(util::format_commit_summary(&commit.message))
-        .nav(Tab::None)
         .body(html! {
             h2 { "Commit" }
             div .commit-like .commit {
