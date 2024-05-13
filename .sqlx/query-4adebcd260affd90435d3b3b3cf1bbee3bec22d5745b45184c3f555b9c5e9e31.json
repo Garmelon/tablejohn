@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT hash FROM commits WHERE new AND reachable = 2",
+  "query": "SELECT hash FROM commits WHERE new AND reachable = ?",
   "describe": {
     "columns": [
       {
@@ -10,11 +10,11 @@
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       false
     ]
   },
-  "hash": "726102c4f61f95047a64cdc21834d0a5544950ecfe9b1d6716521dcf1d0b8fb2"
+  "hash": "4adebcd260affd90435d3b3b3cf1bbee3bec22d5745b45184c3f555b9c5e9e31"
 }

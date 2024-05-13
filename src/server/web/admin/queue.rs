@@ -10,6 +10,7 @@ use time::OffsetDateTime;
 
 use crate::{
     config::ServerConfig,
+    primitive::Reachable,
     server::web::{
         paths::{
             PathAdminQueueAdd, PathAdminQueueAddBatch, PathAdminQueueDecrease,
@@ -75,12 +76,13 @@ pub async fn post_admin_queue_add_batch(
         SELECT hash, ?, ? \
         FROM commits \
         LEFT JOIN runs USING (hash) \
-        WHERE reachable = 2 AND id IS NULL \
+        WHERE reachable = ? AND id IS NULL \
         ORDER BY unixepoch(committer_date) DESC \
         LIMIT ? \
         ",
         date,
         form.priority,
+        Reachable::FromTrackedRef,
         form.amount,
     )
     .execute(&db)

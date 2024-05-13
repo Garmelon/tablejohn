@@ -9,6 +9,7 @@ use sqlx::{Acquire, SqliteConnection, SqlitePool};
 use time::{OffsetDateTime, UtcOffset};
 
 use crate::{
+    primitive::Reachable,
     server::{format, Repo},
     somehow,
 };
@@ -227,11 +228,14 @@ async fn update_commit_tracked_status(conn: &mut SqliteConnection) -> somehow::R
             ) \
         UPDATE commits \
         SET reachable = CASE \
-            WHEN hash IN tracked   THEN 2 \
-            WHEN hash IN reachable THEN 1 \
-            ELSE 0 \
+            WHEN hash IN tracked   THEN ? \
+            WHEN hash IN reachable THEN ? \
+            ELSE ? \
         END \
-        "
+        ",
+        Reachable::FromTrackedRef,
+        Reachable::FromAnyRef,
+        Reachable::Unreachable,
     )
     .execute(conn)
     .await?;

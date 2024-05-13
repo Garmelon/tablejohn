@@ -9,6 +9,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
+    primitive::Reachable,
     server::{
         format,
         web::{
@@ -35,7 +36,7 @@ pub async fn get_commit_by_hash(
             committer, \
             committer_date AS \"committer_date: time::OffsetDateTime\", \
             message, \
-            reachable \
+            reachable AS \"reachable: Reachable\" \
         FROM commits \
         WHERE hash = ? \
         ",
@@ -49,7 +50,11 @@ pub async fn get_commit_by_hash(
 
     let parents = sqlx::query!(
         "\
-        SELECT hash, message, reachable FROM commits \
+        SELECT \
+            hash, \
+            message, \
+            reachable AS \"reachable: Reachable\" \
+        FROM commits \
         JOIN commit_edges ON hash = parent \
         WHERE child = ? \
         ORDER BY reachable DESC, unixepoch(committer_date) ASC \
@@ -63,7 +68,11 @@ pub async fn get_commit_by_hash(
 
     let children = sqlx::query!(
         "\
-        SELECT hash, message, reachable FROM commits \
+        SELECT \
+            hash, \
+            message, \
+            reachable AS \"reachable: Reachable\" \
+        FROM commits \
         JOIN commit_edges ON hash = child \
         WHERE parent = ? \
         ORDER BY reachable DESC, unixepoch(committer_date) ASC \

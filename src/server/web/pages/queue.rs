@@ -14,6 +14,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
+    primitive::Reachable,
     server::{
         format,
         web::{
@@ -120,7 +121,7 @@ async fn get_queue_data(
         SELECT \
             hash, \
             message, \
-            reachable, \
+            reachable AS \"reachable: Reachable\", \
             date AS \"date: time::OffsetDateTime\", \
             priority \
         FROM queue \
@@ -276,7 +277,11 @@ pub async fn get_queue_delete(
 ) -> somehow::Result<Response> {
     let Some(r) = sqlx::query!(
         "\
-        SELECT hash, message, reachable FROM commits \
+        SELECT \
+            hash, \
+            message, \
+            reachable AS \"reachable: Reachable\" \
+            FROM commits \
         JOIN queue USING (hash) \
         WHERE hash = ? \
         ",

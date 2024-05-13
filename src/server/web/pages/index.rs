@@ -5,6 +5,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
+    primitive::Reachable,
     server::web::{
         components,
         page::{Page, Tab},
@@ -27,7 +28,12 @@ pub async fn get_index(
 ) -> somehow::Result<impl IntoResponse> {
     let refs = sqlx::query!(
         "\
-        SELECT name, hash, message, reachable, tracked \
+        SELECT \
+            name, \
+            hash, \
+            message, \
+            reachable AS \"reachable: Reachable\", \
+            tracked \
         FROM refs \
         JOIN commits USING (hash) \
         ORDER BY name ASC \

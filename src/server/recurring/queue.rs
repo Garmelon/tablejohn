@@ -2,16 +2,19 @@ use log::{debug, info, warn};
 use sqlx::{Acquire, SqlitePool};
 use time::OffsetDateTime;
 
-use crate::somehow;
+use crate::{primitive::Reachable, somehow};
 
 async fn inner(db: &SqlitePool) -> somehow::Result<()> {
     let mut tx = db.begin().await?;
     let conn = tx.acquire().await?;
 
     // Get all newly added tracked commits
-    let new = sqlx::query!("SELECT hash FROM commits WHERE new AND reachable = 2")
-        .fetch_all(&mut *conn)
-        .await?;
+    let new = sqlx::query!(
+        "SELECT hash FROM commits WHERE new AND reachable = ?",
+        Reachable::FromTrackedRef,
+    )
+    .fetch_all(&mut *conn)
+    .await?;
     debug!("Found {} new commits", new.len());
 
     // Insert them into the queue
@@ -38,13 +41,17 @@ async fn inner(db: &SqlitePool) -> somehow::Result<()> {
     //
     // When tracked refs are updated, all new commits are automatically added to
     // the queue, since they were still new and have now transitioned to
-    // reachable = 2. This should hopefully not be too big of a problem since
-    // usually the main branch is also tracked. I think I'd rather implement
-    // better queue management tools and graph UI than change this behaviour.
-    let amount = sqlx::query!("UPDATE commits SET new = false WHERE reachable = 2")
-        .execute(&mut *conn)
-        .await?
-        .rows_affected();
+    // Reachable::FromTrackedRef. This should hopefully not be too big of a
+    // problem since usually the main branch is also tracked. I think I'd rather
+    // implement better queue management tools and graph UI than change this
+    // behaviour.
+    let amount = sqlx::query!(
+        "UPDATE commits SET new = false WHERE reachable = ?",
+        Reachable::FromTrackedRef,
+    )
+    .execute(&mut *conn)
+    .await?
+    .rows_affected();
     debug!("Marked {amount} commits as old");
 
     tx.commit().await?;

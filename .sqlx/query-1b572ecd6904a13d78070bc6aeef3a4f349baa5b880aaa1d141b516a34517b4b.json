@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO queue (hash, date, priority) SELECT hash, ?, ? FROM commits LEFT JOIN runs USING (hash) WHERE reachable = ? AND id IS NULL ORDER BY unixepoch(committer_date) DESC LIMIT ? ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "1b572ecd6904a13d78070bc6aeef3a4f349baa5b880aaa1d141b516a34517b4b"
+}

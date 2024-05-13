@@ -9,6 +9,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     config::ServerConfig,
+    primitive::Reachable,
     server::{
         format,
         web::{components, page::Page, paths::PathRunById},
@@ -42,7 +43,7 @@ async fn from_finished_run(
             end AS \"end: time::OffsetDateTime\", \
             exit_code, \
             message, \
-            reachable \
+            reachable AS \"reachable: Reachable\" \
         FROM runs \
         JOIN commits USING (hash) \
         WHERE id = ? \

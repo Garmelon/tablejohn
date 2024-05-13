@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id, hash, bench_method, start AS \"start: time::OffsetDateTime\", end AS \"end: time::OffsetDateTime\", exit_code, message, reachable FROM runs JOIN commits USING (hash) WHERE id = ? ",
+  "query": "SELECT id, hash, bench_method, start AS \"start: time::OffsetDateTime\", end AS \"end: time::OffsetDateTime\", exit_code, message, reachable AS \"reachable: Reachable\" FROM runs JOIN commits USING (hash) WHERE id = ? ",
   "describe": {
     "columns": [
       {
@@ -39,7 +39,7 @@
         "type_info": "Text"
       },
       {
-        "name": "reachable",
+        "name": "reachable: Reachable",
         "ordinal": 7,
         "type_info": "Int64"
       }
@@ -58,5 +58,5 @@
       false
     ]
   },
-  "hash": "26bf8f43e0fa607ddfabb0611ee95c8ed1fef2d1aa76749b660228cd38a84283"
+  "hash": "daae5a05af0e8a511f5099820da2ccbeebb577935786fdb1a235d0315bc5a433"
 }

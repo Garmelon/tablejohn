@@ -1,7 +1,7 @@
 use maud::{html, Markup};
 use time::OffsetDateTime;
 
-use crate::{config::ServerConfig, server::format};
+use crate::{config::ServerConfig, primitive::Reachable, server::format};
 
 use super::{
     paths::{PathCommitByHash, PathRunById, PathWorkerByName},
@@ -17,26 +17,29 @@ pub fn join(sections: &[Markup], with: Markup) -> Markup {
     }
 }
 
-pub fn commit_class_and_title(reachable: i64) -> (&'static str, &'static str) {
-    if reachable == 0 {
-        (
+pub fn commit_class_and_title(reachable: Reachable) -> (&'static str, &'static str) {
+    match reachable {
+        Reachable::Unreachable => (
             "commit-orphaned",
             "This commit is orphaned. It can't be reached from any ref.",
-        )
-    } else if reachable == -1 {
-        (
+        ),
+        Reachable::FromAnyRef => (
             "commit-reachable",
             "This commit can only be reached from untracked refs.",
-        )
-    } else {
-        (
+        ),
+        Reachable::FromTrackedRef => (
             "commit-tracked",
             "This commit can be reached from a tracked ref.",
-        )
+        ),
     }
 }
 
-pub fn link_commit(config: &ServerConfig, hash: String, message: &str, reachable: i64) -> Markup {
+pub fn link_commit(
+    config: &ServerConfig,
+    hash: String,
+    message: &str,
+    reachable: Reachable,
+) -> Markup {
     let short = format::truncate(&format::commit_short(&hash, message), 80);
     let path = config.path(PathCommitByHash { hash });
     let (class, title) = commit_class_and_title(reachable);

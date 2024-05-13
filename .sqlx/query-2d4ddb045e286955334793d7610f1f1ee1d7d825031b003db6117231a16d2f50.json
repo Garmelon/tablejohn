@@ -1,15 +1,15 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT name, hash, message, reachable, tracked FROM refs JOIN commits USING (hash) ORDER BY name ASC ",
+  "query": "SELECT hash, author, message, committer_date AS \"committer_date: OffsetDateTime\" FROM commits WHERE reachable = ? ORDER BY hash ASC ",
   "describe": {
     "columns": [
       {
-        "name": "name",
+        "name": "hash",
         "ordinal": 0,
         "type_info": "Text"
       },
       {
-        "name": "hash",
+        "name": "author",
         "ordinal": 1,
         "type_info": "Text"
       },
@@ -19,26 +19,20 @@
         "type_info": "Text"
       },
       {
-        "name": "reachable",
+        "name": "committer_date: OffsetDateTime",
         "ordinal": 3,
-        "type_info": "Int64"
-      },
-      {
-        "name": "tracked",
-        "ordinal": 4,
-        "type_info": "Int64"
+        "type_info": "Text"
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
-      false,
       false,
       false,
       false,
       false
     ]
   },
-  "hash": "c7a4115d81a3371d77afadfdad7dbe47c4d1d23211a35c0c68174f9ce82893c2"
+  "hash": "2d4ddb045e286955334793d7610f1f1ee1d7d825031b003db6117231a16d2f50"
 }

@@ -10,6 +10,7 @@ use time::OffsetDateTime;
 
 use crate::{
     config::ServerConfig,
+    primitive::Reachable,
     server::{
         format,
         web::{
@@ -99,9 +100,10 @@ pub async fn get_graph_commits(
             message, \
             committer_date AS \"committer_date: OffsetDateTime\" \
         FROM commits \
-        WHERE reachable = 2 \
+        WHERE reachable = ? \
         ORDER BY hash ASC \
-        "
+        ",
+        Reachable::FromTrackedRef,
     )
     .fetch(&mut *conn);
     while let Some(row) = rows.try_next().await? {
@@ -126,9 +128,10 @@ pub async fn get_graph_commits(
         SELECT child, parent \
         FROM commit_edges \
         JOIN commits ON hash = child \
-        WHERE reachable = 2 \
+        WHERE reachable = ? \
         ORDER BY hash ASC \
-        "
+        ",
+        Reachable::FromTrackedRef,
     )
     .fetch(&mut *conn);
     while let Some(row) = rows.try_next().await? {

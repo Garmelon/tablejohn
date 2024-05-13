@@ -22,6 +22,15 @@ pub enum Direction {
     MoreIsBetter = 1,
 }
 
+/// How a commit can be reached from refs.
+#[derive(Debug, Clone, Serialize_repr, Deserialize_repr, sqlx::Type)]
+#[repr(u8)]
+pub enum Reachable {
+    Unreachable = 0,
+    FromAnyRef = 1,
+    FromTrackedRef = 2,
+}
+
 /// A time stamp, usually formatted using RFC3339.
 #[derive(Clone, Copy, sqlx::Type)]
 #[sqlx(transparent)]
